@@ -394,27 +394,4 @@ function views_bulk_operations_views_default_views() {
   return $views;
 }
 
-function _views_bulk_operations_query_string_encode($query, $exclude = array(), $parent = '') {
-  $params = array();
-
-  foreach ($query as $key => $value) {
-    if ($parent) {
-      $key = $parent .'['. $key .']';
-    }
-     
-    if (in_array($key, $exclude)) {
-      continue;
-    }
-
-    if (is_array($value)) {
-      $params[] = _views_bulk_operations_query_string_encode($value, $exclude, $key);
-    }
-    else {
-      $params[] = $key .'='. $value;
-    }
-  }
-
-  return implode('&', $params);
-}
-
 ?>
