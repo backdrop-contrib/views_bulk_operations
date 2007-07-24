@@ -129,7 +129,7 @@ function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
           '#value' => $form_values[$key],
         );
       }
-      $nodes = unserialize($form_values['nodes']); // We'll use that in the confirm_form
+      $selected = unserialize($form_values['nodes']); // We'll use that in the confirm_form
     } 
     else {
       // If this action is not configurable, we skipped VIEWS_NULK_OPS_STEP_CONFIG.
@@ -138,15 +138,16 @@ function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
         '#type' => 'hidden',
         '#value' => serialize($form_values['nodes']),
       );
-      $nodes = $form_values['nodes']; // We'll use that in the confirm_form
+      $selected = $form_values['nodes']; // We'll use that in the confirm_form
     }
     $description = isset($actions[$action]) ? 
         $actions[$action]['description'] : 
         $operations[$action]['label'];
+    $query = drupal_query_string_encode($_GET, array('q'));
     $form = confirm_form($form, 
         t('Are you sure you want to perform \'%action\' on selected nodes?', array('%action' => $description)), 
-        $view->url,
-        theme('views_bulk_operations_confirmation', $nodes['selected']));
+        $query ? array('path' => $_GET['q'], 'query' => $query) : array('path' => $_GET['q']),
+        theme('views_bulk_operations_confirmation', $selected['selected']));
     break;
   }
   return $form;
@@ -219,6 +220,7 @@ function views_bulk_operations_form_submit($form_id, $form_values) {
       }
     }
   }
+  drupal_goto($_GET['q'], drupal_query_string_encode($_GET, array('q')));
 }
 
 function views_bulk_operations_views_tables() {
@@ -391,5 +393,28 @@ function views_bulk_operations_views_default_views() {
   
   return $views;
 }
- 
+
+function _views_bulk_operations_query_string_encode($query, $exclude = array(), $parent = '') {
+  $params = array();
+
+  foreach ($query as $key => $value) {
+    if ($parent) {
+      $key = $parent .'['. $key .']';
+    }
+     
+    if (in_array($key, $exclude)) {
+      continue;
+    }
+
+    if (is_array($value)) {
+      $params[] = _views_bulk_operations_query_string_encode($value, $exclude, $key);
+    }
+    else {
+      $params[] = $key .'='. $value;
+    }
+  }
+
+  return implode('&', $params);
+}
+
 ?>
