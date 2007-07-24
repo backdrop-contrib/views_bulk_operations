@@ -155,7 +155,7 @@ function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
 function views_bulk_operations_form_alter($form_id, &$form) {
   if ($form_id == 'views_filters') { 
     // We only display the filter form on the first page.
-    if ($_POST['form_id'] == 'views_bulk_operations_form' && isset($_POST['step'])) {
+    if ($_POST['form_id'] == 'views_bulk_operations_form' && isset($_POST['step']) && isset($_POST['nodes'])) {
       $form['#prefix'] = '<div style="display: none">';
       $form['#suffix'] = '</div>';
       $view = $form['view']['#value'];
