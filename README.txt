@@ -3,7 +3,7 @@ D R U P A L M O D U L E
 ********************************************************************
 Name: Views Bulk Operations Module
 Authors: Karim Ratib <karim dot ratib at open dash craft dot com>
-         Harry Slaughter <harry at slaughters dot com>
+         Harry Slaughter <harry at devbee dot com>
 Drupal: 5
 ********************************************************************
 DESCRIPTION:
@@ -15,3 +15,9 @@ actions and node operations found in the system. The chosen action
 is applied on each selected node.
 
 ********************************************************************
+USAGE:
+
+After activating the views_bulk_operations module, Create a new (page) view
+and select "Bulk Operations View" as the view type. You will see a view
+form similar to that of admin/content/node.
+
