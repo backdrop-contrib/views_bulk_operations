@@ -5,13 +5,31 @@
  * @file
  * Allow bulk node operations directly within views.
  *
+ * WARNING: This module is under development and not ready for production use.
+ *
+ * BUGS
+ *   - certain action operations do not work properly, 'change node author' for
+ *     example.
+ *   - 'orphaned' actions are not pruned from our stored data and will appear
+ *     as available actions even though they do not exist.
+ *
+ * TODO
+ *   - We do not handle any access control here. We rely on the operations themselves
+ *     to do checking. Users may see operations which they do not actually
+ *     have permission to perform.
+ *   - Currently there is one set of configurable operations which will apply
+ *     to all views. We may consider making operations configurable on a per-view
+ *     basis, though this would probably be considerable work.
+ *
  */
 
 define('VIEWS_BULK_OPS_STEP_VIEW', 1);
 define('VIEWS_BULK_OPS_STEP_CONFIG', 2);
 define('VIEWS_BULK_OPS_STEP_CONFIRM', 3);
 
-// whether all operations are enabled by default
+// whether all operations are enabled by default, setting to 0 requires that
+// the admin enable one or more actions before the bulk operations view will
+// be usable
 define('VIEWS_BULK_OPS_DEFAULT_OPERATION_ENABLE', 1);
 
 /**
@@ -31,7 +49,9 @@ function views_bulk_operations_help($section) {
       return t('Allow bulk node operations directly within views.');
       break;
     case 'admin/settings/views_bulk_operations':
-      return t('These settings determine which actions will be available from within a Bulk Operations view form. Operations selected here will be available for execution on the form.');
+      return t('These settings determine which actions will be available from
+        within a Bulk Operations view form. Operations selected here will be
+        available for execution on the form.');
       break;
   }
 }
@@ -81,6 +101,14 @@ function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
 
   switch ($step) {
   case VIEWS_BULK_OPS_STEP_VIEW: // Show the view
+    if (user_access('administer site configuration')) {
+      $form['configure'] = array(
+        '#type' => 'markup',
+        '#value' => l(t('Enable or Disable Allowed Operations'), 'admin/settings/views_bulk_operations'),
+        '#prefix' => '<div>',
+        '#suffix' => '</div>',
+      );
+    }
     foreach ($all_operations as $operation => $values) {
       $options[$operation] = $values['label'];
     }
@@ -499,6 +527,59 @@ function views_bulk_operations_views_tables() {
     ),
   );
   return $tables;
+}
+
+/**
+ * Implementation of hook_node_operations().
+ */
+function views_bulk_operations_node_operations() {
+  $operations = array(
+    'views_bulk_operations_delete_nodes' => array(
+      'label' => t('Bulk Delete Nodes'),
+      'callback' => 'views_bulk_operations_delete_nodes',
+    ),
+  );
+  return $operations;
+}
+
+/**
+ * Based on node_delete()
+ *
+ * We implement our own node delete operation because we do not follow the
+ * conventional Drupal method of node deletion, which includes its own
+ * confirmation page. We use our own confirmation page and do our own
+ * access control checks.
+ *
+ */
+function views_bulk_operations_delete_nodes($nodes) {
+
+  foreach ($nodes as $nid) {
+    $node = node_load($nid);
+
+    if (node_access('delete', $node)) {
+      db_query('DELETE FROM {node} WHERE nid = %d', $node->nid);
+      db_query('DELETE FROM {node_revisions} WHERE nid = %d', $node->nid);
+
+      // Call the node-specific callback (if any):
+      node_invoke($node, 'delete');
+      node_invoke_nodeapi($node, 'delete');
+
+      // Remove this node from the search index if needed.
+      if (function_exists('search_wipe')) {
+        search_wipe($node->nid, 'node');
+      }
+      drupal_set_message(t('%title has been deleted.', array('%title' => $node->title)));
+      watchdog('content', t('@type: deleted %title.', array('@type' => t($node->type), '%title' => $node->title)));
+      $deleted_nodes++;
+    }
+    else {
+      drupal_set_message(t('Cannot delete "%title", permission denied.', array('%title' => $node->title)));
+    }
+  }
+  if ($deleted_nodes > 0) {
+    // Clear the cache so anonymous users no longer see deleted nodes.
+    cache_clear_all();
+  }
 }
 
 function theme_views_bulk_operations_view($view, $nodes, $type) {
