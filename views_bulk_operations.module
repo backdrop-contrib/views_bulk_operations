@@ -561,15 +561,17 @@ function _views_bulk_operations_get_operations($filter = 'all') {
 
       // Core 'node operations'
       $node_operations = module_invoke_all('node_operations');
-      foreach ($node_operations as $key => $node_operation) {
+
+      foreach ($node_operations as $operation) {
         // some node operations do not provide a valid callback
         // (such as the 'delete' operation)
-        if (empty($node_operation['callback'])) {
+        if (empty($operation['callback'])) {
           continue;
         }
-        if (!isset($all_operations[$key])) {
-          $all_operations[$key] = array(
-            'label'          => $node_operation['label'],
+
+        if (!isset($all_operations[$operation['callback']])) {
+          $all_operations[$operation['callback']] = array(
+            'label'          => $operation['label'],
             'enabled'        => VIEWS_BULK_OPS_DEFAULT_OPERATION_ENABLE,
             'configurable'   => false,
           );
