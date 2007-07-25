@@ -11,51 +11,77 @@ define('VIEWS_BULK_OPS_STEP_VIEW', 1);
 define('VIEWS_BULK_OPS_STEP_CONFIG', 2);
 define('VIEWS_BULK_OPS_STEP_CONFIRM', 3);
 
-define('VIEWS_BULK_OPS_CONFIRM_MAX_NODES', 20);
+// whether all operations are enabled by default
+define('VIEWS_BULK_OPS_DEFAULT_OPERATION_ENABLE', 1);
 
-function views_bulk_operations_views_style_plugins() {
-  return array(
-    'bulk' => array(
-      'name' => t('Bulk Operations View'),
-      'theme' => 'views_bulk_operations_view',
-      'needs_fields' => true,
-      'weight' => -10,
-    ),
-  );
+/**
+ * Implementation of hook_help().
+ */
+function views_bulk_operations_help($section) {
+  switch ($section) {
+    case 'admin/help#views_bulk_operations':
+      return t('
+        Views Bulk Operations adds a new views type which enables operations to
+        be performed on multiple nodes directly from within a view.
+        <p>To create a view of this type, simply select "Views Bulk Operations"
+        as the "view type" for your view (which must be a page view).</p>
+      ');
+      break;
+    case 'admin/modules#description':
+      return t('Allow bulk node operations directly within views.');
+      break;
+    case 'admin/settings/views_bulk_operations':
+      return t('These settings determine which actions will be available from within a Bulk Operations view form. Operations selected here will be available for execution on the form.');
+      break;
+  }
 }
 
-function theme_views_bulk_operations_view($view, $nodes, $type) {
-  $output = drupal_get_form('views_bulk_operations_form', $view, $nodes, $type);
-  //$output .= views_bulk_operations_version();
-  return $output;
+/**
+ * Implementation of hook_menu().
+ */
+function views_bulk_operations_menu($may_cache) {
+  $items = array();
+
+  if ($may_cache) {
+    $items[] = array(
+      'path'               => 'admin/settings/views_bulk_operations',
+      'title'              => t('Views Bulk Operations'),
+      'description'        => t('Configure Views Bulk Operations.'),
+      'callback'           => 'drupal_get_form',
+      'callback arguments' => array('views_bulk_operations_admin_settings'),
+      'access'             => user_access('administer site configuration'),
+      'type'               => MENU_NORMAL_ITEM
+    );
+  }
+  return $items;
 }
 
 function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
   $form['#multistep'] = TRUE;
-  $actions = actions_list();
-  $operations = module_invoke_all('node_operations');
+  $all_operations = _views_bulk_operations_get_operations('enabled');
 
-  // Caluclate next step. Take into consideration whether the action is configurable or not.
+  // No Operations enabled! Cannot function
+  if (empty($all_operations)) {
+    drupal_set_message($error_message, 'error');
+    watchdog('views_bulk_operations', 'No Operations enabled, please enable operations: ' . l('Views Bulk Operations Administration Page', 'admin/settings/views_bulk_operations'), WATCHDOG_ERROR);
+    // TODO: may want to direct somewhere else?
+    drupal_goto();
+  }
+
+  // Calculate next step. Take into consideration whether the action is configurable or not.
   $step = isset($form_values) ? (int) $form_values['step'] + 1: VIEWS_BULK_OPS_STEP_VIEW;
   if ($step == VIEWS_BULK_OPS_STEP_CONFIG) {
     $action = $form_values['action'];
-    if (!isset($actions[$action]) || !$actions[$action]['configurable']) {
+    if (!isset($all_operations[$action]) || !$all_operations[$action]['configurable']) {
       $step = VIEWS_BULK_OPS_STEP_CONFIRM;
     }
   }
   $form['step'] = array('#type' => 'hidden', '#value' => $step);
-  
+
   switch ($step) {
   case VIEWS_BULK_OPS_STEP_VIEW: // Show the view
-    foreach ($actions as $aid => $action) {
-      if ($action['type'] == 'Node') {
-        $options[$aid] = $action['description'].' '.t('(action)');
-      }
-    }
-    foreach ($operations as $oid => $operation) {
-      if ($operation['callback']) {
-        $options[$oid] = $operation['label'].' '.t('(node operation)');
-      }
+    foreach ($all_operations as $operation => $values) {
+      $options[$operation] = $values['label'];
     }
     $form['action'] = array(
       '#type' => 'select',
@@ -120,7 +146,7 @@ function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
       );
       // Gather the form values for the action configuration and store them in the
       // form as hidden elements to be picked up by the submit function.
-      // WARNING: This might break for complex values so it would be wiser to 
+      // WARNING: This might break for complex values so it would be wiser to
       // serialize here and unserialize in the submit function.
       $form_action = unserialize($form_values['action_elements']);
       foreach ($form_action as $key) {
@@ -130,7 +156,7 @@ function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
         );
       }
       $selected = unserialize($form_values['nodes']); // We'll use that in the confirm_form
-    } 
+    }
     else {
       // If this action is not configurable, we skipped VIEWS_NULK_OPS_STEP_CONFIG.
       // $form_values['nodes'] still needs to be serialized.
@@ -140,12 +166,12 @@ function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
       );
       $selected = $form_values['nodes']; // We'll use that in the confirm_form
     }
-    $description = isset($actions[$action]) ? 
-        $actions[$action]['description'] : 
+    $description = isset($actions[$action]) ?
+        $actions[$action]['description'] :
         $operations[$action]['label'];
     $query = drupal_query_string_encode($_GET, array('q'));
-    $form = confirm_form($form, 
-        t('Are you sure you want to perform \'%action\' on selected nodes?', array('%action' => $description)), 
+    $form = confirm_form($form,
+        t('Are you sure you want to perform \'%action\' on selected nodes?', array('%action' => $description)),
         $query ? array('path' => $_GET['q'], 'query' => $query) : array('path' => $_GET['q']),
         theme('views_bulk_operations_confirmation', $selected['selected']));
     break;
@@ -154,7 +180,7 @@ function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
 }
 
 function views_bulk_operations_form_alter($form_id, &$form) {
-  if ($form_id == 'views_filters') { 
+  if ($form_id == 'views_filters') {
     // We only display the filter form on the first page.
     if ($_POST['form_id'] == 'views_bulk_operations_form' && isset($_POST['step']) && isset($_POST['nodes'])) {
       $form['#prefix'] = '<div style="display: none">';
@@ -165,24 +191,6 @@ function views_bulk_operations_form_alter($form_id, &$form) {
   }
 }
 
-function theme_views_bulk_operations_confirmation($nodes) {
-  $count = 0;
-  $output = t('You selected the following nodes:').'<br /><ul>';
-  foreach($nodes as $nid) {
-    if ($count >= VIEWS_BULK_OPS_CONFIRM_MAX_NODES) { // Number of titles to display before we say "...and more"
-      $output .= '<li>'.t('...and %remaining more.', array('%remaining' => count($nodes) - $count)).'</li>';
-      break;
-    }
-    if (is_numeric($nid) && $nid > 0) {
-      $node = node_load($nid);
-      $output .= '<li>'.$node->title.'</li>';
-      $count++;
-    }
-  }
-  $output .= '</ul>';
-  return $output;
-}
- 
 function views_bulk_operations_form_validate($form_id, $form_values) {
   if ($form_values['step'] == VIEWS_BULK_OPS_STEP_VIEW) {
     if (!array_sum($form_values['nodes']['selected'])) { // If all 0, nothing is selected
@@ -205,7 +213,7 @@ function views_bulk_operations_form_submit($form_id, $form_values) {
       $nodes = array_filter($nodes['selected']);
       if (isset($operation['callback arguments'])) {
         $args = array_merge(array($nodes), $operation['callback arguments']);
-      } 
+      }
       else {
         $args = array($nodes);
       }
@@ -223,28 +231,91 @@ function views_bulk_operations_form_submit($form_id, $form_values) {
   drupal_goto($_GET['q'], drupal_query_string_encode($_GET, array('q')));
 }
 
-function views_bulk_operations_views_tables() {
-  $tables['views_bulk_operations'] = array(
-    'name' => 'views_bulk_operations',
-    'join' => array(
-      'left' => array(
-        'table' => 'node',
-        'field' => 'nid',
-      ),
-      'right' => array(
-        'field' => 'nid',
-      ),
-    ),
-    'fields' => array(
-      'views_bulk_operations_field_node_status' => array(
-        'name' => t('Node: Status'),
-        'notafield' => true,
-        'help' => t('Displays the node status (published/promoted/sticky).'),
-        'handler' => 'views_bulk_operations_field_node_status', 
-      ),
-    ),
+/**
+ * administration settings page
+ */
+function views_bulk_operations_admin_settings() {
+  $form['#submit'] = array('views_bulk_operations_admin_settings_submit' => array());
+  $form['#tree'] = TRUE;
+
+  $all_operations = _views_bulk_operations_get_operations('all');
+  $enabled_operations = _views_bulk_operations_get_operations('enabled');
+
+  if (empty($enabled_operations)) {
+    drupal_set_message(t('No operations are enabled. You must enable one or
+      more operations in order to use Views Bulk Operations.'), warning);
+  }
+  // General Settings
+  $form['config'] = array(
+    '#type'          => 'fieldset',
+    '#title'         => t('Preferences'),
+    '#collapsible'   => FALSE,
   );
-  return $tables;
+  $form['config']['views_bulk_operations_confirm_max_nodes'] = array(
+    '#type'          => 'textfield',
+    '#size'          => 5,
+    '#title'         => t('Confirmation Page Nodes'),
+    '#description' => t('The number of nodes to "preview" in the confirmation
+      page before executing actual operations. Remaining nodes will be truncated.
+      Set to 0 to show all.'),
+    '#default_value' => variable_get('views_bulk_operations_confirm_max_nodes', '20'),
+  );
+
+  // Enable/Disable Operations
+  $form['operations'] = array(
+    '#type'          => 'fieldset',
+    '#title'         => t('Operations'),
+    '#description' => t('Select those operations which you would like to make
+      available on Views Bulk Operations forms.'),
+    '#collapsible'   => FALSE,
+  );
+
+  // Special notes relating to Actions module
+  if (module_exists('actions')) {
+    $form['operations']['action'] = array(
+      '#type'          => 'markup',
+      '#value' => t('<em>Note:</em> Some of the operations provided by the
+        Actions module are identical to native Drupal node operations. In most
+        cases, you will want to leave these disabled.'),
+    );
+  }
+  else {
+    $form['operations']['action'] = array(
+      '#type'          => 'markup',
+      // BUG: the URL here appears above the text, not sure why!?
+      '#value'         => t('Install the !actions_module to enable additional operations.',
+        array('!actions_module' => l('Actions module', 'http://drupal.org/project/actions'))
+      ),
+    );
+  }
+
+  // Operations checkboxes
+  foreach ($all_operations as $operation => $values) {
+    $form['operations'][$operation] = array(
+      '#type'          => 'checkbox',
+      '#title'         => $values['label'] . ' <em>(' . $operation . ')</em>',
+      '#default_value' => $values['enabled'],
+      '#collapsible'   => FALSE,
+    );
+  }
+
+  return system_settings_form($form);
+}
+
+function views_bulk_operations_admin_settings_submit($form, &$edit) {
+  // overriding submit, so have to save our own vars
+  variable_set('views_bulk_operations_confirm_max_nodes',
+    $edit['config']['views_bulk_operations_confirm_max_nodes']);
+
+  $all_operations = _views_bulk_operations_get_operations('all');
+
+  // set the enabled/disabled status, but leave other values alone
+  foreach ($all_operations as $operation => $values) {
+    $all_operations[$operation]['enabled'] = $edit['operations'][$operation];
+  }
+
+  // store serialized data
+  variable_set('views_bulk_operations_configured_operations', serialize($all_operations));
 }
 
 function views_bulk_operations_field_node_status($fieldinfo, $fielddata, $value, $data) {
@@ -261,9 +332,23 @@ function views_bulk_operations_field_node_status($fieldinfo, $fielddata, $value,
 
 /**
  * Borrowed from contemplate.module
- */ 
+ */
 function views_bulk_operations_version() {
   return str_replace(array('$RCSf'.'ile:', ',v', '$Re'.'vision: ', '$Da'.'te: ', '$'), '', '<p style="font-size:x-small">$RCSfile$ version: <b>$Revision$</b>, $Date$</p>');
+}
+
+/**
+ * Implementation of hook_views_style_plugins()
+ */
+function views_bulk_operations_views_style_plugins() {
+  return array(
+    'bulk' => array(
+      'name' => t('Bulk Operations View'),
+      'theme' => 'views_bulk_operations_view',
+      'needs_fields' => true,
+      'weight' => -10,
+    ),
+  );
 }
 
 function views_bulk_operations_views_default_views() {
@@ -390,8 +475,152 @@ function views_bulk_operations_views_default_views() {
   );
   $view->requires = array(node, users, views_bulk_operations);
   $views[$view->name] = $view;
-  
+
   return $views;
 }
 
-?>
+function views_bulk_operations_views_tables() {
+  $tables['views_bulk_operations'] = array(
+    'name' => 'views_bulk_operations',
+    'join' => array(
+      'left' => array(
+        'table' => 'node',
+        'field' => 'nid',
+      ),
+      'right' => array(
+        'field' => 'nid',
+      ),
+    ),
+    'fields' => array(
+      'views_bulk_operations_field_node_status' => array(
+        'name' => t('Node: Status'),
+        'notafield' => true,
+        'help' => t('Displays the node status (published/promoted/sticky).'),
+        'handler' => 'views_bulk_operations_field_node_status',
+      ),
+    ),
+  );
+  return $tables;
+}
+
+function theme_views_bulk_operations_view($view, $nodes, $type) {
+  $output = drupal_get_form('views_bulk_operations_form', $view, $nodes, $type);
+  //$output .= views_bulk_operations_version();
+  return $output;
+}
+
+function theme_views_bulk_operations_confirmation($nodes) {
+  $count = 0;
+  $output = t('You selected the following nodes:').'<br /><ul>';
+  foreach($nodes as $nid) {
+    $show_nodes = variable_get('views_bulk_operations_confirm_max_nodes', '20');
+    // Number of titles to display before we say "...and more"
+    if (($show_nodes > 0) && ($count >=  $show_nodes)) {
+      $output .= '<li>'.t('...and %remaining more.', array('%remaining' => count($nodes) - $count)).'</li>';
+      break;
+    }
+    if (is_numeric($nid) && $nid > 0) {
+      $node = node_load($nid);
+      $output .= '<li>'.$node->title.'</li>';
+      $count++;
+    }
+  }
+  $output .= '</ul>';
+  return $output;
+}
+
+/**
+ * Description
+ * Fetch available operations.
+ *
+ * @param (string) $filter
+ *  'enabled' - return data for operations that are enabled only
+ *  'disabled' - return data for operations that are disabled only
+ *  'all' - return data for all available operations
+ *
+ * @return (array)
+ *   Array whose keys contain the name of the callback and values contain
+ *   additional information about that callback. Format of array is as follows:
+ *
+ *   array(
+ *    'callback' => array(label, enabled, configurable, batchable)
+ *   )
+ */
+function _views_bulk_operations_get_operations($filter = 'all') {
+  $all_operations = array();
+  $return_operations = array();
+
+  $serialized_operations = variable_get('views_bulk_operations_configured_operations', array());
+
+  if (!empty($serialized_operations)) {
+    $all_operations = unserialize($serialized_operations);
+  }
+
+  switch ($filter) {
+    case 'all':
+      // in this case, we want to check for availability of new actions
+      // as well as fetching the existing values
+
+      // Core 'node operations'
+      $node_operations = module_invoke_all('node_operations');
+      foreach ($node_operations as $node_operation) {
+        // some node operations do not provide a valid callback
+        // (such as the 'delete' operation)
+        if (empty($node_operation['callback'])) {
+          continue;
+        }
+        if (!isset($all_operations[$node_operation['callback']])) {
+          $all_operations[$node_operation['callback']] = array(
+            'label'          => $node_operation['label'],
+            'enabled'        => VIEWS_BULK_OPS_DEFAULT_OPERATION_ENABLE,
+            'configurable'   => 0,
+          );
+        }
+      }
+
+      // Actions Operations (if module available)
+      if (module_exists('actions')) {
+        $action_operations = actions_list();
+
+        foreach ($action_operations as $callback => $values) {
+          // we do not want to include ALL actions as some are not 'node operations'-like.
+          // TODO: Depending on how actions work, we may want to allow admin
+          // to turn on/off action types. Don't know enough about actions
+          // to determine that right now, so limiting to types I know we want.
+          if (($values['type'] == 'Node' || $values['type'] == 'Workflow') && ($values['batchable'] == TRUE)) {
+            if (!isset($all_operations[$callback])) {
+              $all_operations[$callback] = array(
+                'label'          => $values['description'],
+                'enabled'        => VIEWS_BULK_OPS_DEFAULT_OPERATION_ENABLE,
+                'configurable'   => isset($values['configurable']) ? 1 : 0,
+              );
+            }
+          }
+        }
+      }
+      $return_operations = $all_operations;
+      // save latest data
+      variable_set('views_bulk_operations_configured_operations', serialize($all_operations));
+      break;
+
+    case 'enabled':
+    case 'disabled':
+      if (empty($all_operations)) {
+        watchdog('views_bulk_operations', 'Operations have not been configured', WATCHDOG_WARNING);
+        return FALSE;
+      }
+      else {
+        $state = $filter == 'enabled' ? 1 : 0;
+        foreach ($all_operations as $operation => $values) {
+          if ( $values['enabled'] == $state ) {
+            $return_operations[$operation] = $values;
+          }
+        }
+      }
+      break;
+  }
+  asort($return_operations);
+  return $return_operations;
+}
+
+// TODO: implementation of additional actions, such as Delete?
