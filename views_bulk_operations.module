@@ -60,10 +60,11 @@ function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
   $form['#multistep'] = TRUE;
   $all_operations = _views_bulk_operations_get_operations('enabled');
 
-  // No Operations enabled! Cannot function
+  // No operations enabled! Cannot function
   if (empty($all_operations)) {
+    $error_message = t('No operations enabled. Please check the ').l('Views Bulk Operations administration page', 'admin/settings/views_bulk_operations').'.';
     drupal_set_message($error_message, 'error');
-    watchdog('views_bulk_operations', 'No Operations enabled, please enable operations: ' . l('Views Bulk Operations Administration Page', 'admin/settings/views_bulk_operations'), WATCHDOG_ERROR);
+    watchdog('views_bulk_operations', $error_message, WATCHDOG_ERROR);
     // TODO: may want to direct somewhere else?
     drupal_goto();
   }
@@ -128,11 +129,11 @@ function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
       '#value' => t('Next'),
     );
     $form['#redirect'] = FALSE;
-    drupal_set_title(t('Set parameters for \'%action\'', array('%action' => $actions[$action]['description'])));
+    drupal_set_title(t('Set parameters for \'%action\'', array('%action' => $all_operations[$action]['label'])));
     break;
   case VIEWS_BULK_OPS_STEP_CONFIRM: // Display the final confirmation
     $action = $form_values['action'];
-    $configurable = isset($actions[$action]) && $actions[$action]['configurable'];
+    $configurable = isset($all_operations[$action]) && $all_operations[$action]['configurable'];
     $form['action'] = array(
       '#type' => 'hidden',
       '#value' => $action,
@@ -166,12 +167,9 @@ function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
       );
       $selected = $form_values['nodes']; // We'll use that in the confirm_form
     }
-    $description = isset($actions[$action]) ?
-        $actions[$action]['description'] :
-        $operations[$action]['label'];
     $query = drupal_query_string_encode($_GET, array('q'));
     $form = confirm_form($form,
-        t('Are you sure you want to perform \'%action\' on selected nodes?', array('%action' => $description)),
+        t('Are you sure you want to perform \'%action\' on selected nodes?', array('%action' => $all_operations[$action]['label'])),
         $query ? array('path' => $_GET['q'], 'query' => $query) : array('path' => $_GET['q']),
         theme('views_bulk_operations_confirmation', $selected['selected']));
     break;
@@ -563,17 +561,17 @@ function _views_bulk_operations_get_operations($filter = 'all') {
 
       // Core 'node operations'
       $node_operations = module_invoke_all('node_operations');
-      foreach ($node_operations as $node_operation) {
+      foreach ($node_operations as $key => $node_operation) {
         // some node operations do not provide a valid callback
         // (such as the 'delete' operation)
         if (empty($node_operation['callback'])) {
           continue;
         }
-        if (!isset($all_operations[$node_operation['callback']])) {
-          $all_operations[$node_operation['callback']] = array(
+        if (!isset($all_operations[$key])) {
+          $all_operations[$key] = array(
             'label'          => $node_operation['label'],
             'enabled'        => VIEWS_BULK_OPS_DEFAULT_OPERATION_ENABLE,
-            'configurable'   => 0,
+            'configurable'   => false,
           );
         }
       }
@@ -592,7 +590,7 @@ function _views_bulk_operations_get_operations($filter = 'all') {
               $all_operations[$callback] = array(
                 'label'          => $values['description'],
                 'enabled'        => VIEWS_BULK_OPS_DEFAULT_OPERATION_ENABLE,
-                'configurable'   => isset($values['configurable']) ? 1 : 0,
+                'configurable'   => $values['configurable'],
               );
             }
           }
@@ -606,15 +604,12 @@ function _views_bulk_operations_get_operations($filter = 'all') {
     case 'enabled':
     case 'disabled':
       if (empty($all_operations)) {
-        watchdog('views_bulk_operations', 'Operations have not been configured', WATCHDOG_WARNING);
-        return FALSE;
+        $all_operations = _views_bulk_operations_get_operations('all');
       }
-      else {
-        $state = $filter == 'enabled' ? 1 : 0;
-        foreach ($all_operations as $operation => $values) {
-          if ( $values['enabled'] == $state ) {
-            $return_operations[$operation] = $values;
-          }
+      $state = $filter == 'enabled' ? 1 : 0;
+      foreach ($all_operations as $operation => $values) {
+        if ($values['enabled'] == $state) {
+          $return_operations[$operation] = $values;
         }
       }
       break;
