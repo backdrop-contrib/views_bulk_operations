@@ -30,7 +30,7 @@ define('VIEWS_BULK_OPS_STEP_CONFIRM', 3);
 // whether all operations are enabled by default, setting to 0 requires that
 // the admin enable one or more actions before the bulk operations view will
 // be usable
-define('VIEWS_BULK_OPS_DEFAULT_OPERATION_ENABLE', 1);
+define('VIEWS_BULK_OPS_DEFAULT_OPERATION_ENABLE', 0);
 
 /**
  * Implementation of hook_help().
@@ -231,28 +231,38 @@ function views_bulk_operations_form_submit($form_id, $form_values) {
   $nodes = unserialize($form_values['nodes']);
   if (!is_array($nodes['selected'])) return;
 
+  // action should contain a valid callback
   $action = $form_values['action'];
-  $operations = module_invoke_all('node_operations');
-  if (isset($operations[$action])) { // Doing a node_operation
-    $operation = $operations[$action];
-    if ($function = $operation['callback']) {
+  $operations = _views_bulk_operations_get_operations('enabled');
+
+  if (isset($operations[$action]) && function_exists($action)) {
+    // NODE OPERATIONS
+    if ($operations[$action]['type'] == 'node') {
       $nodes = array_filter($nodes['selected']);
-      if (isset($operation['callback arguments'])) {
-        $args = array_merge(array($nodes), $operation['callback arguments']);
+      if (isset($operations[$action]['callback arguments'])) {
+        $args = array_merge(array($nodes), $operations[$action]['callback arguments']);
       }
       else {
         $args = array($nodes);
       }
-      call_user_func_array($function, $args);
-      drupal_set_message(t('Executed node operation %action on nodes %nids.', array('%action' => $action, '%nids' => implode($nodes, ','))));
+      call_user_func_array($action, $args);
+      drupal_set_message(t('Executed node operation %action on nodes %nids.', array('%action' => $operations[$action]['label'], '%nids' => implode($nodes, ', '))));
     }
-  } else { // Doing an Action
-    foreach ($nodes['selected'] as $value) {
-      if (is_numeric($value) && $value > 0) {
-        call_user_func($action, 'do', $form_values, node_load($value));
-        drupal_set_message(t('Executed action %action on node %nid.', array('%action' => $action, '%nid' => $value)));
+    // ACTION OPERATIONS
+    else if ($operations[$action]['type'] == 'action') { // Doing an Action
+      foreach ($nodes['selected'] as $value) {
+        if (is_numeric($value) && $value > 0) {
+          call_user_func($action, 'do', $form_values, node_load($value));
+          drupal_set_message(t('Executed action %action on node %nid.', array('%action' => $operations[$action]['label'], '%nid' => $value)));
+        }
       }
     }
+    else { // we don't know what operation type this is! shouldn't happen
+      watchdog('views_bulk_operations', 'Unknown operation type (' . $operations[$action]['type'] . ')', WATCHDOG_ERROR);
+    }
+  }
+  else { // an invalid or disabled action, shouldn't happen :)
+    watchdog('views_bulk_operations', 'Got invalid operation (' . $action . ')', WATCHDOG_ERROR);
   }
   drupal_goto($_GET['q'], drupal_query_string_encode($_GET, array('q')));
 }
@@ -534,7 +544,7 @@ function views_bulk_operations_views_tables() {
  */
 function views_bulk_operations_node_operations() {
   $operations = array(
-    'views_bulk_operations_delete_nodes' => array(
+    'bulk_delete' => array(
       'label' => t('Bulk Delete Nodes'),
       'callback' => 'views_bulk_operations_delete_nodes',
     ),
@@ -652,9 +662,11 @@ function _views_bulk_operations_get_operations($filter = 'all') {
 
         if (!isset($all_operations[$operation['callback']])) {
           $all_operations[$operation['callback']] = array(
-            'label'          => $operation['label'],
-            'enabled'        => VIEWS_BULK_OPS_DEFAULT_OPERATION_ENABLE,
-            'configurable'   => false,
+            'label'              => $operation['label'],
+            'callback arguments' => $operation['callback arguments'],
+            'enabled'            => VIEWS_BULK_OPS_DEFAULT_OPERATION_ENABLE,
+            'configurable'       => false,
+            'type'               => 'node',
           );
         }
       }
@@ -671,9 +683,11 @@ function _views_bulk_operations_get_operations($filter = 'all') {
           if (($values['type'] == 'Node' || $values['type'] == 'Workflow') && ($values['batchable'] == TRUE)) {
             if (!isset($all_operations[$callback])) {
               $all_operations[$callback] = array(
-                'label'          => $values['description'],
-                'enabled'        => VIEWS_BULK_OPS_DEFAULT_OPERATION_ENABLE,
-                'configurable'   => $values['configurable'],
+                'label'              => $values['description'],
+                'callback arguments' => NULL, // doesn't apply to action operations
+                'enabled'            => VIEWS_BULK_OPS_DEFAULT_OPERATION_ENABLE,
+                'configurable'       => $values['configurable'],
+                'type'               => 'action',
               );
             }
           }
