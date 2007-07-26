@@ -10,8 +10,8 @@
  * BUGS
  *   - certain action operations do not work properly, 'change node author' for
  *     example.
- *   - 'orphaned' actions are not pruned from our stored data and will appear
- *     as available actions even though they do not exist.
+ *   - on admin page, warning appears if no actions are enabled; if you then
+ *     enable an action and save it, the warning still appears once.
  *
  * TODO
  *   - We do not handle any access control here. We rely on the operations themselves
@@ -632,7 +632,13 @@ function theme_views_bulk_operations_confirmation($nodes) {
  *   additional information about that callback. Format of array is as follows:
  *
  *   array(
- *    'callback' => array(label, enabled, configurable, batchable)
+ *     'callback' => array(
+ *       label,              // human readable name of operation
+ *       callback arguments, // node operations callbacks
+ *       enabled,            // whether we show this operation in our views
+ *       configurable,       // actions operations only
+ *       type                // action or node operation
+ *     )
  *   )
  */
 function _views_bulk_operations_get_operations($filter = 'all') {
@@ -642,13 +648,19 @@ function _views_bulk_operations_get_operations($filter = 'all') {
   $serialized_operations = variable_get('views_bulk_operations_configured_operations', array());
 
   if (!empty($serialized_operations)) {
-    $all_operations = unserialize($serialized_operations);
+    $stored_operations = unserialize($serialized_operations);
   }
 
   switch ($filter) {
     case 'all':
       // in this case, we want to check for availability of new actions
-      // as well as fetching the existing values
+      // as well as fetching the settings for existing actions
+      // We need to be mindful of actions that may no longer exist as well
+      // so we'll remove anything that remains in $orphaned_operations at the end
+
+      // we save stored data in $stored_operations and pass values into $new_operations
+      // only if operation is still valid (prevents removed operations from appearing)
+      $new_operations = array();
 
       // Core 'node operations'
       $node_operations = module_invoke_all('node_operations');
@@ -660,15 +672,16 @@ function _views_bulk_operations_get_operations($filter = 'all') {
           continue;
         }
 
-        if (!isset($all_operations[$operation['callback']])) {
-          $all_operations[$operation['callback']] = array(
-            'label'              => $operation['label'],
-            'callback arguments' => $operation['callback arguments'],
-            'enabled'            => VIEWS_BULK_OPS_DEFAULT_OPERATION_ENABLE,
-            'configurable'       => false,
-            'type'               => 'node',
-          );
-        }
+        $enabled = isset($stored_operations[$operation['callback']]['enabled'])
+          ? $stored_operations[$operation['callback']]['enabled']
+          : VIEWS_BULK_OPS_DEFAULT_OPERATION_ENABLE;
+        $new_operations[$operation['callback']] = array(
+          'label'              => $operation['label'],
+          'callback arguments' => $operation['callback arguments'],
+          'enabled'            => $enabled,
+          'configurable'       => false,
+          'type'               => 'node',
+        );
       }
 
       // Actions Operations (if module available)
@@ -680,31 +693,35 @@ function _views_bulk_operations_get_operations($filter = 'all') {
           // TODO: Depending on how actions work, we may want to allow admin
           // to turn on/off action types. Don't know enough about actions
           // to determine that right now, so limiting to types I know we want.
-          if (($values['type'] == 'Node' || $values['type'] == 'Workflow') && ($values['batchable'] == TRUE)) {
-            if (!isset($all_operations[$callback])) {
-              $all_operations[$callback] = array(
-                'label'              => $values['description'],
-                'callback arguments' => NULL, // doesn't apply to action operations
-                'enabled'            => VIEWS_BULK_OPS_DEFAULT_OPERATION_ENABLE,
-                'configurable'       => $values['configurable'],
-                'type'               => 'action',
-              );
-            }
+          if (($values['type'] == 'Node' || $values['type'] == 'Workflow')
+              && ($values['batchable'] == TRUE)) {
+
+            $enabled = isset($stored_operations[$callback]['enabled'])
+              ? $stored_operations[$callback]['enabled']
+              : VIEWS_BULK_OPS_DEFAULT_OPERATION_ENABLE;
+            $new_operations[$callback] = array(
+              'label'              => $values['description'],
+              'callback arguments' => NULL, // doesn't apply to action operations
+              'enabled'            => $enabled,
+              'configurable'       => $values['configurable'],
+              'type'               => 'action',
+            );
           }
         }
       }
-      $return_operations = $all_operations;
+
+      $return_operations = $new_operations;
       // save latest data
-      variable_set('views_bulk_operations_configured_operations', serialize($all_operations));
+      variable_set('views_bulk_operations_configured_operations', serialize($new_operations));
       break;
 
     case 'enabled':
     case 'disabled':
-      if (empty($all_operations)) {
-        $all_operations = _views_bulk_operations_get_operations('all');
+      if (empty($stored_operations)) {
+        $stored_operations = _views_bulk_operations_get_operations('all');
       }
       $state = $filter == 'enabled' ? 1 : 0;
-      foreach ($all_operations as $operation => $values) {
+      foreach ($stored_operations as $operation => $values) {
         if ($values['enabled'] == $state) {
           $return_operations[$operation] = $values;
         }
@@ -714,5 +731,3 @@ function _views_bulk_operations_get_operations($filter = 'all') {
   asort($return_operations);
   return $return_operations;
 }
-
-// TODO: implementation of additional actions, such as Delete?
