@@ -12,6 +12,11 @@
  *     example.
  *   - on admin page, warning appears if no actions are enabled; if you then
  *     enable an action and save it, the warning still appears once.
+ *   - The purpose of Action 'types' are not well defined. We currently
+ *     restrict types to 'Node' and 'Workflow' (see:
+ *     _views_bulk_operations_get_operations()). If a module defines an
+ *     action of another type, it will not show up in our list of
+ *     configureable actions. 
  *
  * TODO
  *   - We do not handle any access control here. We rely on the operations themselves
