@@ -1,0 +1,20 @@
+/* $Id$ */
+
+/*
+** definitions for bulk operation views
+*/
+
+/* Float all form elements */
+#views-bulk-operations-form div .form-item {
+  float: left;
+}
+
+/* Put some margins on the Execute button */
+#views-bulk-operations-form div .form-submit {
+  margin: 0.9em 0.5em 2em 0;
+}
+
+/* Clear the node selector */
+.views_node_selector {
+  clear: both;
+}
