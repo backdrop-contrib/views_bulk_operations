@@ -5,27 +5,6 @@
  * @file
  * Allow bulk node operations directly within views.
  *
- * WARNING: This module is under development and not ready for production use.
- *
- * BUGS
- *   - certain action operations do not work properly, 'change node author' for
- *     example.
- *   - on admin page, warning appears if no actions are enabled; if you then
- *     enable an action and save it, the warning still appears once.
- *   - The purpose of Action 'types' are not well defined. We currently
- *     restrict types to 'Node' and 'Workflow' (see:
- *     _views_bulk_operations_get_operations()). If a module defines an
- *     action of another type, it will not show up in our list of
- *     configureable actions. 
- *
- * TODO
- *   - We do not handle any access control here. We rely on the operations themselves
- *     to do checking. Users may see operations which they do not actually
- *     have permission to perform.
- *   - Currently there is one set of configurable operations which will apply
- *     to all views. We may consider making operations configurable on a per-view
- *     basis, though this would probably be considerable work.
- *
  */
 
 define('VIEWS_BULK_OPS_STEP_VIEW', 1);
@@ -122,6 +101,7 @@ function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
         '#suffix' => '</div>',
       );
     }
+    $options[0] = t('- Choose an action -');
     foreach ($all_operations as $operation => $values) {
       $options[$operation] = $values['label'];
     }
@@ -232,8 +212,11 @@ function views_bulk_operations_form_alter($form_id, &$form) {
 
 function views_bulk_operations_form_validate($form_id, $form_values) {
   if ($form_values['step'] == VIEWS_BULK_OPS_STEP_VIEW) {
-    if (!array_sum($form_values['nodes']['selected'])) { // If all 0, nothing is selected
-      form_set_error('nodes', t('No nodes selected.'));
+    if (!array_sum($form_values['nodes']['selected'])) { // If all 0, no node selected
+      form_set_error('nodes', t('No nodes selected. Please select one or more nodes.'));
+    }
+    if (!$form_values['action']) { // No action selected
+      form_set_error('action', t('No action selected. Please select an action to perform.'));
     }
   }
 }
