@@ -4,17 +4,22 @@
 ** definitions for bulk operation views
 */
 
-/* Float all form elements */
-#views-bulk-operations-form div .form-item {
+/* Float operation selection element */
+#views-bulk-operations-select {
   float: left;
 }
 
 /* Put some margins on the Execute button */
-#views-bulk-operations-form div .form-submit {
+#views-bulk-operations-execute {
   margin: 0.9em 0.5em 2em 0;
 }
 
 /* Clear the node selector */
-.views_node_selector {
+.views-node-selector {
   clear: both;
 }
+
+/* Style the admin operations link */
+#views-bulk-operations-admin {
+}
+

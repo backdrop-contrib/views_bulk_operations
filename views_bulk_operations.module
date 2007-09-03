@@ -105,25 +105,27 @@ function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
       $form['configure'] = array(
         '#type' => 'markup',
         '#value' => l(t('Enable or disable allowed operations'), "admin/build/views/bulk/$view->name"),
-        '#prefix' => '<div id="allowed_operations_link">',
+        '#prefix' => '<div id="views-bulk-operations-admin">',
         '#suffix' => '</div>',
       );
     }
-    $options[0] = t('- Choose an action -');
+    $options[0] = t('- Choose an operation -');
     foreach ($all_operations as $operation => $values) {
       $options[$operation] = $values['label'];
     }
     $form['action'] = array(
       '#type' => 'select',
       '#title' => '',
-      '#description' => t('Please select the action to perform on the selected nodes.'),
+      '#description' => t('Please select the operation to perform on the selected nodes.'),
       '#options' => $options,
-      '#prefix' => '<div id="views_bulk_operations_action">',
+      '#prefix' => '<div id="views-bulk-operations-select">',
       '#suffix' => '</div>',
     );
     $form['submit'] = array(
       '#type' => 'submit',
       '#value' => t('Execute'),
+      '#prefix' => '<div id="views-bulk-operations-execute">',
+      '#suffix' => '</div>',
     );
     $form['nodes'] = array(
       '#title' => '',
@@ -131,7 +133,7 @@ function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
       '#view' => $view->name,
       '#multiple' => TRUE,
       '#embedded' => TRUE,
-      '#prefix' => '<div class="views_node_selector">',
+      '#prefix' => '<div class="views-node-selector">',
       '#suffix' => '</div>',
     );
     $form['#redirect'] = FALSE;
