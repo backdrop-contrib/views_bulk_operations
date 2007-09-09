@@ -266,8 +266,9 @@ function views_bulk_operations_form_submit($form_id, $form_values) {
     else if ($operations[$action]['type'] == 'action') { // Doing an Action
       foreach ($nodes as $value) {
         if (is_numeric($value) && $value > 0) {
-          call_user_func($action, 'do', $form_values, node_load($value));
-          drupal_set_message(t('Executed action %action on node %nid.', array('%action' => $operations[$action]['label'], '%nid' => $value)));
+          $node = node_load($value);
+          call_user_func($action, 'do', $form_values, $node);
+          drupal_set_message(t('Performed %action on node %nid.', array('%action' => $operations[$action]['label'], '%nid' => $node->title)));
         }
       }
     }
