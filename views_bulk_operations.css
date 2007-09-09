@@ -6,20 +6,25 @@
 
 /* Float operation selection element */
 #views-bulk-operations-select {
-  float: left;
 }
 
 /* Put some margins on the Execute button */
-#views-bulk-operations-execute {
-  margin: 0.9em 0.5em 2em 0;
+#views-bulk-operations-dropdown {
+  float: left;
+  padding: 3px;
 }
 
-/* Clear the node selector */
-.views-node-selector {
-  clear: both;
+/* Put some margins on the Execute button */
+#views-bulk-operations-submit {
+  padding: 14px 0px 0px 0px;
 }
 
 /* Style the admin operations link */
 #views-bulk-operations-admin {
+  clear:both;
 }
 
+/* Clear the node selector dropdown */
+.views-node-selector {
+  clear: both;
+}

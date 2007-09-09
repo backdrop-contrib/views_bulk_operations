@@ -101,38 +101,46 @@ function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
 
   switch ($step) {
   case VIEWS_BULK_OPS_STEP_VIEW: // Show the view
+    $options[0] = t('- Choose an operation -');
+    foreach ($all_operations as $operation => $values) {
+      $options[$operation] = $values['label'];
+    }
+    $form['select'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Bulk operations'),
+      //'#description' => t('Please select the operation to perform on the selected nodes.'),
+      '#options' => $options,
+      '#prefix' => '<div id="views-bulk-operations-select">',
+      '#suffix' => '</div>',
+    );
+    $form['select']['action'] = array(
+      '#type' => 'select',
+      '#title' => '',
+      //'#description' => t('Please select the operation to perform on the selected nodes.'),
+      '#options' => $options,
+      '#prefix' => '<div id="views-bulk-operations-dropdown">',
+      '#suffix' => '</div>',
+    );
+    $form['select']['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Execute'),
+      '#prefix' => '<div id="views-bulk-operations-submit">',
+      '#suffix' => '</div>',
+    );
     if (user_access('administer site configuration')) {
-      $form['configure'] = array(
+      $form['select']['configure'] = array(
         '#type' => 'markup',
         '#value' => l(t('Enable or disable allowed operations'), "admin/build/views/bulk/$view->name"),
         '#prefix' => '<div id="views-bulk-operations-admin">',
         '#suffix' => '</div>',
       );
     }
-    $options[0] = t('- Choose an operation -');
-    foreach ($all_operations as $operation => $values) {
-      $options[$operation] = $values['label'];
-    }
-    $form['action'] = array(
-      '#type' => 'select',
-      '#title' => '',
-      '#description' => t('Please select the operation to perform on the selected nodes.'),
-      '#options' => $options,
-      '#prefix' => '<div id="views-bulk-operations-select">',
-      '#suffix' => '</div>',
-    );
-    $form['submit'] = array(
-      '#type' => 'submit',
-      '#value' => t('Execute'),
-      '#prefix' => '<div id="views-bulk-operations-execute">',
-      '#suffix' => '</div>',
-    );
     $form['nodes'] = array(
       '#title' => '',
       '#type' => 'views_node_selector',
-      '#view' => $view->name,
+      '#view' => $view,
+      '#view_nodes' => $nodes,
       '#multiple' => TRUE,
-      '#embedded' => TRUE,
       '#prefix' => '<div class="views-node-selector">',
       '#suffix' => '</div>',
     );
@@ -201,7 +209,7 @@ function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
     $form = confirm_form($form,
         t('Are you sure you want to perform \'%action\' on selected nodes?', array('%action' => $all_operations[$action]['label'])),
         $query ? array('path' => $_GET['q'], 'query' => $query) : array('path' => $_GET['q']),
-        theme('views_bulk_operations_confirmation', $selected['selected']));
+        theme('views_bulk_operations_confirmation', $selected));
     break;
   }
   return $form;
@@ -221,7 +229,7 @@ function views_bulk_operations_form_alter($form_id, &$form) {
 
 function views_bulk_operations_form_validate($form_id, $form_values) {
   if ($form_values['step'] == VIEWS_BULK_OPS_STEP_VIEW) {
-    if (!array_sum($form_values['nodes']['selected'])) { // If all 0, no node selected
+    if (!array_sum($form_values['nodes'])) { // If all 0, no node selected
       form_set_error('nodes', t('No nodes selected. Please select one or more nodes.'));
     }
     if (!$form_values['action']) { // No action selected
@@ -231,10 +239,11 @@ function views_bulk_operations_form_validate($form_id, $form_values) {
 }
 
 function views_bulk_operations_form_submit($form_id, $form_values) {
+
   if ($form_values['step'] < VIEWS_BULK_OPS_STEP_CONFIRM) return;
 
   $nodes = unserialize($form_values['nodes']);
-  if (!is_array($nodes['selected'])) return;
+  if (!is_array($nodes)) return;
 
   // action should contain a valid callback
   $action = $form_values['action'];
@@ -244,7 +253,7 @@ function views_bulk_operations_form_submit($form_id, $form_values) {
   if (isset($operations[$action]) && function_exists($action)) {
     // NODE OPERATIONS
     if ($operations[$action]['type'] == 'node') {
-      $nodes = array_filter($nodes['selected']);
+      $nodes = array_filter($nodes);
       if (isset($operations[$action]['callback arguments'])) {
         $args = array_merge(array($nodes), $operations[$action]['callback arguments']);
       }
@@ -252,11 +261,10 @@ function views_bulk_operations_form_submit($form_id, $form_values) {
         $args = array($nodes);
       }
       call_user_func_array($action, $args);
-      drupal_set_message(t('Executed node operation %action on nodes %nids.', array('%action' => $operations[$action]['label'], '%nids' => implode($nodes, ', '))));
     }
     // ACTION OPERATIONS
     else if ($operations[$action]['type'] == 'action') { // Doing an Action
-      foreach ($nodes['selected'] as $value) {
+      foreach ($nodes as $value) {
         if (is_numeric($value) && $value > 0) {
           call_user_func($action, 'do', $form_values, node_load($value));
           drupal_set_message(t('Executed action %action on node %nid.', array('%action' => $operations[$action]['label'], '%nid' => $value)));
@@ -302,7 +310,7 @@ function views_bulk_operations_view_settings($view_name) {
   $form['#validate'] = array('views_bulk_operations_view_settings_validate' => array());
 
   drupal_set_title(t('Bulk operations for view %view', array('%view' => $view_name)));
-  
+
   // Special notes relating to Actions module
   if (module_exists('actions')) {
     $form['action'] = array(
@@ -324,7 +332,7 @@ function views_bulk_operations_view_settings($view_name) {
 
   $all_operations = _views_bulk_operations_get_operations('all', $view_name);
   $enabled_operations = _views_bulk_operations_get_operations('enabled', $view_name);
-  
+
   // Operations checkboxes
   foreach ($all_operations as $operation => $values) {
     $form['operations'][$operation] = array(
@@ -356,7 +364,7 @@ function views_bulk_operations_view_settings_validate($form_id, $form_values) {
 }
 
 function views_bulk_operations_view_settings_submit($form_id, $form_values) {
-  
+
   $view_name = $form_values['view_name'];
   $all_operations = _views_bulk_operations_get_operations('all', $view_name);
 
@@ -564,7 +572,7 @@ function views_bulk_operations_views_tables() {
 function views_bulk_operations_node_operations() {
   $operations = array(
     'bulk_delete' => array(
-      'label' => t('Delete node'),
+      'label' => t('Delete'),
       'callback' => 'views_bulk_operations_delete_nodes',
     ),
   );
@@ -759,4 +767,3 @@ function views_bulk_operations_views_links($type, $view) {
     array('title' => t('Bulk'), 'href' => "admin/build/views/bulk/$view->name"),
   );
 }
-
