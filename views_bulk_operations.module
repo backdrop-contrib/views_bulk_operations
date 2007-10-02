@@ -99,8 +99,14 @@ function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
   $form['step'] = array('#type' => 'hidden', '#value' => $step);
   $form['view_name'] = array('#type' => 'hidden', '#value' => $view->name);
 
+  // We need to hide pagination on all but the normal view
+  if ($step > VIEWS_BULK_OPS_STEP_VIEW) {
+    $view->use_pager = FALSE;
+  }
+
   switch ($step) {
   case VIEWS_BULK_OPS_STEP_VIEW: // Show the view
+
     $options[0] = t('- Choose an operation -');
     foreach ($all_operations as $operation => $values) {
       $options[$operation] = $values['label'];
@@ -221,8 +227,6 @@ function views_bulk_operations_form_alter($form_id, &$form) {
     if ($_POST['form_id'] == 'views_bulk_operations_form' && isset($_POST['step']) && isset($_POST['nodes'])) {
       $form['#prefix'] = '<div style="display: none">';
       $form['#suffix'] = '</div>';
-      $view = $form['view']['#value'];
-      $view->use_pager = FALSE;
     }
   }
 }
@@ -240,10 +244,14 @@ function views_bulk_operations_form_validate($form_id, $form_values) {
 
 function views_bulk_operations_form_submit($form_id, $form_values) {
 
-  if ($form_values['step'] < VIEWS_BULK_OPS_STEP_CONFIRM) return;
+  if ($form_values['step'] < VIEWS_BULK_OPS_STEP_CONFIRM){
+    return;
+  }
 
   $nodes = unserialize($form_values['nodes']);
-  if (!is_array($nodes)) return;
+  if (!is_array($nodes)) {
+    return;
+  }
 
   // action should contain a valid callback
   $action = $form_values['action'];
@@ -395,13 +403,6 @@ function views_bulk_operations_field_node_status($fieldinfo, $fielddata, $value,
 }
 
 /**
- * Borrowed from contemplate.module
- */
-function views_bulk_operations_version() {
-  return str_replace(array('$RCSf'.'ile:', ',v', '$Re'.'vision: ', '$Da'.'te: ', '$'), '', '<p style="font-size:x-small">$RCSfile$ version: <b>$Revision$</b>, $Date$</p>');
-}
-
-/**
  * Implementation of hook_views_style_plugins()
  */
 function views_bulk_operations_views_style_plugins() {
@@ -410,6 +411,7 @@ function views_bulk_operations_views_style_plugins() {
       'name' => t('Bulk Operations View'),
       'theme' => 'views_bulk_operations_view',
       'needs_fields' => true,
+      'needs_table_header' => true,
       'weight' => -10,
     ),
   );
@@ -622,7 +624,6 @@ function views_bulk_operations_delete_nodes($nodes) {
 
 function theme_views_bulk_operations_view($view, $nodes, $type) {
   $output = drupal_get_form('views_bulk_operations_form', $view, $nodes, $type);
-  //$output .= views_bulk_operations_version();
   return $output;
 }
 
