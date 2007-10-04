@@ -41,14 +41,6 @@ function views_bulk_operations_help($section) {
 }
 
 /**
- * hook_init()
- * Load our CSS file.
- */
-function views_bulk_operations_init() {
-  drupal_add_css(drupal_get_path('module', 'views_bulk_operations') .'/views_bulk_operations.css');
-}
-
-/**
  * Implementation of hook_menu().
  */
 function views_bulk_operations_menu($may_cache) {
@@ -87,6 +79,8 @@ function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
     // TODO: may want to direct somewhere else?
     drupal_goto();
   }
+
+  drupal_add_css(drupal_get_path('module', 'views_bulk_operations') . '/views_bulk_operations.css', 'module');
 
   // Calculate next step. Take into consideration whether the action is configurable or not.
   $step = isset($form_values) ? (int) $form_values['step'] + 1: VIEWS_BULK_OPS_STEP_VIEW;
