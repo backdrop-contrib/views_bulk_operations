@@ -156,7 +156,7 @@ function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
       '#type' => 'hidden',
       '#value' => serialize($form_values['nodes']),
     );
-    $form_action = call_user_func($action, 'form', array(), array());
+    $form_action = call_user_func($all_operations[$action]['callback'], 'form', array(), array());
     $form = array_merge($form, $form_action);
     $form['action_elements'] = array(
       '#type' => 'hidden',
@@ -252,7 +252,7 @@ function views_bulk_operations_form_submit($form_id, $form_values) {
   $view_name = $form_values['view_name'];
   $operations = _views_bulk_operations_get_operations('enabled', $view_name);
 
-  if (isset($operations[$action]) && function_exists($action)) {
+  if (isset($operations[$action]) && function_exists($operations[$action]['callback'])) {
     // NODE OPERATIONS
     if ($operations[$action]['type'] == 'node') {
       $nodes = array_filter($nodes);
@@ -262,14 +262,15 @@ function views_bulk_operations_form_submit($form_id, $form_values) {
       else {
         $args = array($nodes);
       }
-      call_user_func_array($action, $args);
+      call_user_func_array($operations[$action]['callback'], $args);
+      drupal_set_message(t('Performed %action on nodes %nid.', array('%action' => $operations[$action]['label'], '%nid' => implode(',', $nodes))));
     }
     // ACTION OPERATIONS
     else if ($operations[$action]['type'] == 'action') { // Doing an Action
       foreach ($nodes as $value) {
         if (is_numeric($value) && $value > 0) {
           $node = node_load($value);
-          call_user_func($action, 'do', $form_values, $node);
+          call_user_func($operations[$action]['callback'], 'do', $form_values, $node);
           drupal_set_message(t('Performed %action on node %nid.', array('%action' => $operations[$action]['label'], '%nid' => $node->title)));
         }
       }
@@ -279,7 +280,7 @@ function views_bulk_operations_form_submit($form_id, $form_values) {
     }
   }
   else { // an invalid or disabled action, shouldn't happen :)
-    watchdog('views_bulk_operations', 'Got invalid operation (' . $action . ')', WATCHDOG_ERROR);
+    watchdog('views_bulk_operations', 'Got invalid operation (' . $operations[$action]['callback'] . ')', WATCHDOG_ERROR);
   }
   drupal_goto($_GET['q'], drupal_query_string_encode($_GET, array('q')));
 }
@@ -340,7 +341,7 @@ function views_bulk_operations_view_settings($view_name) {
   foreach ($all_operations as $operation => $values) {
     $form['operations'][$operation] = array(
       '#type'          => 'checkbox',
-      '#title'         => $values['label'] . ' <em>(' . $operation . ')</em>',
+      '#title'         => $values['label'] . ' <em>(' . $values['callback'] . ')</em>',
       '#default_value' => $values['enabled'],
       '#collapsible'   => FALSE,
     );
@@ -698,11 +699,13 @@ function _views_bulk_operations_get_operations($filter, $view_name) {
           continue;
         }
 
-        $enabled = isset($stored_operations[$operation['callback']]['enabled'])
-          ? $stored_operations[$operation['callback']]['enabled']
+        $key = md5($operation['label']);
+        $enabled = isset($stored_operations[$key]['enabled'])
+          ? $stored_operations[$key]['enabled']
           : VIEWS_BULK_OPS_DEFAULT_OPERATION_ENABLE;
-        $new_operations[$operation['callback']] = array(
+        $new_operations[$key] = array(
           'label'              => $operation['label'],
+          'callback'           => $operation['callback'],
           'callback arguments' => $operation['callback arguments'],
           'enabled'            => $enabled,
           'configurable'       => false,
@@ -722,11 +725,13 @@ function _views_bulk_operations_get_operations($filter, $view_name) {
           if (($values['type'] == 'Node' || $values['type'] == 'Workflow')
               && ($values['batchable'] == TRUE)) {
 
-            $enabled = isset($stored_operations[$callback]['enabled'])
-              ? $stored_operations[$callback]['enabled']
+            $key = md5($values['description']);
+            $enabled = isset($stored_operations[$key]['enabled'])
+              ? $stored_operations[$key]['enabled']
               : VIEWS_BULK_OPS_DEFAULT_OPERATION_ENABLE;
-            $new_operations[$callback] = array(
+            $new_operations[$key] = array(
               'label'              => $values['description'],
+              'callback'           => $callback,
               'callback arguments' => NULL, // doesn't apply to action operations
               'enabled'            => $enabled,
               'configurable'       => $values['configurable'],
