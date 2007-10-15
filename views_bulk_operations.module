@@ -5,6 +5,13 @@
  * @file
  * Allow bulk node operations directly within views.
  *
+ * BUGS:
+ *  - settings for bulk ops views are currently stored in the variables table,
+ *    and there's no way to hook into the view delete process, so settings stick
+ *    around after a corresponding view has been deleted. if cruft becomes an issue
+ *    we should switch to using our own table for storing this info and we can
+ *    prune it using 'where vid not in (select vid from view... )' etc...
+ *
  */
 
 define('VIEWS_BULK_OPS_STEP_VIEW', 1);
@@ -69,7 +76,7 @@ function views_bulk_operations_menu($may_cache) {
 
 function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
   $form['#multistep'] = TRUE;
-  $all_operations = _views_bulk_operations_get_operations('enabled', $view->name);
+  $all_operations = _views_bulk_operations_get_operations('enabled', $view->vid);
 
   // No operations enabled! Cannot function
   if (empty($all_operations)) {
@@ -91,7 +98,7 @@ function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
     }
   }
   $form['step'] = array('#type' => 'hidden', '#value' => $step);
-  $form['view_name'] = array('#type' => 'hidden', '#value' => $view->name);
+  $form['view_vid'] = array('#type' => 'hidden', '#value' => $view->vid);
 
   // We need to hide pagination on all but the normal view
   if ($step > VIEWS_BULK_OPS_STEP_VIEW) {
@@ -249,8 +256,8 @@ function views_bulk_operations_form_submit($form_id, $form_values) {
 
   // action should contain a valid callback
   $action = $form_values['action'];
-  $view_name = $form_values['view_name'];
-  $operations = _views_bulk_operations_get_operations('enabled', $view_name);
+  $view_vid = $form_values['view_vid'];
+  $operations = _views_bulk_operations_get_operations('enabled', $view_vid);
 
   if (isset($operations[$action]) && function_exists($operations[$action]['callback'])) {
     // NODE OPERATIONS
@@ -309,11 +316,16 @@ function views_bulk_operations_admin_settings() {
  * Bulk operations config page for a given view.
  */
 function views_bulk_operations_view_settings($view_name) {
+  // we generally use the view->id, but the url in this context will
+  // contain view->name
+  $view = module_invoke('views', 'get_view', $view_name);
+
   $form['#tree'] = TRUE;
   $form['#submit'] = array('views_bulk_operations_view_settings_submit' => array());
   $form['#validate'] = array('views_bulk_operations_view_settings_validate' => array());
+  $form['view_vid'] = array('#type' => 'hidden', '#value' => $view->vid);
 
-  drupal_set_title(t('Bulk operations for view %view', array('%view' => $view_name)));
+  drupal_set_title(t('Bulk operations for view %view', array('%view' => $view->name)));
 
   // Special notes relating to Actions module
   if (module_exists('actions')) {
@@ -321,7 +333,7 @@ function views_bulk_operations_view_settings($view_name) {
       '#type'          => 'markup',
       '#value' => t('<em>Note:</em> Some of the operations provided by the
         Actions module are identical to native Drupal node operations. In most
-        cases, you will want to leave these disabled.'),
+        cases, you should disable at least one of these operations.'),
     );
   }
   else {
@@ -334,8 +346,8 @@ function views_bulk_operations_view_settings($view_name) {
     );
   }
 
-  $all_operations = _views_bulk_operations_get_operations('all', $view_name);
-  $enabled_operations = _views_bulk_operations_get_operations('enabled', $view_name);
+  $all_operations = _views_bulk_operations_get_operations('all', $view->vid);
+  $enabled_operations = _views_bulk_operations_get_operations('enabled', $view->vid);
 
   // Operations checkboxes
   foreach ($all_operations as $operation => $values) {
@@ -346,12 +358,6 @@ function views_bulk_operations_view_settings($view_name) {
       '#collapsible'   => FALSE,
     );
   }
-
-  $form['view_name'] = array(
-    '#type' => 'value',
-    '#value' => $view_name,
-  );
-
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Save configuration'),
@@ -368,9 +374,9 @@ function views_bulk_operations_view_settings_validate($form_id, $form_values) {
 }
 
 function views_bulk_operations_view_settings_submit($form_id, $form_values) {
+  $view = module_invoke('views', 'get_view', $form_values['view_vid']);
 
-  $view_name = $form_values['view_name'];
-  $all_operations = _views_bulk_operations_get_operations('all', $view_name);
+  $all_operations = _views_bulk_operations_get_operations('all', $view->vid);
 
   // set the enabled/disabled status, but leave other values alone
   foreach ($all_operations as $operation => $values) {
@@ -378,11 +384,10 @@ function views_bulk_operations_view_settings_submit($form_id, $form_values) {
   }
 
   // store serialized data
-  variable_set('views_bulk_operations_'.$view_name, serialize($all_operations));
+  variable_set('views_bulk_operations_prefs_' . $view->vid, serialize($all_operations));
 
   // return to view
-  $urls = views_get_all_urls();
-  drupal_goto($urls[$view_name]);
+  drupal_goto($view->url);
 }
 
 function views_bulk_operations_field_node_status($fieldinfo, $fielddata, $value, $data) {
@@ -651,8 +656,8 @@ function theme_views_bulk_operations_confirmation($nodes) {
  *  'disabled' - return data for operations that are disabled only
  *  'all' - return data for all available operations
  *
- * @param (string) $view_name
- *   The name of the view whose operations we are selecting
+ * @param (string) $view_vid
+ *   The ID of the view whose operations we are selecting
  *
  * @return (array)
  *   Array whose keys contain the name of the callback and values contain
@@ -668,11 +673,11 @@ function theme_views_bulk_operations_confirmation($nodes) {
  *     )
  *   )
  */
-function _views_bulk_operations_get_operations($filter, $view_name) {
+function _views_bulk_operations_get_operations($filter, $view_vid) {
   $all_operations = array();
   $return_operations = array();
 
-  $serialized_operations = variable_get('views_bulk_operations_'.$view_name, array());
+  $serialized_operations = variable_get('views_bulk_operations_prefs_' . $view_vid, array());
 
   if (!empty($serialized_operations)) {
     $stored_operations = unserialize($serialized_operations);
@@ -742,14 +747,14 @@ function _views_bulk_operations_get_operations($filter, $view_name) {
       }
 
       $return_operations = $new_operations;
-      // save latest data
-      variable_set('views_bulk_operations_'.$view_name, serialize($new_operations));
+      // save latest 'enabled actions' preferences for this view
+      variable_set('views_bulk_operations_prefs_' . $view_vid, serialize($new_operations));
       break;
 
     case 'enabled':
     case 'disabled':
       if (empty($all_operations)) {
-        $stored_operations = _views_bulk_operations_get_operations('all', $view_name);
+        $stored_operations = _views_bulk_operations_get_operations('all', $view_vid);
       }
       $state = $filter == 'enabled' ? 1 : 0;
       foreach ($stored_operations as $operation => $values) {

@@ -1,0 +1,10 @@
+<?php
+// $Id$
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function views_bulk_operations_uninstall() {
+  // delete all our variables
+  db_query("DELETE FROM {variable} WHERE name LIKE 'views_bulk_operations%'");
+}
