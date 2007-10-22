@@ -384,7 +384,7 @@ function views_bulk_operations_view_settings_submit($form_id, $form_values) {
   }
 
   // store serialized data
-  variable_set('views_bulk_operations_prefs_' . $view->vid, serialize($all_operations));
+  variable_set('views_bulk_operations_prefs_' . $view->vid, $all_operations);
 
   // return to view
   drupal_goto($view->url);
@@ -677,11 +677,7 @@ function _views_bulk_operations_get_operations($filter, $view_vid) {
   $all_operations = array();
   $return_operations = array();
 
-  $serialized_operations = variable_get('views_bulk_operations_prefs_' . $view_vid, array());
-
-  if (!empty($serialized_operations)) {
-    $stored_operations = unserialize($serialized_operations);
-  }
+  $stored_operations = variable_get('views_bulk_operations_prefs_' . $view_vid, array());
 
   switch ($filter) {
     case 'all':
@@ -748,7 +744,7 @@ function _views_bulk_operations_get_operations($filter, $view_vid) {
 
       $return_operations = $new_operations;
       // save latest 'enabled actions' preferences for this view
-      variable_set('views_bulk_operations_prefs_' . $view_vid, serialize($new_operations));
+      variable_set('views_bulk_operations_prefs_' . $view_vid, $new_operations);
       break;
 
     case 'enabled':
