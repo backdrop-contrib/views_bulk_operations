@@ -17,6 +17,7 @@
 define('VIEWS_BULK_OPS_STEP_VIEW', 1);
 define('VIEWS_BULK_OPS_STEP_CONFIG', 2);
 define('VIEWS_BULK_OPS_STEP_CONFIRM', 3);
+define('VIEWS_BULK_OPS_STEP_SINGLE', 4);
 
 // whether all operations are enabled by default, setting to 0 requires that
 // the admin enable one or more actions before the bulk operations view will
@@ -75,39 +76,73 @@ function views_bulk_operations_menu($may_cache) {
 }
 
 function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
-  $form['#multistep'] = TRUE;
+  drupal_add_css(drupal_get_path('module', 'views_bulk_operations') . '/views_bulk_operations.css', 'module');
+  
+  // Get the operations and based on them many things are decided.
   $all_operations = _views_bulk_operations_get_operations('enabled', $view->vid);
-
-  // No operations enabled! Cannot function
-  if (empty($all_operations)) {
+  if (empty($all_operations)) { // No ops found: bail out
     $error_message = t('No operations enabled. Please check the ').l('Views Bulk Operations administration page', "admin/build/views/bulk/$view->name").'.';
     drupal_set_message($error_message, 'error');
     watchdog('views_bulk_operations', $error_message, WATCHDOG_ERROR);
-    // TODO: may want to direct somewhere else?
     drupal_goto();
-  }
-
-  drupal_add_css(drupal_get_path('module', 'views_bulk_operations') . '/views_bulk_operations.css', 'module');
-
-  // Calculate next step. Take into consideration whether the action is configurable or not.
-  $step = isset($form_values) ? (int) $form_values['step'] + 1: VIEWS_BULK_OPS_STEP_VIEW;
-  if ($step == VIEWS_BULK_OPS_STEP_CONFIG) {
-    $action = $form_values['action'];
-    if (!isset($all_operations[$action]) || !$all_operations[$action]['configurable']) {
-      $step = VIEWS_BULK_OPS_STEP_CONFIRM;
+  } elseif (count($all_operations) == 1) { // One op found: special case
+    $form['#multistep'] = FALSE; 
+    $form['#redirect'] = FALSE; 
+    $step = VIEWS_BULK_OPS_STEP_SINGLE;
+  } else { // Many ops found: calculate the next step
+    $form['#multistep'] = TRUE;
+    $step = isset($form_values) ? (int) $form_values['step'] + 1: VIEWS_BULK_OPS_STEP_VIEW;
+    if ($step == VIEWS_BULK_OPS_STEP_CONFIG) {
+      $action = $form_values['action'];
+      if (!isset($all_operations[$action]) || !$all_operations[$action]['configurable']) {
+        $step = VIEWS_BULK_OPS_STEP_CONFIRM;
+      }
     }
   }
+
   $form['step'] = array('#type' => 'hidden', '#value' => $step);
   $form['view_vid'] = array('#type' => 'hidden', '#value' => $view->vid);
 
-  // We need to hide pagination on all but the normal view
-  if ($step > VIEWS_BULK_OPS_STEP_VIEW) {
-    $view->use_pager = FALSE;
-  }
-
   switch ($step) {
+  case VIEWS_BULK_OPS_STEP_SINGLE: // Show the full thing for a single action
+    $keys   = array_keys($all_operations);
+    $action = $keys[0];
+    $form['action'] = array(
+      '#type' => 'hidden',
+      '#value' => $action,
+    );   
+    $form['nodes'] = array(
+      '#title' => '',
+      '#type' => 'views_node_selector',
+      '#view' => $view,
+      '#view_nodes' => $nodes,
+      '#multiple' => TRUE,
+      '#prefix' => '<div class="views-node-selector">',
+      '#suffix' => '</div>',
+    );
+    if ($all_operations[$action]['configurable']) {
+      $form_action = call_user_func($all_operations[$action]['callback'], 'form', array(), array());
+      $form['arguments'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Operation arguments'),
+        '#collapsible' => FALSE,
+      );
+      $form['arguments'] = array_merge($form['arguments'], $form_action);
+    }
+    $form['execute'] = array(
+      '#type' => 'submit',
+      '#value' => $all_operations[$action]['label'],
+    );   
+    if (user_access('administer site configuration')) {
+      $form['select']['configure'] = array(
+        '#type' => 'markup',
+        '#value' => l(t('Enable or disable allowed operations'), "admin/build/views/bulk/$view->name"),
+        '#prefix' => '<div id="views-bulk-operations-admin">',
+        '#suffix' => '</div>',
+      );
+    }
+    break;
   case VIEWS_BULK_OPS_STEP_VIEW: // Show the view
-
     $options[0] = t('- Choose an operation -');
     foreach ($all_operations as $operation => $values) {
       $options[$operation] = $values['label'];
@@ -115,7 +150,6 @@ function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
     $form['select'] = array(
       '#type' => 'fieldset',
       '#title' => t('Bulk operations'),
-      //'#description' => t('Please select the operation to perform on the selected nodes.'),
       '#options' => $options,
       '#prefix' => '<div id="views-bulk-operations-select">',
       '#suffix' => '</div>',
@@ -123,12 +157,11 @@ function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
     $form['select']['action'] = array(
       '#type' => 'select',
       '#title' => '',
-      //'#description' => t('Please select the operation to perform on the selected nodes.'),
       '#options' => $options,
       '#prefix' => '<div id="views-bulk-operations-dropdown">',
       '#suffix' => '</div>',
     );
-    $form['select']['submit'] = array(
+    $form['select']['execute'] = array(
       '#type' => 'submit',
       '#value' => t('Execute'),
       '#prefix' => '<div id="views-bulk-operations-submit">',
@@ -169,7 +202,7 @@ function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
       '#type' => 'hidden',
       '#value' => serialize(array_keys($form_action)),
     );
-    $form['submit'] = array(
+    $form['execute'] = array(
       '#type' => 'submit',
       '#value' => t('Next'),
     );
@@ -240,17 +273,25 @@ function views_bulk_operations_form_validate($form_id, $form_values) {
     if (!$form_values['action']) { // No action selected
       form_set_error('action', t('No action selected. Please select an action to perform.'));
     }
+  } elseif ($form_values['step'] == VIEWS_BULK_OPS_STEP_SINGLE) {
+    if (!array_sum($form_values['nodes'])) { // If all 0, no node selected
+      form_set_error('nodes', t('No nodes selected. Please select one or more nodes.'));
+    } 
   }
 }
 
 function views_bulk_operations_form_submit($form_id, $form_values) {
-
-  if ($form_values['step'] < VIEWS_BULK_OPS_STEP_CONFIRM){
-    return;
-  }
-
-  $nodes = unserialize($form_values['nodes']);
-  if (!is_array($nodes)) {
+  switch ($form_values['step']) {
+  case VIEWS_BULK_OPS_STEP_CONFIRM:
+    $nodes = unserialize($form_values['nodes']);
+    if (!is_array($nodes)) {
+      return;
+    }
+    break;
+  case VIEWS_BULK_OPS_STEP_SINGLE:  
+    $nodes = $form_values['nodes'];
+    break;  
+  default:
     return;
   }
 
@@ -323,7 +364,8 @@ function views_bulk_operations_view_settings($view_name) {
   $form['#tree'] = TRUE;
   $form['#submit'] = array('views_bulk_operations_view_settings_submit' => array());
   $form['#validate'] = array('views_bulk_operations_view_settings_validate' => array());
-  $form['view_vid'] = array('#type' => 'hidden', '#value' => $view->vid);
+  // Static views don't have a vid
+  $form['view_vid'] = array('#type' => 'hidden', '#value' => isset($view->vid) ? $view->vid : $view_name);
 
   drupal_set_title(t('Bulk operations for view %view', array('%view' => $view->name)));
 
