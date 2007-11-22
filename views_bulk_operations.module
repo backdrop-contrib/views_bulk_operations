@@ -22,7 +22,7 @@ define('VIEWS_BULK_OPS_STEP_SINGLE', 4);
 // whether all operations are enabled by default, setting to 0 requires that
 // the admin enable one or more actions before the bulk operations view will
 // be usable
-define('VIEWS_BULK_OPS_DEFAULT_OPERATION_ENABLE', 1);
+define('VIEWS_BULK_OPS_DEFAULT_OPERATION_ENABLE', 0);
 
 /**
  * Implementation of hook_help().
@@ -62,17 +62,46 @@ function views_bulk_operations_menu($may_cache) {
       'callback'           => 'drupal_get_form',
       'callback arguments' => array('views_bulk_operations_admin_settings'),
       'access'             => user_access('administer site configuration'),
-      'type'               => MENU_NORMAL_ITEM
+      'type'               => MENU_NORMAL_ITEM,
     );
-    $items[] = array(
-      'path'               => 'admin/build/views/bulk',
-      'callback'           => 'drupal_get_form',
-      'callback arguments' => array('views_bulk_operations_view_settings'),
-      'access'             => array('administer site configuration'),
-      'type'               => MENU_CALLBACK
-    );
+  } else {
+    if (arg(0) == 'admin' &&
+        arg(1) == 'build' &&
+        arg(2) == 'views') {
+      $view_name = arg(3);
+      $path = 'admin/build/views/'.$view_name.'/bulk';
+    } else {
+      $urls = views_get_all_urls();
+      foreach ($urls as $key => $url) {
+        if (strpos($_GET['q'], $url) !== FALSE) {
+          $view_name = $key;
+          break;
+        }
+      }
+      $path = $url.'/bulk';
+    }
+    $view = views_get_view($view_name);
+    if ($view && isset($view->page_type) && $view->page_type == 'bulk') {
+      $items[] = array(
+        'path' => $path,
+        'title' => t('Bulk'),
+        'description' => t('Select the operations to be displayed in the view.'),
+        'access' => user_access('administer views'),
+        'callback' => 'drupal_get_form',
+        'callback arguments' => array('views_bulk_operations_view_settings', $view),
+        'type' => MENU_LOCAL_TASK,
+        'weight' => 10,
+      );
+    }
   }
   return $items;
+}
+
+function views_bulk_operations_views_tabs($op) {
+  switch ($op) {
+  case 'names':
+    return array('bulk');
+  }
 }
 
 function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
@@ -81,7 +110,7 @@ function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
   // Get the operations and based on them many things are decided.
   $all_operations = _views_bulk_operations_get_operations('enabled', $view->vid);
   if (empty($all_operations)) { // No ops found: bail out
-    $error_message = t('No operations enabled. Please check the ').l('Views Bulk Operations administration page', "admin/build/views/bulk/$view->name").'.';
+    $error_message = t('No operations enabled. Please check the ').l('Views Bulk Operations administration page', "admin/build/views/$view->name/bulk").'.';
     drupal_set_message($error_message, 'error');
     watchdog('views_bulk_operations', $error_message, WATCHDOG_ERROR);
     drupal_goto();
@@ -132,15 +161,17 @@ function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
     $form['execute'] = array(
       '#type' => 'submit',
       '#value' => $all_operations[$action]['label'],
-    );   
-    if (user_access('administer site configuration')) {
+    );
+    /*
+    if (user_access('administer views')) {
       $form['select']['configure'] = array(
         '#type' => 'markup',
-        '#value' => l(t('Enable or disable allowed operations'), "admin/build/views/bulk/$view->name"),
+        '#value' => l(t('Enable or disable allowed operations'), "admin/build/views/$view->name/bulk"),
         '#prefix' => '<div id="views-bulk-operations-admin">',
         '#suffix' => '</div>',
       );
     }
+    */
     break;
   case VIEWS_BULK_OPS_STEP_VIEW: // Show the view
     $options[0] = t('- Choose an operation -');
@@ -167,14 +198,16 @@ function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
       '#prefix' => '<div id="views-bulk-operations-submit">',
       '#suffix' => '</div>',
     );
-    if (user_access('administer site configuration')) {
+    /*
+    if (user_access('administer views')) {
       $form['select']['configure'] = array(
         '#type' => 'markup',
-        '#value' => l(t('Enable or disable allowed operations'), "admin/build/views/bulk/$view->name"),
+        '#value' => l(t('Enable or disable allowed operations'), "admin/build/views/$view->name/bulk"),
         '#prefix' => '<div id="views-bulk-operations-admin">',
         '#suffix' => '</div>',
       );
     }
+    */
     $form['nodes'] = array(
       '#title' => '',
       '#type' => 'views_node_selector',
@@ -356,16 +389,16 @@ function views_bulk_operations_admin_settings() {
 /**
  * Bulk operations config page for a given view.
  */
-function views_bulk_operations_view_settings($view_name) {
+function views_bulk_operations_view_settings($view) {
   // we generally use the view->id, but the url in this context will
   // contain view->name
-  $view = module_invoke('views', 'get_view', $view_name);
+  //$view = module_invoke('views', 'get_view', $view_name);
 
   $form['#tree'] = TRUE;
   $form['#submit'] = array('views_bulk_operations_view_settings_submit' => array());
   $form['#validate'] = array('views_bulk_operations_view_settings_validate' => array());
   // Static views don't have a vid
-  $form['view_vid'] = array('#type' => 'hidden', '#value' => isset($view->vid) ? $view->vid : $view_name);
+  $form['view_vid'] = array('#type' => 'hidden', '#value' => isset($view->vid) ? $view->vid : $view->name);
 
   drupal_set_title(t('Bulk operations for view %view', array('%view' => $view->name)));
 
@@ -808,6 +841,6 @@ function _views_bulk_operations_get_operations($filter, $view_vid) {
 
 function views_bulk_operations_views_links($type, $view) {
   return array(
-    array('title' => t('Bulk'), 'href' => "admin/build/views/bulk/$view->name"),
+    array('title' => t('Bulk'), 'href' => "admin/build/views/$view->name/bulk"),
   );
 }
