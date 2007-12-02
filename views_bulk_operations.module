@@ -106,7 +106,7 @@ function views_bulk_operations_views_tabs($op) {
 
 function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
   drupal_add_css(drupal_get_path('module', 'views_bulk_operations') . '/views_bulk_operations.css', 'module');
-  
+
   // Get the operations and based on them many things are decided.
   $all_operations = _views_bulk_operations_get_operations('enabled', $view->vid);
   if (empty($all_operations)) { // No ops found: bail out
@@ -115,8 +115,8 @@ function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
     watchdog('views_bulk_operations', $error_message, WATCHDOG_ERROR);
     drupal_goto();
   } elseif (count($all_operations) == 1) { // One op found: special case
-    $form['#multistep'] = FALSE; 
-    $form['#redirect'] = FALSE; 
+    $form['#multistep'] = FALSE;
+    $form['#redirect'] = FALSE;
     $step = VIEWS_BULK_OPS_STEP_SINGLE;
   } else { // Many ops found: calculate the next step
     $form['#multistep'] = TRUE;
@@ -139,7 +139,7 @@ function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
     $form['action'] = array(
       '#type' => 'hidden',
       '#value' => $action,
-    );   
+    );
     $form['nodes'] = array(
       '#title' => '',
       '#type' => 'views_node_selector',
@@ -309,7 +309,7 @@ function views_bulk_operations_form_validate($form_id, $form_values) {
   } elseif ($form_values['step'] == VIEWS_BULK_OPS_STEP_SINGLE) {
     if (!array_sum($form_values['nodes'])) { // If all 0, no node selected
       form_set_error('nodes', t('No nodes selected. Please select one or more nodes.'));
-    } 
+    }
   }
 }
 
@@ -321,9 +321,9 @@ function views_bulk_operations_form_submit($form_id, $form_values) {
       return;
     }
     break;
-  case VIEWS_BULK_OPS_STEP_SINGLE:  
+  case VIEWS_BULK_OPS_STEP_SINGLE:
     $nodes = $form_values['nodes'];
-    break;  
+    break;
   default:
     return;
   }
@@ -798,9 +798,8 @@ function _views_bulk_operations_get_operations($filter, $view_vid) {
           // TODO: Depending on how actions work, we may want to allow admin
           // to turn on/off action types. Don't know enough about actions
           // to determine that right now, so limiting to types I know we want.
-          if (($values['type'] == 'Node' || $values['type'] == 'Workflow')
+          if ((in_array($values['type'], array('Node', 'Workflow', 'Email')))
               && ($values['batchable'] == TRUE)) {
-
             $key = md5($values['description']);
             $enabled = isset($stored_operations[$key]['enabled'])
               ? $stored_operations[$key]['enabled']
