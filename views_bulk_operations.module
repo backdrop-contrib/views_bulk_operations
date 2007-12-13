@@ -19,6 +19,10 @@ define('VIEWS_BULK_OPS_STEP_CONFIG', 2);
 define('VIEWS_BULK_OPS_STEP_CONFIRM', 3);
 define('VIEWS_BULK_OPS_STEP_SINGLE', 4);
 
+// maxiumum number of node titles that will be displayed in operation
+// confirmation page.
+define('VIEWS_BULK_OPS_MAX_CONFIRM_NODES', 10);
+
 // whether all operations are enabled by default, setting to 0 requires that
 // the admin enable one or more actions before the bulk operations view will
 // be usable
@@ -32,18 +36,13 @@ function views_bulk_operations_help($section) {
     case 'admin/help#views_bulk_operations':
       return t('
         Views Bulk Operations adds a new views type which enables operations to
-        be performed on multiple nodes directly from within a view.
-        <p>To create a view of this type, simply select "Views Bulk Operations"
-        as the "view type" for your view (which must be a page view).</p>
+        be performed on multiple nodes directly from within a view. <p>To create
+        a view of this type, simply select "Views Bulk Operations" as the "view
+        type" for your view (which must be a page view).</p>
       ');
       break;
     case 'admin/modules#description':
       return t('Allow bulk node operations directly within views.');
-      break;
-    case 'admin/build/views/bulk':
-      return t('These settings determine which actions will be available from
-        within a Bulk Operations view form. Operations selected here will be
-        available for execution on the form.');
       break;
   }
 }
@@ -55,24 +54,16 @@ function views_bulk_operations_menu($may_cache) {
   $items = array();
 
   if ($may_cache) {
-    /*
-    $items[] = array(
-      'path'               => 'admin/settings/views_bulk_operations',
-      'title'              => t('Views bulk operations'),
-      'description'        => t('Configure Views Bulk Operations.'),
-      'callback'           => 'drupal_get_form',
-      'callback arguments' => array('views_bulk_operations_admin_settings'),
-      'access'             => user_access('administer site configuration'),
-      'type'               => MENU_NORMAL_ITEM,
-    );
-    */
-  } else {
+    // no static menu entries
+  }
+  else {
     if (arg(0) == 'admin' &&
         arg(1) == 'build' &&
         arg(2) == 'views') {
       $view_name = arg(3);
-      $path = 'admin/build/views/'.$view_name.'/bulk';
-    } else {
+      $path = 'admin/build/views/'.$view_name.'/operations';
+    }
+    else {
       $urls = views_get_all_urls();
       foreach ($urls as $key => $url) {
         if (strpos($_GET['q'], $url) !== FALSE) {
@@ -80,7 +71,7 @@ function views_bulk_operations_menu($may_cache) {
           break;
         }
       }
-      $path = $url.'/bulk';
+      $path = $url.'/operations';
     }
     $view = views_get_view($view_name);
     if ($view && isset($view->page_type) && $view->page_type == 'bulk') {
@@ -120,7 +111,8 @@ function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
     $form['#multistep'] = FALSE;
     $form['#redirect'] = FALSE;
     $step = VIEWS_BULK_OPS_STEP_SINGLE;
-  } else { // Many ops found: calculate the next step
+  }
+  else { // Many ops found: calculate the next step
     $form['#multistep'] = TRUE;
     $step = isset($form_values) ? (int) $form_values['step'] + 1: VIEWS_BULK_OPS_STEP_VIEW;
     if ($step == VIEWS_BULK_OPS_STEP_CONFIG) {
@@ -190,16 +182,6 @@ function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
       '#prefix' => '<div id="views-bulk-operations-submit">',
       '#suffix' => '</div>',
     );
-    /*
-    if (user_access('administer views')) {
-      $form['select']['configure'] = array(
-        '#type' => 'markup',
-        '#value' => l(t('Enable or disable allowed operations'), "admin/build/views/$view->name/bulk"),
-        '#prefix' => '<div id="views-bulk-operations-admin">',
-        '#suffix' => '</div>',
-      );
-    }
-    */
     $form['nodes'] = array(
       '#title' => '',
       '#type' => 'views_node_selector',
@@ -361,27 +343,6 @@ function views_bulk_operations_form_submit($form_id, $form_values) {
 }
 
 /**
- * General settings page
- */
-/*
-function views_bulk_operations_admin_settings() {
-  $form['#tree'] = TRUE;
-
-  // General Settings
-  $form['views_bulk_operations_confirm_max_nodes'] = array(
-    '#type'          => 'textfield',
-    '#size'          => 5,
-    '#title'         => t('Confirmation Page Nodes'),
-    '#description' => t('The number of nodes to "preview" in the confirmation
-      page before executing actual operations. Remaining nodes will be truncated.
-      Set to 0 to show all.'),
-    '#default_value' => variable_get('views_bulk_operations_confirm_max_nodes', '20'),
-  );
-
-  return system_settings_form($form);
-}
-*/
-/**
  * Bulk operations config page for a given view.
  */
 function views_bulk_operations_view_settings($view) {
@@ -414,13 +375,27 @@ function views_bulk_operations_view_settings($view) {
 }
 
 function theme_views_bulk_operations_view_settings($form) {
+
+  $output = t('
+    <p>These settings determine which actions will be available from within a
+    bulk operations view form. Operations selected here will be available for
+    execution on the form. If only one action is selected, no dropdown will
+    be provided and users will be able to perform or configure the single
+    operation directly from the view form </p>
+  ');
+
   if (module_exists('actions')) {
-    $output = t('<em>Note:</em> Some of the operations provided by the
-                 Actions module are identical to native Drupal node operations. In most
-                 cases, you should disable at least one of these operations.');
-  } else {
-    $output = t('<em>Note:</em> Install the !actions_module to enable additional operations.',
-            array('!actions_module' => l('Actions module', 'http://drupal.org/project/actions')));
+    $output .= t('
+      <p><em>Note:</em> Some of the operations provided by the Actions module are
+      identical to native Drupal node operations. In most cases, you should
+      disable at least one of these operations.</p>
+    ');
+  }
+  else {
+    $output .= t('
+      <p><em>Note:</em> Install the !actions_module to enable additional
+      operations.</p>
+    ', array('!actions_module' => l('Actions module', 'http://drupal.org/project/actions')));
   }
   $output .= drupal_render($form);
   $output .= '<p class="cvs-version">$Id$</p>';
@@ -691,9 +666,8 @@ function theme_views_bulk_operations_confirmation($nodes) {
   $count = 0;
   $output = t('You selected the following nodes:').'<br /><ul>';
   foreach($nodes as $nid) {
-    $show_nodes = variable_get('views_bulk_operations_confirm_max_nodes', '20');
     // Number of titles to display before we say "...and more"
-    if (($show_nodes > 0) && ($count >=  $show_nodes)) {
+    if ((VIEWS_BULK_OPS_MAX_CONFIRM_NODES > 0) && ($count >=  VIEWS_BULK_OPS_MAX_CONFIRM_NODES)) {
       $output .= '<li>'.t('...and %remaining more.', array('%remaining' => count($nodes) - $count)).'</li>';
       break;
     }
@@ -825,7 +799,7 @@ function _views_bulk_operations_get_operations($filter, $vid) {
 
 function views_bulk_operations_views_links($type, $view) {
   return array(
-    array('title' => t('Bulk'), 'href' => "admin/build/views/$view->name/bulk"),
+    array('title' => t('Operations'), 'href' => "admin/build/views/$view->name/operations"),
   );
 }
 
