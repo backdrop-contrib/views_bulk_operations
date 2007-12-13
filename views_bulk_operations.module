@@ -324,7 +324,7 @@ function views_bulk_operations_form_submit($form_id, $form_values) {
 
   // action should contain a valid callback
   $action = $form_values['action'];
-  $vid = $form_values['view_vid'];
+  $vid = $form_values['vid'];
   $operations = _views_bulk_operations_get_operations('enabled', $vid);
 
   if (isset($operations[$action]) && function_exists($operations[$action]['callback'])) {
@@ -857,4 +857,3 @@ function expand_views_node_selector($element) {
   include_once drupal_get_path('module', 'views_bulk_operations') . '/views_form.inc';
   return _expand_views_node_selector($element);
 }
-
