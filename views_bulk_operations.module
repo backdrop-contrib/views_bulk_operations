@@ -93,7 +93,7 @@ function views_bulk_operations_menu($may_cache) {
 function views_bulk_operations_views_tabs($op) {
   switch ($op) {
   case 'names':
-    return array('bulk');
+    return array('operations');
   }
 }
 
@@ -103,10 +103,9 @@ function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
   // Get the operations and based on them many things are decided.
   $all_operations = _views_bulk_operations_get_operations('enabled', $view->vid);
   if (empty($all_operations)) { // No ops found: bail out
-    $error_message = t('No operations enabled. Please check the ').l('Views Bulk Operations administration page', "admin/build/views/$view->name/bulk").'.';
+    $error_message = t('No operations are enabled. You must enable one or more operations in order to use Views Bulk Operations.');
     drupal_set_message($error_message, 'error');
-    watchdog('views_bulk_operations', $error_message, WATCHDOG_ERROR);
-    drupal_goto();
+    drupal_goto($_GET['q'].'/operations');
   } elseif (count($all_operations) == 1) { // One op found: special case
     $form['#multistep'] = FALSE;
     $form['#redirect'] = FALSE;
