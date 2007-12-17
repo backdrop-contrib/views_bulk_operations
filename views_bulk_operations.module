@@ -100,8 +100,11 @@ function views_bulk_operations_views_tabs($op) {
 function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
   drupal_add_css(drupal_get_path('module', 'views_bulk_operations') . '/views_bulk_operations.css', 'module');
 
+  $form['step'] = array('#type' => 'hidden', '#value' => $step);
+  $form['vid'] = array('#type' => 'hidden', '#value' => isset($view->vid) ? $view->vid : $view->name);
+
   // Get the operations and based on them many things are decided.
-  $all_operations = _views_bulk_operations_get_operations('enabled', $view->vid);
+  $all_operations = _views_bulk_operations_get_operations('enabled', $form['vid']['#value']);
   if (empty($all_operations)) { // No ops found: bail out
     $error_message = t('No operations are enabled. You must enable one or more operations in order to use Views Bulk Operations.');
     drupal_set_message($error_message, 'error');
@@ -121,9 +124,6 @@ function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
       }
     }
   }
-
-  $form['step'] = array('#type' => 'hidden', '#value' => $step);
-  $form['vid'] = array('#type' => 'hidden', '#value' => $view->vid);
 
   switch ($step) {
   case VIEWS_BULK_OPS_STEP_SINGLE: // Show the full thing for a single action
@@ -305,8 +305,7 @@ function views_bulk_operations_form_submit($form_id, $form_values) {
 
   // action should contain a valid callback
   $action = $form_values['action'];
-  $vid = $form_values['vid'];
-  $operations = _views_bulk_operations_get_operations('enabled', $vid);
+  $operations = _views_bulk_operations_get_operations('enabled', $form_values['vid']);
 
   if (isset($operations[$action]) && function_exists($operations[$action]['callback'])) {
     // NODE OPERATIONS
@@ -353,8 +352,8 @@ function views_bulk_operations_view_settings($view) {
 
   drupal_set_title(t('Bulk operations for view %view', array('%view' => $view->name)));
 
-  $all_operations = _views_bulk_operations_get_operations('all', $view->vid);
-  $enabled_operations = _views_bulk_operations_get_operations('enabled', $view->vid);
+  $all_operations = _views_bulk_operations_get_operations('all', $form['vid']['#value']);
+  $enabled_operations = _views_bulk_operations_get_operations('enabled', $form['vid']['#value']);
 
   // Operations checkboxes
   foreach ($all_operations as $operation => $values) {
@@ -410,7 +409,7 @@ function views_bulk_operations_view_settings_validate($form_id, $form_values) {
 
 function views_bulk_operations_view_settings_submit($form_id, $form_values) {
   $view = module_invoke('views', 'get_view', $form_values['vid']);
-  $all_operations = _views_bulk_operations_get_operations('all', $view->vid);
+  $all_operations = _views_bulk_operations_get_operations('all', $form_values['vid']);
 
   // set the enabled/disabled status, but leave other values alone
   foreach ($all_operations as $operation => $values) {
@@ -418,10 +417,12 @@ function views_bulk_operations_view_settings_submit($form_id, $form_values) {
   }
 
   // store serialized data
-  variable_set('views_bulk_operations_prefs_' . $view->vid, $all_operations);
+  variable_set('views_bulk_operations_prefs_' . $form_values['vid'], $all_operations);
 
   // return to view
-  drupal_goto($view->url);
+  if (isset($view->url)) {
+    return $view->url;
+  }
 }
 
 function views_bulk_operations_field_node_status($fieldinfo, $fielddata, $value, $data) {
