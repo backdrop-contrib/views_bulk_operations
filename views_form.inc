@@ -53,7 +53,7 @@ function theme_views_node_selector($element) {
   // the 'select all' checkbox if we are using checkboxes.
   $extra = $multiple ? theme('table_select_header_cell') : '&nbsp;';
 
-  if ($view->table_header[0] != $extra) {
+  if (is_array($view->table_header) && $view->table_header[0] != $extra) {
     array_unshift($view->table_header, $extra);
   }
 
