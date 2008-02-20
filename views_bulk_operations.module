@@ -326,6 +326,7 @@ function views_bulk_operations_form_submit($form_id, $form_values) {
       break;
     case VIEWS_BULK_OPS_STEP_SINGLE:
       $nodes = $form_values['nodes'];
+      $preserved_action_form_elements = $form_values;
       break;
     default:
       return;
@@ -504,6 +505,12 @@ function views_bulk_operations_views_default_views() {
   $view->use_pager = TRUE;
   $view->nodes_per_page = '10';
   $view->sort = array (
+    array (
+      'tablename' => 'node',
+      'field' => 'changed',
+      'sortorder' => 'DESC',
+      'options' => 'normal',
+    ),
   );
   $view->argument = array (
   );
@@ -544,7 +551,6 @@ function views_bulk_operations_views_default_views() {
       'operator' => 'OR',
       'options' => '',
       'value' => array (
-        0 => 'filenode',
       ),
     ),
     array (
