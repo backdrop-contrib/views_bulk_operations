@@ -66,7 +66,7 @@ function views_bulk_operations_menu($may_cache) {
     else {
       $urls = views_get_all_urls();
       foreach ($urls as $key => $url) {
-        if (strpos($_GET['q'], $url) !== FALSE) {
+        if (@strpos($_GET['q'], $url) !== FALSE) {
           $view_name = $key;
           break;
         }
