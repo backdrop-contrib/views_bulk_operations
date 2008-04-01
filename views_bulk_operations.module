@@ -162,7 +162,7 @@ function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
     case VIEWS_BULK_OPS_STEP_VIEW: // Show the view
       $options[0] = t('- Choose an operation -');
       foreach ($enabled_operations as $operation => $values) {
-        $options[$operation] = $values['label'];
+        $options[$operation] = t($values['label']);
       }
       $form['select'] = array(
         '#type' => 'fieldset',
@@ -773,7 +773,7 @@ function _views_bulk_operations_get_operations($filter, $vid) {
           continue;
         }
 
-        $key = md5($operation['label']);
+        $key = md5($operation['callback']);
         $enabled = isset($stored_operations[$key]['enabled'])
           ? $stored_operations[$key]['enabled']
           : VIEWS_BULK_OPS_DEFAULT_OPERATION_ENABLE;
@@ -797,9 +797,9 @@ function _views_bulk_operations_get_operations($filter, $vid) {
           // to allow admin to turn on/off action types. Don't know enough about
           // actions to determine that right now, so limiting to types I know we
           // want.
-          if ((in_array($values['type'], array('Node', 'Workflow', 'Email')))
+          if ((in_array($values['type'], array(t('Node'), t('Workflow'), t('Email'))))
               && ($values['batchable'] == TRUE)) {
-            $key = md5($values['description']);
+            $key = md5($callback);
             $enabled = isset($stored_operations[$key]['enabled'])
               ? $stored_operations[$key]['enabled']
               : VIEWS_BULK_OPS_DEFAULT_OPERATION_ENABLE;
