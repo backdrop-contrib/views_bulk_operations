@@ -797,8 +797,8 @@ function _views_bulk_operations_get_operations($filter, $vid) {
           // to allow admin to turn on/off action types. Don't know enough about
           // actions to determine that right now, so limiting to types I know we
           // want.
-          if ((in_array($values['type'], array(t('Node'), t('Workflow'), t('Email'))))
-              && ($values['batchable'] == TRUE)) {
+          if ((in_array($values['type'], array(t('Node'), t('Workflow'), t('Email'))))) {
+#              && ($values['batchable'] == TRUE)) {
             $key = md5($callback);
             $enabled = isset($stored_operations[$key]['enabled'])
               ? $stored_operations[$key]['enabled']
