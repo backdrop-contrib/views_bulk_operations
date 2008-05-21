@@ -107,7 +107,8 @@ function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
       operations in order to use Views Bulk Operations.');
     drupal_set_message($error_message, 'error');
     drupal_goto($_GET['q'].'/operations');
-  } elseif (count($enabled_operations) == 1) { // One op found: special case
+  } 
+  elseif (count($enabled_operations) == 1) { // One op found: special case
     $form['#multistep'] = FALSE;
     $form['#redirect'] = FALSE;
     $step = VIEWS_BULK_OPS_STEP_SINGLE;
@@ -136,7 +137,7 @@ function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
         '#value' => $action,
       );
       if ($enabled_operations[$action]['configurable']) {
-        $form_action = call_user_func($enabled_operations[$action]['callback'], 'form', array(), array());
+        $form_action = _views_bulk_operations_action_form($enabled_operations[$action]);
         $form['arguments'] = array(
           '#type' => 'fieldset',
           '#title' => t($enabled_operations[$action]['label']),
@@ -207,7 +208,7 @@ function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
         '#type' => 'hidden',
         '#value' => serialize($form_values['nodes']),
       );
-      $form_action = call_user_func($enabled_operations[$action]['callback'], 'form', array(), array());
+      $form_action = _views_bulk_operations_action_form($enabled_operations[$action]);
       $form = array_merge($form, $form_action);
       // 'action_elements' is where we store the key values of the configurable
       // action form elements so that we can extract just those form values
@@ -224,6 +225,7 @@ function views_bulk_operations_form($view, $nodes, $type, $form_values = NULL) {
       $form['#redirect'] = FALSE;
       drupal_set_title(t('Set parameters for \'%action\'', array('%action' => $enabled_operations[$action]['label'])));
       break;
+ 
     case VIEWS_BULK_OPS_STEP_CONFIRM: // Display the final confirmation
       $view->use_pager = FALSE;
       $action = $form_values['action'];
@@ -304,7 +306,7 @@ function views_bulk_operations_form_validate($form_id, $form_values) {
     $action = $form_values['action'];
     $operations = _views_bulk_operations_get_operations('enabled', $form_values['vid']);
     if ($operations[$action]['configurable']) {
-      call_user_func($operations[$action]['callback'], 'validate', $form_values, array());
+      _views_bulk_operations_action_validate($operations[$action], $form_id, $form_values);
     }
   }
 
@@ -357,9 +359,9 @@ function views_bulk_operations_form_submit($form_id, $form_values) {
           $params = array();
 
           if ($operations[$action]['configurable']) {
-            $params = call_user_func($operations[$action]['callback'], 'submit', $preserved_action_form_elements, array());
+            $params = _views_bulk_operations_action_submit($operations[$action], $form_id, $preserved_action_form_elements);
           }
-          call_user_func($operations[$action]['callback'], 'do', $params, $node);
+          _views_bulk_operations_action_do($operations[$action], $node, $params);
           drupal_set_message(t('Performed %action on node %nid.', array('%action' => $operations[$action]['label'], '%nid' => $node->title)));
         }
       }
@@ -372,6 +374,48 @@ function views_bulk_operations_form_submit($form_id, $form_values) {
     watchdog('views_bulk_operations', 'Got invalid operation (' . $operations[$action]['callback'] . ')', WATCHDOG_ERROR);
   }
   drupal_goto($_GET['q'], drupal_query_string_encode($_GET, array('q')));
+}
+
+function _views_bulk_operations_action_form($action) {
+  $action_form = $action['callback'].'_form';
+  if (function_exists($action_form)) { // Drupal-6-style actions
+    return call_user_func($action_form, array());
+  }
+  else {
+    return call_user_func($action['callback'], 'form', array(), array());
+  }
+}
+
+function _views_bulk_operations_action_validate($action, $form_id, $form_values) {
+  $action_validate = $action['callback'].'_validate';
+  if (function_exists($action_validate)) { // Drupal-6-style actions
+    call_user_func($action_validate, $form_id, $form_values);
+  }
+  else {
+    call_user_func($action['callback'], 'validate', $form_values, array());
+  }
+}
+
+function _views_bulk_operations_action_submit($action, $form_id, $form_values) {
+  $action_submit = $action['callback'].'_submit';
+  if (function_exists($action_submit)) { // Drupal-6-style actions
+    return call_user_func($action_submit, $form_id, $form_values);
+  }
+  else {
+    return call_user_func($action['callback'], 'submit', $form_values, array());
+  }
+}
+
+function _views_bulk_operations_action_do($action, $node, $context) {
+  $action_do = $action['callback'];
+  $info = _module_parse_info_file(drupal_get_path('module', 'actions').'/actions.info');
+  if (preg_match('/^5.[x1-9]-2.[x1-9]/', $info['version'])) { // Drupal-6-style actions
+    call_user_func($action_do, $node, $context);
+    node_save($node);
+  }
+  else {
+    call_user_func($action_do, 'do', $context, $node);
+  }
 }
 
 /**
@@ -797,8 +841,8 @@ function _views_bulk_operations_get_operations($filter, $vid) {
           // to allow admin to turn on/off action types. Don't know enough about
           // actions to determine that right now, so limiting to types I know we
           // want.
-          if ((in_array($values['type'], array(t('Node'), t('Workflow'), t('Email'))))) {
-#              && ($values['batchable'] == TRUE)) {
+          foreach (array('node', 'workflow', 'email') as $type) {
+            if (0 != strcasecmp($type, $values['type'])) continue;
             $key = md5($callback);
             $enabled = isset($stored_operations[$key]['enabled'])
               ? $stored_operations[$key]['enabled']
@@ -811,6 +855,7 @@ function _views_bulk_operations_get_operations($filter, $vid) {
               'configurable'       => $values['configurable'],
               'type'               => 'action',
             );
+            break; // out of inner, type-searching loop
           }
         }
       }
