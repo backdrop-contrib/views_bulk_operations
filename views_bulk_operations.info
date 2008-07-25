@@ -1,5 +1,6 @@
 ; $Id$
 name = Views Bulk Operations
-description = Exposes new Views type 'Bulk Operations View' for selecting multiple nodes and applying operations on them.
-dependencies = views
+description = Exposes new Views style 'Bulk Operations' for selecting multiple nodes and applying operations on them.
+dependencies[] = views
 package = Views
+core = 6.x

@@ -3,8 +3,7 @@ D R U P A L M O D U L E
 ********************************************************************
 Name: Views Bulk Operations Module
 Authors: Karim Ratib <karim dot ratib at open dash craft dot com>
-         Harry Slaughter <harry at devbee dot com>
-Drupal: 5
+Drupal: 6
 ********************************************************************
 DESCRIPTION:
 
