@@ -70,7 +70,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
     $node_operations = module_invoke_all('node_operations');
     foreach ($node_operations as $operation) {
       if (empty($operation['callback'])) continue;
-      $key = md5($operation['callback']);
+      $key = md5($operation['label']);
       $operations[$key] = array(
         'label'              => $operation['label'],
         'callback'           => $operation['callback'],
@@ -84,7 +84,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
     foreach ($action_operations as $callback => $values) {
       foreach (array('node', 'workflow', 'email') as $type) {
         if (0 != strcasecmp($type, $values['type'])) continue;
-        $key = md5($callback);
+        $key = md5($values['description']);
         $operations[$key] = array(
           'label'              => $values['description'],
           'callback'           => $callback,
