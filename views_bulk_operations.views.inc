@@ -8,7 +8,7 @@ function views_bulk_operations_views_plugins() {
         'title' => t('Bulk Operations'),
         'help' => t('Displays nodes with checkmarks for bulk actions.'),
         'handler' => 'views_bulk_operations_plugin_style',
-        'uses row plugin' => TRUE,
+        'uses row plugin' => FALSE,
         'uses fields' => TRUE,
         'uses options' => TRUE,
         'type' => 'normal',
@@ -17,13 +17,15 @@ function views_bulk_operations_views_plugins() {
   );
 }
 
-class views_bulk_operations_plugin_style extends views_plugin_style {
+class views_bulk_operations_plugin_style extends views_plugin_style_table {
   function options(&$options) {
+    parent::options($options);
     $options['selected_operations'] = array();
     $this->populate_operations($options);
   }
 
   function options_form(&$form, &$form_values) {
+    parent::options_form($form, $form_values);
     $form['selected_operations'] = array(
       '#type' => 'checkboxes',
       '#title' => t('Selected operations'),
@@ -36,6 +38,9 @@ class views_bulk_operations_plugin_style extends views_plugin_style {
   }
 
   function render() {
+    // We build the groups here to pass them to the node_selector function through the form.
+    $sets = $this->render_grouping($this->view->result, $this->options['grouping']);
+    $this->sets = $sets;
     return drupal_get_form('views_bulk_operations_form', $this);
   }
 

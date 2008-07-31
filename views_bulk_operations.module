@@ -32,26 +32,34 @@ function views_bulk_operations_theme() {
 
 function theme_views_node_selector($element) {
   $view = $element['#view'];
+  $sets = $element['#sets'];
 
-  // Construct header.
-  $header = array();
-  $header[] = theme('table_select_header_cell');
-  foreach ($view->field as $id => $field) {
-    $header[] = $field->label();
-  }
-  
-  // Construct rows.
-  $rows = array();
-  foreach ($view->result as $node) {
-    $row = array();
-    $row[] = array('data' => theme('checkbox', $element[$node->nid]));
-    foreach ($view->field as $id => $field) {
-      $row[] = array('data' => $field->theme($node));
+  $vars = array(
+    'view' => $view,
+    );
+
+  $output = '';
+  // Give each group its own headers row.
+  foreach ($sets as $records) {
+    // template_preprocess_views_view_table expects the raw data in 'rows'.
+    $vars['rows'] = $records;
+      
+    // Render the view as table. Function from views/theme/theme.inc
+    template_preprocess_views_view_table($vars);
+    
+    // Add checkboxes to the header and the rows.
+    $checkbox_header = array(theme('table_select_header_cell'));
+    $headers = array_merge($checkbox_header, $vars['header']);
+    
+    $rows = array();
+    foreach ($records as $num => $node) {
+      $row = array();
+      $row[] =  theme('checkbox', $element[$node->nid]);
+      $rows[] = array_merge($row, $vars['rows'][$num]) ;
     }
-    $rows[] = $row;
-  }
 
-  $output = theme('table', $header, $rows);
+    $output .= theme('table', $headers, $rows);
+  }
   return theme('form_element', $element, $output);
 }
 
@@ -104,6 +112,8 @@ function views_bulk_operations_form($form_state, $plugin) {
     $form['nodes'] = array(
       '#type' => 'views_node_selector',
       '#view' => $plugin->view,
+      // Sets for grouping.
+      '#sets' => $plugin->sets,
       '#prefix' => '<div class="views-node-selector">',
       '#suffix' => '</div>',
     );
@@ -331,18 +341,40 @@ function views_bulk_operations_views_default_views() {
   $handler->override_option('items_per_page', 0);
   $handler->override_option('style_plugin', 'bulk');
   $handler->override_option('style_options', array(
+    'grouping' => '',
+    'override' => 1,
+    'sticky' => 0,
+    'order' => 'asc',
+    'columns' => array(
+      'title' => 'title',
+      'type' => 'type',
+      'name' => 'name',
+      'status' => 'status',
+      'edit_node' => 'edit_node',
+    ),
+    'info' => array(
+      'title' => array(
+        'sortable' => 1,
+        'separator' => '',
+      ),
+      'type' => array(
+        'sortable' => 1,
+        'separator' => '',
+      ),
+      'name' => array(
+        'sortable' => 1,
+        'separator' => '',
+      ),
+      'status' => array(
+        'sortable' => 0,
+        'separator' => '',
+      ),
+      'edit_node' => array(
+        'separator' => '',
+      ),
+    ),
+    'default' => '-1',
     'selected_operations' => array(
-      '867e6bb83ef13a39c914e114fab4d6f2' => '867e6bb83ef13a39c914e114fab4d6f2',
-      'c6d3850086dc3c1bca4bf0625ce78c56' => 'c6d3850086dc3c1bca4bf0625ce78c56',
-      '548749a939aa6334157edff3d8f69351' => '548749a939aa6334157edff3d8f69351',
-      '6a99179e9c90e9edfb34d075fa234d78' => '6a99179e9c90e9edfb34d075fa234d78',
-      'c4ca4238a0b923820dcc509a6f75849b' => 'c4ca4238a0b923820dcc509a6f75849b',
-      '799e8527bbd3d99e4c8c25a8a674d264' => 0,
-      'fce859fcce0e81943c3e31c20ccd68ff' => 0,
-      '0341fcc505281031474b68c72e03a997' => 0,
-      '94a098afb1689f950d72ed4c44f8655d' => 0,
-      '15faf15d7f591f8ef8e80238dd7c8b8c' => 0,
-      'c6db6d4ee28924020b504a5feb2bff9f' => 0,
     ),
   ));
   $handler = $view->new_display('page', 'Page', 'page');
