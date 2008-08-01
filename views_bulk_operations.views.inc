@@ -21,11 +21,17 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
   function options(&$options) {
     parent::options($options);
     $options['selected_operations'] = array();
+    $options['use_batch'] = TRUE;
     $this->populate_operations($options);
   }
 
   function options_form(&$form, &$form_values) {
     parent::options_form($form, $form_values);
+    $form['use_batch'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Use Batch API to process selected nodes.'),
+      '#default_value' => $this->options['use_batch'],
+    );
     $form['selected_operations'] = array(
       '#type' => 'checkboxes',
       '#title' => t('Selected operations'),

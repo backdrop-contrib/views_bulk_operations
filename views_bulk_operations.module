@@ -173,7 +173,7 @@ function views_bulk_operations_form($form_state, $plugin) {
     $form = confirm_form($form,
       t('Are you sure you want to perform \'%action\' on selected nodes?', array('%action' => $operation['label'])),
       $query ? array('path' => $_GET['q'], 'query' => $query) : array('path' => $_GET['q']),
-      theme('views_bulk_operations_confirmation', $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['nodes'])); 
+      theme('views_bulk_operations_confirmation', array_filter($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['nodes']))); 
   }
   return $form;
 }
@@ -194,7 +194,9 @@ function views_bulk_operations_form_validate($form, &$form_state) {
     }
     $plugin = $form_state['values']['plugin'];
     $operation = $plugin->get_operation_info($form_state['values']['action']);
-    _views_bulk_operations_action_validate($operation, $form, $form_state);
+    if ($operation['configurable']) {
+      _views_bulk_operations_action_validate($operation, $form, $form_state);
+    }
     break; 
   case VIEWS_BULK_OPS_STEP_CONFIG:
     $plugin = $form_state['values']['plugin'];
@@ -225,35 +227,72 @@ function views_bulk_operations_form_submit($form, &$form_state) {
 
   $plugin = $form_state['values']['plugin'];
   $operation = $plugin->get_operation_info($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['action']);
-  $nodes = $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['nodes'];
-  if ($operation['type'] == 'action') {
-    foreach ($nodes as $nid) {
-      if (is_numeric($nid) && $nid > 0) {
-        $node = node_load($nid);
-        $params = array();
-        if ($operation['configurable']) {
-          $form_state['values'] += $form_state['storage'][VIEWS_BULK_OPS_STEP_CONFIG];
-          $params = _views_bulk_operations_action_submit($operation, $form, $form_state);
-        }
-        _views_bulk_operations_action_do($operation, $node, $params);
-        drupal_set_message(t('Performed %action on node %title.', array('%action' => $operation['label'], '%title' => $node->title)));
-      }
-    }
+  $params = array();
+  if ($operation['type'] == 'action' && $operation['configurable']) {
+    $form_state['values'] += $form_state['storage'][VIEWS_BULK_OPS_STEP_CONFIG];
+    $params = _views_bulk_operations_action_submit($operation, $form, $form_state);
   }
-  else { // type == 'node'
-    $nodes = array_filter($nodes);
-    if (isset($operation['callback arguments'])) {
-      $args = array_merge(array($nodes), $operation['callback arguments']);
+  else if ($operation['type'] == 'node' && isset($operation['callback arguments'])) {
+    $params = $operation['callback arguments'];
+  }
+  $nodes = array_filter($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['nodes']);
+  
+  // FIXME Hack to force actions_do() to process any number of invocations. 
+  // Check http://drupal.org/node/148410#comment-946901 to understand more.
+  variable_set('actions_max_stack', 10000000);
+  if ($plugin->options['use_batch']) {
+    $operations = array();
+    foreach ($nodes as $nid) {
+      $operations[] = array('_views_bulk_operations_batch_process', array($operation, $nid, $params));
     }
-    else {
-      $args = array($nodes);
+    $batch = array(
+      'operations' => $operations,
+      'finished' => '_views_bulk_operations_batch_finished',
+      'title' => t('Performing %action on selected nodes...', array('%action' => $operation['label'])),
+      'init_message' => t('starting batch process.'),
+      'progress_message' => t('processed @current out of @total.'),
+      'error_message' => t('batch process has encountered an error.'),
+    );  
+    batch_set($batch);
+  }
+  else {
+    $context = array();
+    foreach ($nodes as $nid) {
+      _views_bulk_operations_batch_process($operation, $nid, $params, $context);
     }
-    call_user_func_array($operation['callback'], $args);
-    drupal_set_message(t('Performed %action on nodes %nid.', array('%action' => $operation['label'], '%nid' => implode(',', $nodes))));
+    _views_bulk_operations_batch_finished(TRUE, $context['results'], array());
   }
 
   unset($form_state['storage']);
   $form_state['redirect'] = $_GET['q'];
+}
+
+function _views_bulk_operations_batch_process($operation, $nid, $params, &$context) {
+  $node = node_load($nid);
+  if ($operation['type'] == 'action') {
+    _views_bulk_operations_action_do($operation, $node, $params);
+  }
+  else { // type == 'node'
+    $args = array_merge(array(array($nid)), $params);
+    call_user_func_array($operation['callback'], $args);
+  }
+  $context['results'][] = t('Performed %action on node %title.', array('%action' => $operation['label'], '%title' => $node->title));
+}
+
+function _views_bulk_operations_batch_finished($success, $results, $operations) {
+  if ($success) {
+    // Here we do something meaningful with the results.
+    $message = count($results) .' nodes processed:';
+    $message .= theme('item_list', $results);
+  }
+  else {
+    // An error occurred.
+    // $operations contains the operations that remained unprocessed.
+    $error_operation = reset($operations);
+    $message = 'An error occurred while processing '. $error_operation[0] .' with arguments: '. print_r($error_operation[0], TRUE);
+  }
+  variable_set('actions_max_stack', 35);
+  drupal_set_message($message);
 }
 
 function _views_bulk_operations_action_form($action) {
@@ -421,6 +460,7 @@ function views_bulk_operations_views_default_views() {
       ),
     ),
     'default' => '-1',
+    'use_batch' => 0,
     'selected_operations' => array(
     ),
   ));
@@ -436,7 +476,7 @@ function views_bulk_operations_views_default_views() {
     'title' => '',
     'weight' => 0,
   ));
-  
+
   $views[$view->name] = $view;
   return $views;
 }
