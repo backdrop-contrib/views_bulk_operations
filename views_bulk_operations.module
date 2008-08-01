@@ -78,7 +78,12 @@ function views_bulk_operations_form($form_state, $plugin) {
   drupal_add_css(drupal_get_path('module', 'views_bulk_operations') . '/views_bulk_operations.css', 'module');
 
   if (!isset($form_state['storage']['step'])) {
-    $step = VIEWS_BULK_OPS_STEP_VIEW;
+    if (count($plugin->get_selected_operations()) == 1) {
+      $step = VIEWS_BULK_OPS_STEP_SINGLE;
+    }
+    else {
+      $step = VIEWS_BULK_OPS_STEP_VIEW;
+    }
   } else switch ($form_state['storage']['step']) {
   case VIEWS_BULK_OPS_STEP_VIEW:
     $operation = $plugin->get_operation_info($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['action']);
@@ -89,6 +94,7 @@ function views_bulk_operations_form($form_state, $plugin) {
       $step = VIEWS_BULK_OPS_STEP_CONFIRM;
     }
     break;
+  case VIEWS_BULK_OPS_STEP_SINGLE:
   case VIEWS_BULK_OPS_STEP_CONFIG:
     $step = VIEWS_BULK_OPS_STEP_CONFIRM;
   }
@@ -124,6 +130,34 @@ function views_bulk_operations_form($form_state, $plugin) {
       '#suffix' => '</div>',             
     );
     break;
+  case VIEWS_BULK_OPS_STEP_SINGLE:
+    $ops = array_keys($plugin->get_selected_operations());
+    $operation = $plugin->get_operation_info($ops[0]);
+    $form['action'] = array('#type' => 'value', '#value' => $ops[0]);
+    if ($operation['configurable']) {
+      $form['select'] = array(
+        '#type' => 'fieldset',
+        '#title' => $operation['label'],
+        '#prefix' => '<div id="views-bulk-operations-select">',
+        '#suffix' => '</div>',
+      );
+      $form['select'] += _views_bulk_operations_action_form($operation);
+    }
+    $form['nodes'] = array(
+      '#type' => 'views_node_selector',
+      '#view' => $plugin->view,
+      // Sets for grouping.
+      '#sets' => $plugin->sets,
+      '#prefix' => '<div class="views-node-selector">',
+      '#suffix' => '</div>',
+    );
+    $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => $operation['label'],
+      '#prefix' => '<div id="views-bulk-operations-submit">',
+      '#suffix' => '</div>',             
+    );
+    break;
   case VIEWS_BULK_OPS_STEP_CONFIG:
     $operation = $plugin->get_operation_info($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['action']);
     $form += _views_bulk_operations_action_form($operation);
@@ -154,6 +188,14 @@ function views_bulk_operations_form_validate($form, &$form_state) {
       form_set_error('action', t('No operation selected. Please select an operation to perform.'));
     }
     break;
+  case VIEWS_BULK_OPS_STEP_SINGLE:
+    if (!array_sum($form_state['values']['nodes'])) { // If all 0, no node selected
+      form_set_error('nodes', t('No nodes selected. Please select one or more nodes.'));
+    }
+    $plugin = $form_state['values']['plugin'];
+    $operation = $plugin->get_operation_info($form_state['values']['action']);
+    _views_bulk_operations_action_validate($operation, $form, $form_state);
+    break; 
   case VIEWS_BULK_OPS_STEP_CONFIG:
     $plugin = $form_state['values']['plugin'];
     $operation = $plugin->get_operation_info($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['action']);
@@ -167,6 +209,11 @@ function views_bulk_operations_form_submit($form, &$form_state) {
   case VIEWS_BULK_OPS_STEP_VIEW:
     $form_state['storage']['step'] = $form_state['values']['step'];
     $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW] = $form_state['values'];
+    return;
+  case VIEWS_BULK_OPS_STEP_SINGLE:
+    $form_state['storage']['step'] = $form_state['values']['step'];
+    $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW] = $form_state['values'];
+    $form_state['storage'][VIEWS_BULK_OPS_STEP_CONFIG] = $form_state['values'];
     return;
   case VIEWS_BULK_OPS_STEP_CONFIG:
     $form_state['storage']['step'] = $form_state['values']['step'];
