@@ -47,7 +47,16 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
     // We build the groups here to pass them to the node_selector function through the form.
     $sets = $this->render_grouping($this->view->result, $this->options['grouping']);
     $this->sets = $sets;
-    return drupal_get_form('views_bulk_operations_form', $this);
+
+    // Append suffix to avoid clashing between multiple VBOs on same page.
+    static $form_suffix;
+    if (isset($form_suffix)) {
+      $form_suffix++;
+    }
+    else {
+      $form_suffix = 1;
+    }
+    return drupal_get_form('views_bulk_operations_form_' . $form_suffix, $this);
   }
 
   function get_selected_operations() {

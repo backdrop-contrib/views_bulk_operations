@@ -175,6 +175,9 @@ function views_bulk_operations_form($form_state, $plugin) {
       $query ? array('path' => $_GET['q'], 'query' => $query) : array('path' => $_GET['q']),
       theme('views_bulk_operations_confirmation', array_filter($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['nodes']))); 
   }
+ 
+  // Use views_bulk_operations_form_submit() for form submit, regardless of form_id.
+  $form['#submit'][] = 'views_bulk_operations_form_submit';
   return $form;
 }
 
@@ -479,5 +482,24 @@ function views_bulk_operations_views_default_views() {
 
   $views[$view->name] = $view;
   return $views;
+}
+
+/**
+ * hook_forms() implementation
+ * force each instance of function to use the
+ * same callback
+ */
+function views_bulk_operations_forms() {
+  // Get the form ID
+  $args = func_get_args();
+  $form_id = $args[0];
+  // Ensure we map a callback for our form and not something else
+  $forms = array();
+  if (strpos($form_id, 'views_bulk_operations_form') === 0) {
+    // Let the forms API know where to get the form data corresponding
+    // to this form id.
+    $forms[$form_id] = array('callback' => 'views_bulk_operations_form');
+  }
+  return $forms;
 }
 
