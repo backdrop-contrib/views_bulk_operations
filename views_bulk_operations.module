@@ -10,6 +10,8 @@ define('VIEWS_BULK_OPS_STEP_SINGLE', 4);
 // confirmation page.
 define('VIEWS_BULK_OPS_MAX_CONFIRM_NODES', 10);
 
+include_once(drupal_get_path('module', 'views_bulk_operations') .'/taxonomy_actions.inc');
+
 function views_bulk_operations_elements() {
   $type['views_node_selector'] = array(
     '#input' => TRUE,
