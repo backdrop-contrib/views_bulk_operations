@@ -42,7 +42,7 @@ function taxonomy_action_form($context) {
     '#type' => 'checkbox',
     '#title' => t('Replace existing terms'),
     '#default_value' => FALSE,
-    '#description' => t('Check this box to replace existing terms with selected ones. Leave unchecked to add the new terms.'),
+    '#description' => t('Check this box to delete existing terms before adding the selected ones. Leave unchecked to just add the new terms over existing ones.'),
   );
   return $form;
 }

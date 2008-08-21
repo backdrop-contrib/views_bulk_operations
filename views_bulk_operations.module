@@ -170,7 +170,8 @@ function views_bulk_operations_form($form_state, $plugin) {
       '#value' => t('Next'),
     );
     drupal_set_title(t('Set parameters for \'%action\'', array('%action' => $operation['label'])));
-    $plugin->view->pager['use_pager'] = FALSE; 
+    $plugin->view->pager['use_pager'] = FALSE;
+    $plugin->view->exposed_widgets = NULL;
     break;
   
   case VIEWS_BULK_OPS_STEP_CONFIRM:
@@ -181,6 +182,7 @@ function views_bulk_operations_form($form_state, $plugin) {
       $query ? array('path' => $_GET['q'], 'query' => $query) : array('path' => $_GET['q']),
       theme('views_bulk_operations_confirmation', array_filter($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['nodes']))); 
     $plugin->view->pager['use_pager'] = FALSE;
+    $plugin->view->exposed_widgets = NULL;
     break;
   }
  
@@ -430,13 +432,98 @@ function views_bulk_operations_views_default_views() {
       'field' => 'edit_node',
     ),
   ));
+  $handler->override_option('filters', array(
+    'type' => array(
+      'operator' => 'in',
+      'value' => array(),
+      'group' => '0',
+      'exposed' => TRUE,
+      'expose' => array(
+        'use_operator' => 0,
+        'operator' => 'type_op',
+        'identifier' => 'type',
+        'label' => 'Node: Type',
+        'optional' => 1,
+        'single' => 1,
+        'remember' => 0,
+        'reduce' => 0,
+      ),
+      'id' => 'type',
+      'table' => 'node',
+      'field' => 'type',
+      'override' => array(
+        'button' => 'Override',
+      ),
+      'relationship' => 'none',
+    ),
+    'promote' => array(
+      'operator' => '=',
+      'value' => '1',
+      'group' => '0',
+      'exposed' => TRUE,
+      'expose' => array(
+        'operator' => '',
+        'identifier' => 'promote',
+        'label' => 'Promoted to front page',
+        'optional' => 1,
+        'remember' => 0,
+      ),
+      'id' => 'promote',
+      'table' => 'node',
+      'field' => 'promote',
+      'override' => array(
+        'button' => 'Override',
+      ),
+      'relationship' => 'none',
+    ),
+    'status' => array(
+      'operator' => '=',
+      'value' => '1',
+      'group' => '0',
+      'exposed' => TRUE,
+      'expose' => array(
+        'operator' => '',
+        'identifier' => 'status',
+        'label' => 'Published',
+        'optional' => 1,
+        'remember' => 0,
+      ),
+      'id' => 'status',
+      'table' => 'node',
+      'field' => 'status',
+      'override' => array(
+        'button' => 'Override',
+      ),
+      'relationship' => 'none',
+    ),
+    'sticky' => array(
+      'operator' => '=',
+      'value' => '1',
+      'group' => '0',
+      'exposed' => TRUE,
+      'expose' => array(
+        'operator' => '',
+        'identifier' => 'sticky',
+        'label' => 'Sticky',
+        'optional' => 1,
+        'remember' => 0,
+      ),
+      'id' => 'sticky',
+      'table' => 'node',
+      'field' => 'sticky',
+      'override' => array(
+        'button' => 'Override',
+      ),
+      'relationship' => 'none',
+    ),
+  ));
   $handler->override_option('access', array(
     'type' => 'none',
     'role' => array(),
     'perm' => '',
   ));
   $handler->override_option('title', 'Content');
-  $handler->override_option('items_per_page', 0);
+  $handler->override_option('use_pager', '1');
   $handler->override_option('style_plugin', 'bulk');
   $handler->override_option('style_options', array(
     'grouping' => '',
@@ -488,6 +575,7 @@ function views_bulk_operations_views_default_views() {
     'title' => '',
     'weight' => 0,
   ));
+
 
   $views[$view->name] = $view;
   return $views;
