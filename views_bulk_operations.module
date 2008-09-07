@@ -33,12 +33,14 @@ function views_bulk_operations_theme() {
 }
 
 function theme_views_node_selector($element) {
+  drupal_add_js(drupal_get_path('module', 'views_bulk_operations').'/views_bulk_operations.js');
+
   $view = $element['#view'];
   $sets = $element['#sets'];
 
   $vars = array(
     'view' => $view,
-    );
+  );
 
   $output = '';
   // Give each group its own headers row.
@@ -59,8 +61,24 @@ function theme_views_node_selector($element) {
       $row[] =  theme('checkbox', $element[$node->nid]);
       $rows[] = array_merge($row, $vars['rows'][$num]) ;
     }
+  
+    // Add the first row as option to select all records across all pages.
+    if ($view->pager['use_pager']) {
+      $row = array(
+        array(
+          'data' => '<span id="vbo-this-page">'. t('All <strong>!nodes</strong> nodes on this page are selected.', array('!nodes' => count($records)))
+            .'&nbsp;<input type="button" id="vbo-select-all-pages" value="'. t('Select all !nodes nodes in this view.', array('!nodes' => $view->total_rows)) .'" /></span>'
+            .'<span id="vbo-all-pages" style="display: none">'. t('All <strong>!nodes</strong> nodes in this view are selected.', array('!nodes' => $view->total_rows))
+            .'&nbsp;<input type="button" id="vbo-select-this-page" value="'. t('Select only !nodes nodes on this page.', array('!nodes' => count($records))) .'" /></span>',
+          'class' => 'view-field view-field-select-all',
+          'colspan' => count($headers) + 1,
+        ),
+      );
+      array_unshift($rows, $row);
+    }
 
     $output .= theme('table', $headers, $rows);
+    $output .= theme('hidden', $element['select_all']);
   }
   return theme('form_element', $element, $output);
 }
@@ -73,6 +91,11 @@ function views_node_selector_process($element, $edit) {
   }
   $element['#options'] = $options;
   $element = expand_checkboxes($element);
+
+  // Ummm unset the #options so that FAPI doesn't give me the "Illegal choice %choice in !name element" error.
+  unset($element['#options']);
+  $element['select_all'] = array('#type' => 'hidden');
+
   return $element; 
 }
 
@@ -177,10 +200,25 @@ function views_bulk_operations_form($form_state, $plugin) {
   case VIEWS_BULK_OPS_STEP_CONFIRM:
     $operation = $plugin->get_operation_info($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['action']);
     $query = drupal_query_string_encode($_GET, array('q'));
+    $selected = $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['nodes'];
+    if ($selected['select_all']) {
+      $selected = array();
+      $plugin->view->pager['use_pager'] = FALSE;
+      $plugin->view->pager['items_per_page'] = 0;
+      $plugin->view->executed = FALSE;
+      $plugin->view->built = FALSE;
+      $plugin->view->execute();
+      foreach ($plugin->view->result as $result) {
+        $selected[$result->nid] = $result->nid;
+      }
+    }
+    else {
+      unset($selected['select_all']);
+    }
     $form = confirm_form($form,
       t('Are you sure you want to perform \'%action\' on selected nodes?', array('%action' => $operation['label'])),
       $query ? array('path' => $_GET['q'], 'query' => $query) : array('path' => $_GET['q']),
-      theme('views_bulk_operations_confirmation', array_filter($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['nodes']))); 
+      theme('views_bulk_operations_confirmation', array_filter($selected))); 
     $plugin->view->pager['use_pager'] = FALSE;
     $plugin->view->exposed_widgets = NULL;
     break;
@@ -249,10 +287,24 @@ function views_bulk_operations_form_submit($form, &$form_state) {
   else if ($operation['type'] == 'node' && isset($operation['callback arguments'])) {
     $params = $operation['callback arguments'];
   }
-  $nodes = array_filter($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['nodes']);
+  $nodes = $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['nodes'];
+  if ($nodes['select_all']) {
+    $nodes = array();
+    $plugin->view->pager['use_pager'] = FALSE;
+    $plugin->view->pager['items_per_page'] = 0;
+    $plugin->view->executed = FALSE;
+    $plugin->view->built = FALSE;
+    $plugin->view->execute();
+    foreach ($plugin->view->result as $result) {
+      $nodes[$result->nid] = $result->nid;
+    }
+  }
+  else {
+    unset($nodes['select_all']);
+  }
   
   // FIXME Hack to force actions_do() to process any number of invocations. 
-  // Check http://drupal.org/node/148410#comment-946901 to understand more.
+  // Check http://drupal.org/node/290282 to understand more.
   variable_set('actions_max_stack', 10000000);
   if ($plugin->options['use_batch']) {
     $operations = array();

@@ -28,3 +28,10 @@
 .views-node-selector {
   clear: both;
 }
+
+/* Select All row */
+.view-field-select-all {
+  text-align: center;
+  display: none;
+}
+
