@@ -6,7 +6,7 @@ function views_bulk_operations_views_plugins() {
     'style' => array(
       'bulk' => array(
         'title' => t('Bulk Operations'),
-        'help' => t('Displays nodes with checkmarks for bulk actions.'),
+        'help' => t('Displays rows with checkmarks for bulk actions.'),
         'handler' => 'views_bulk_operations_plugin_style',
         'uses row plugin' => FALSE,
         'uses fields' => TRUE,
@@ -29,7 +29,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
     parent::options_form($form, $form_values);
     $form['use_batch'] = array(
       '#type' => 'checkbox',
-      '#title' => t('Use Batch API to process selected nodes.'),
+      '#title' => t('Use Batch API to process selected rows.'),
       '#default_value' => $this->options['use_batch'],
     );
     $form['selected_operations'] = array(
@@ -73,8 +73,12 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
 
   private function get_operations_options() {
     $options = array();
+    $info = _views_bulk_operations_object_info_for_view($this->view);
+    if (!$info) return NULL;
     foreach ($this->options['all_operations'] as $key => $operation) {
-      $options[$key] = $operation['label'] .' ('. $operation['callback'] .')'; 
+      if ($operation['object'] == $info['type']) {
+        $options[$key] = $operation['label'] .' ('. $operation['callback'] .')'; 
+      }
     }
     return $options;
   }
@@ -91,24 +95,22 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
         'callback'           => $operation['callback'],
         'callback arguments' => $operation['callback arguments'],
         'configurable'       => false,
-        'type'               => 'node',                                                     
+        'type'               => 'node_operation',
+        'object'             => 'node',
       );
     }
     
     $action_operations = actions_list() + $this->get_custom_actions();
     foreach ($action_operations as $callback => $values) {
-      foreach (array('node', 'workflow', 'email') as $type) {
-        if (0 != strcasecmp($type, $values['type'])) continue;
-        $key = md5($values['description']);
-        $operations[$key] = array(
-          'label'              => $values['description'],
-          'callback'           => $callback,
-          'callback arguments' => $values['parameters'],
-          'configurable'       => $values['configurable'],
-          'type'               => 'action',
-        );
-        break; // out of inner, type-searching loop
-      }                                                                                                         
+      $key = md5($values['description']);
+      $operations[$key] = array(
+        'label'              => $values['description'],
+        'callback'           => $callback,
+        'callback arguments' => $values['parameters'],
+        'configurable'       => $values['configurable'],
+        'type'               => 'action',
+        'object'             => $values['type'],
+      );
     }
 
     $options['all_operations'] = $operations;
