@@ -14,7 +14,7 @@ Drupal.vboSelectAll = function() {
       setSelectAll(false);
     });
     jQuery('td input:checkbox', table).click(function() {
-      setSelectAll($('input#edit-nodes-select-all', form).attr('value') == 1);
+      setSelectAll($('input#edit-objects-select-all', form).attr('value') == 1);
     });
   });
 
@@ -25,17 +25,17 @@ Drupal.vboSelectAll = function() {
       if (all) {
         jQuery('span#vbo-this-page', tdSelectAll).css('display', 'none');
         jQuery('span#vbo-all-pages', tdSelectAll).css('display', 'inline');
-        jQuery('input#edit-nodes-select-all', form).attr('value', 1);
+        jQuery('input#edit-objects-select-all', form).attr('value', 1);
       }
       else {
         jQuery('span#vbo-this-page', tdSelectAll).css('display', 'inline');
         jQuery('span#vbo-all-pages', tdSelectAll).css('display', 'none');
-        jQuery('input#edit-nodes-select-all', form).attr('value', 0);
+        jQuery('input#edit-objects-select-all', form).attr('value', 0);
       }
     }
     else {
       jQuery('td.view-field-select-all', table).css('display', 'none');
-      jQuery('input#edit-nodes-select-all', form).attr('value', all ? 1 : 0);
+      jQuery('input#edit-objects-select-all', form).attr('value', all ? 1 : 0);
     }
   }
 }
