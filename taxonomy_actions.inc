@@ -1,15 +1,22 @@
 <?php
 
 function views_bulk_operations_action_info() {
-  return array(
-    'taxonomy_action' => array(
+  $actions['taxonomy_action'] = array(
+    'type' => 'node',
+    'description' => t('Modify node\'s taxonomy terms'),
+    'configurable' => TRUE,
+    'behavior' => array('changes_node_property'),
+    'hooks' => array(),
+  );
+  if (module_exists('og_actions')) {
+    $actions['og_add_group_vbo_action'] = array(
       'type' => 'node',
-      'description' => t('Modify node\'s taxonomy terms'),
+      'description' => t('Add post to the specified group (VBO #310542)'),
       'configurable' => TRUE,
-      'behavior' => array('changes_node_property'),
       'hooks' => array(),
-    ),
-  );                         
+    );
+  }
+  return $actions;
 }
 
 function taxonomy_action(&$node, $context) {
@@ -26,7 +33,7 @@ function taxonomy_action(&$node, $context) {
 function taxonomy_action_form($context) {
   foreach (taxonomy_get_vocabularies() as $vid => $vocabulary) {
     foreach (taxonomy_get_tree($vid) as $term) {
-      $terms[$term->tid] = $vocabulary->name.': '.$term->name;
+      $terms[$term->tid] = t($vocabulary->name).': '.t($term->name);
     }
   }
   $form['terms'] = array(
@@ -58,5 +65,18 @@ function taxonomy_action_validate($form, $form_state) {
   if (!$form_state['values']['replace'] && empty($form_state['values']['terms'])) {
     form_set_error('terms', t('You did not select any term nor did you choose to replace existing terms. Please select one or more terms.'));
   }
+}
+
+function og_add_group_vbo_action(&$node, $context) {
+  og_add_group_action($node, $context);
+  $node->og_groups = drupal_map_assoc($node->og_groups);
+}
+
+function og_add_group_vbo_action_form($context) {
+  return og_add_group_action_form($context);
+}
+
+function og_add_group_vbo_action_submit($form, $form_state) {
+  return og_add_group_action_submit($form, $form_state);
 }
 
