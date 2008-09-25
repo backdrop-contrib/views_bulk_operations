@@ -53,7 +53,12 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
   }
 
   function get_operation_info($key) {
-    return $this->options['all_operations'][$key];
+    $operation = $this->options['all_operations'][$key];
+    if ($operation['object'] == 'system') { // System actions: morph them into current view type
+      $info = _views_bulk_operations_object_info_for_view($this->view);
+      $operation['object'] = $info['type'];
+    }
+    return $operation;
   }
 
   private function get_operations_options() {
