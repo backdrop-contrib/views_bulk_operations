@@ -61,6 +61,9 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
     $info = _views_bulk_operations_object_info_for_view($this->view);
     if (!$info) return NULL;
     foreach ($this->options['all_operations'] as $key => $operation) {
+      if ($operation['object'] == 'system') { // System actions: morph them into current view type
+        $operation['object'] = $info['type'];
+      }
       if ($operation['object'] == $info['type']) {
         $options[$key] = $operation['label'] .' ('. $operation['callback'] .')'; 
       }
