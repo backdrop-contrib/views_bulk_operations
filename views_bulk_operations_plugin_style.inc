@@ -82,7 +82,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
     $node_operations = module_invoke_all('node_operations');
     foreach ($node_operations as $operation) {
       if (empty($operation['callback'])) continue;
-      $key = md5($operation['label']);
+      $key = md5($operation['callback']);
       $operations[$key] = array(
         'label'              => $operation['label'],
         'callback'           => $operation['callback'],
@@ -95,7 +95,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
     
     $action_operations = actions_list() + $this->get_custom_actions();
     foreach ($action_operations as $callback => $values) {
-      $key = md5($values['description']);
+      $key = md5($callback);
       $operations[$key] = array(
         'label'              => $values['description'],
         'callback'           => $callback,
