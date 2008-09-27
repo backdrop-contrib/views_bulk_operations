@@ -140,12 +140,6 @@ function views_bulk_operations_form($form_state, $plugin) {
       '#prefix' => '<div id="views-bulk-operations-select">',
       '#suffix' => '</div>',             
     );
-    $form['select']['action'] = array(
-      '#type' => 'select',
-      '#options' => array(0 => t('- Choose an operation -')) + $plugin->get_selected_operations(),
-      '#prefix' => '<div id="views-bulk-operations-dropdown">',
-      '#suffix' => '</div>',             
-    );
     $form['objects'] = array(
       '#type' => 'views_node_selector',
       '#view' => $plugin->view,
@@ -154,12 +148,31 @@ function views_bulk_operations_form($form_state, $plugin) {
       '#prefix' => '<div class="views-node-selector">',
       '#suffix' => '</div>',
     );
-    $form['select']['submit'] = array(
-      '#type' => 'submit',
-      '#value' => t('Execute'),
-      '#prefix' => '<div id="views-bulk-operations-submit">',
-      '#suffix' => '</div>',             
-    );
+    if ($plugin->options['display_type'] == 0) {
+      // Create dropdown and submit button.
+      $form['select']['action'] = array(
+        '#type' => 'select',
+        '#options' => array(0 => t('- Choose an operation -')) + $plugin->get_selected_operations(),
+        '#prefix' => '<div id="views-bulk-operations-dropdown">',
+        '#suffix' => '</div>',             
+      );
+      $form['select']['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Execute'),
+        '#prefix' => '<div id="views-bulk-operations-submit">',
+        '#suffix' => '</div>',             
+      );
+    }
+    else {
+      // Create buttons for actions.
+      foreach ($plugin->get_selected_operations() as $md5 => $description) {
+        $form['select'][$md5] = array(
+          '#type' => 'submit',
+          '#value' => $description,
+          '#hash' => $md5,
+        );
+      }
+    }
     break;
   
   case VIEWS_BULK_OPS_STEP_SINGLE:
@@ -241,6 +254,9 @@ function views_bulk_operations_form_validate($form, &$form_state) {
   case VIEWS_BULK_OPS_STEP_VIEW:
     if (!array_sum($form_state['values']['objects'])) { // If all 0, no row selected
       form_set_error('objects', t('No row selected. Please select one or more rows.'));
+    }
+    if (!empty($form_state['clicked_button']['#hash'])) {
+      $form_state['values']['action'] = $form_state['clicked_button']['#hash'];
     }
     if (!$form_state['values']['action']) { // No action selected
       form_set_error('action', t('No operation selected. Please select an operation to perform.'));

@@ -7,6 +7,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
     parent::options($options);
     $options['selected_operations'] = array();
     $options['use_batch'] = TRUE;
+    $options['display_type'] = 0;
     $this->populate_operations($options);
   }
 
@@ -16,6 +17,15 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
       '#type' => 'checkbox',
       '#title' => t('Use Batch API to process selected rows.'),
       '#default_value' => $this->options['use_batch'],
+    );
+    $form['display_type'] = array(
+      '#type' => 'radios',
+      '#title' => t('Display operations as'),
+      '#default_value' => $this->options['display_type'],
+      '#options' => array(
+        t('Dropdown selectbox with Submit button'),
+        t('Each action as a separate button'),
+      ),
     );
     $form['selected_operations'] = array(
       '#type' => 'checkboxes',
