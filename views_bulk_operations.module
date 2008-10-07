@@ -410,7 +410,7 @@ function _views_bulk_operations_batch_process($operation, $oid, $params, &$conte
   if ($operation['type'] == 'action') {
     _views_bulk_operations_action_do($operation, $object, $params);
   }
-  else { // type == 'node_operation'
+  else { // type == 'node_operation' || type == 'user_operation'
     $args = array_merge(array(array($oid)), $params);
     call_user_func_array($operation['callback'], $args);
   }
