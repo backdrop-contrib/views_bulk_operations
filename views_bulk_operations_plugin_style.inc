@@ -96,7 +96,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
       $operations[$key] = array(
         'label'              => $operation['label'],
         'callback'           => $operation['callback'],
-        'callback arguments' => $operation['callback arguments'],
+        'callback arguments' => isset($operation['callback arguments']) ? $operation['callback arguments'] : '',
         'configurable'       => false,
         'type'               => 'node_operation',
         'object'             => 'node',
@@ -110,7 +110,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
       $operations[$key] = array(
         'label'              => $operation['label'],
         'callback'           => $operation['callback'],
-        'callback arguments' => $operation['callback arguments'],
+        'callback arguments' => isset($operation['callback arguments']) ? $operation['callback arguments'] : '',
         'configurable'       => false,
         'type'               => 'user_operation',
         'object'             => 'user',
@@ -123,7 +123,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
       $operations[$key] = array(
         'label'              => $values['description'],
         'callback'           => $callback,
-        'callback arguments' => $values['parameters'],
+        'callback arguments' => isset($values['parameters']) ? $values['parameters'] : array(),
         'configurable'       => $values['configurable'],
         'type'               => 'action',
         'object'             => $values['type'],
@@ -141,7 +141,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
         'description' => $action->description,
         'type' => $action->type,
         'configurable' => FALSE,
-        'parameters' => $actions->parameters,
+        'parameters' => $action->parameters,
       );
     }
     return $actions;
