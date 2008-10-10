@@ -114,7 +114,7 @@ function views_bulk_operations_views_default_views() {
     ),
     'promote' => array(
       'operator' => '=',
-      'value' => '1',
+      'value' => 'All',
       'group' => '0',
       'exposed' => TRUE,
       'expose' => array(
@@ -134,7 +134,7 @@ function views_bulk_operations_views_default_views() {
     ),
     'status' => array(
       'operator' => '=',
-      'value' => '1',
+      'value' => 'All',
       'group' => '0',
       'exposed' => TRUE,
       'expose' => array(
@@ -154,7 +154,7 @@ function views_bulk_operations_views_default_views() {
     ),
     'sticky' => array(
       'operator' => '=',
-      'value' => '1',
+      'value' => 'All',
       'group' => '0',
       'exposed' => TRUE,
       'expose' => array(
