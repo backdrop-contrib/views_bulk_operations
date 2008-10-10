@@ -537,6 +537,18 @@ function views_bulk_operations_forms() {
   return $forms;
 }
 
+/**
+ * Implementation of hook_object_info()
+ *
+ * Hook used by VBO to be able to handle different objects as does Views 2.
+ *
+ * The array returned for each object type contains:
+ *  'type' => the object type name, should be the same as 'type' field in actions. 
+ *  'base_table' => the Views 2 table name corresponding to that object type, should be the same as the $view->base_table attribute.
+ *  'load' => a function that given a $id, loads the corresponding object
+ *  'title' => an attribute on the object that returns a human-friendly identifier of the object.
+ *
+ */
 function views_bulk_operations_object_info() {
   return array(
     'node' => array(
