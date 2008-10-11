@@ -16,7 +16,10 @@ is applied on each selected node.
 ********************************************************************
 USAGE:
 
-After activating the views_bulk_operations module, Create a new (page) view
-and select "Bulk Operations View" as the view type. You will see a view
-form similar to that of admin/content/node.
+**YOU SHOULD BE FAMILIAR WITH CREATING VIEWS IN DRUPAL 6**
+
+After activating the views_bulk_operations module, create a new view 
+of any type (VBO currently supports node, user and comment). In the
+view admin page, modify the Style attribute of the Basic Settings to
+"Bulk Operations". You then need to select the fields you want displayed.
 
