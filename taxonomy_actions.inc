@@ -18,7 +18,7 @@ function taxonomy_action(&$node, $context) {
     $terms[$tid] = taxonomy_get_term($tid);
   }
   if (!$context['replace']) {
-    $terms = array_merge($terms, taxonomy_node_get_terms($node->nid));
+    $terms = array_merge($terms, taxonomy_node_get_terms($node));
   }
   $node->taxonomy = $terms;
 }
