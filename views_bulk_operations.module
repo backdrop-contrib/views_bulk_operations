@@ -347,12 +347,14 @@ function views_bulk_operations_form_submit($form, &$form_state) {
   $plugin = $form_state['values']['plugin'];
   $operation = $plugin->get_operation_info($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['action']);
   $params = array();
-  if ($operation['type'] == 'action' && $operation['configurable']) {
+  if ($operation['configurable']) {
     $form_state['values'] += $form_state['storage'][VIEWS_BULK_OPS_STEP_CONFIG];
-    $params = _views_bulk_operations_action_submit($operation, $form, $form_state);
+    $params += _views_bulk_operations_action_submit($operation, $form, $form_state);
   }
-  else if ($operation['type'] != 'action' && isset($operation['callback arguments'])) {
-    $params = $operation['callback arguments'];
+  // Add static callback arguments. Note that in the case of actions, static arguments
+  // are picked up from the database in actions_do().
+  if ($operation['type'] == 'operation' && isset($operation['callback arguments'])) {
+    $params += $operation['callback arguments'];
   }
   $objects = array_filter($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['objects']);
   if ($objects['select_all']) {
@@ -389,9 +391,12 @@ function views_bulk_operations_form_submit($form, &$form_state) {
     batch_set($batch);
   }
   else {
-    $context = array();
-    foreach ($objects as $oid) {
-      _views_bulk_operations_batch_process($operation, $oid, $params, $context);
+    $context['results']['rows'] = 0;
+    if ($operation['type'] == 'action') {
+      _views_bulk_operations_action_process($operation, $objects, $params, $context);
+    }
+    else {
+      _views_bulk_operations_operation_process($operation, $objects, $params, $context);
     }
     _views_bulk_operations_batch_finished(TRUE, $context['results'], array());
   }
@@ -401,7 +406,7 @@ function views_bulk_operations_form_submit($form, &$form_state) {
 }
 
 /**
- * Batch callback for batched operations.
+ * Callback for Bacth API operations.
  */
 function _views_bulk_operations_batch_process($operation, $oid, $params, &$context) {
   $info = _views_bulk_operations_object_info_for_type($operation['object']);
@@ -410,11 +415,36 @@ function _views_bulk_operations_batch_process($operation, $oid, $params, &$conte
   if ($operation['type'] == 'action') {
     _views_bulk_operations_action_do($operation, $object, $params);
   }
-  else { // type == 'node_operation' || type == 'user_operation'
+  else { // type == 'operation'
     $args = array_merge(array(array($oid)), $params);
     call_user_func_array($operation['callback'], $args);
   }
-  $context['results'][] = t('Performed %action on object %title.', array('%action' => $operation['label'], '%title' => $object->{$info['title']}));
+  $context['results']['log'][] = t('Performed %action on object %title.', array('%action' => $operation['label'], '%title' => $object->{$info['title']}));
+  $context['results']['rows'] += 1;
+}
+
+/**
+ * Execute action on array of objects.
+ */
+function _views_bulk_operations_action_process($operation, $objects, $params, &$context) {
+  $info = _views_bulk_operations_object_info_for_type($operation['object']);
+  if (!$info) return;
+  foreach ($objects as $oid) {
+    $object = call_user_func($info['load'], $oid);
+    _views_bulk_operations_action_do($operation, $object, $params);
+    $context['results']['log'][] = t('Performed %action on object %title.', array('%action' => $operation['label'], '%title' => $object->{$info['title']}));
+    $context['results']['rows'] += 1;
+  }
+}
+
+/**
+ * Execute node (or user) operation on arrays of objects.
+ */
+function _views_bulk_operations_operation_process($operation, $objects, $params, &$context) {
+  $args = array_merge(array($objects), $params);
+  call_user_func_array($operation['callback'], $args);
+  $context['results']['log'][] = t('Performed %action on objects %oids.', array('%action' => $operation['label'], '%oids' => implode(',', $objects)));
+  $context['results']['rows'] += count($objects);
 }
 
 /**
@@ -423,8 +453,8 @@ function _views_bulk_operations_batch_process($operation, $oid, $params, &$conte
 function _views_bulk_operations_batch_finished($success, $results, $operations) {
   if ($success) {
     // Here we do something meaningful with the results.
-    $message = t('!results rows processed:', array('!results' => count($results)));
-    $message .= theme('item_list', $results);
+    $message = t('!results rows processed:', array('!results' => $results['rows']));
+    $message .= theme('item_list', $results['log']);
   }
   else {
     // An error occurred.

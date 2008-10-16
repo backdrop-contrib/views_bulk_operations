@@ -96,9 +96,9 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
       $operations[$key] = array(
         'label'              => $operation['label'],
         'callback'           => $operation['callback'],
-        'callback arguments' => isset($operation['callback arguments']) ? $operation['callback arguments'] : '',
-        'configurable'       => false,
-        'type'               => 'node_operation',
+        'callback arguments' => isset($operation['callback arguments']) ? $operation['callback arguments'] : array(),
+        'configurable'       => isset($operation['configurable']) ? $operation['configurable'] : false,
+        'type'               => 'operation',
         'object'             => 'node',
       );
     }
@@ -110,23 +110,23 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
       $operations[$key] = array(
         'label'              => $operation['label'],
         'callback'           => $operation['callback'],
-        'callback arguments' => isset($operation['callback arguments']) ? $operation['callback arguments'] : '',
-        'configurable'       => false,
-        'type'               => 'user_operation',
+        'callback arguments' => isset($operation['callback arguments']) ? $operation['callback arguments'] : array(),
+        'configurable'       => isset($operation['configurable']) ? $operation['configurable'] : false,
+        'type'               => 'operation',
         'object'             => 'user',
       );
     }
 
     $action_operations = actions_list() + $this->get_custom_actions();
-    foreach ($action_operations as $callback => $values) {
-      $key = md5($callback . $values['description']);
+    foreach ($action_operations as $callback => $operation) {
+      $key = md5($callback . $operation['description']);
       $operations[$key] = array(
-        'label'              => $values['description'],
+        'label'              => $operation['description'],
         'callback'           => $callback,
-        'callback arguments' => isset($values['parameters']) ? $values['parameters'] : array(),
-        'configurable'       => $values['configurable'],
+        'callback arguments' => isset($operation['parameters']) ? $operation['parameters'] : array(),
+        'configurable'       => $operation['configurable'],
         'type'               => 'action',
-        'object'             => $values['type'],
+        'object'             => $operation['type'],
       );
     }
 

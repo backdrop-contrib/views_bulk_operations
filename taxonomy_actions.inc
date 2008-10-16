@@ -13,6 +13,11 @@ function views_bulk_operations_action_info() {
 }
 
 function taxonomy_action(&$node, $context) {
+  if (empty($context['terms']) && $context['replace']) { // Just delete terms
+    taxonomy_node_delete($node);
+    $node->taxonomy = array();
+    return;
+  }
   $terms = array();
   foreach ($context['terms'] as $tid) {
     $terms[$tid] = taxonomy_get_term($tid);
