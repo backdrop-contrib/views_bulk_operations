@@ -127,6 +127,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
         'configurable'       => $operation['configurable'],
         'type'               => 'action',
         'object'             => $operation['type'],
+        'aggregate'          => $operation['aggregate'],
       );
     }
 

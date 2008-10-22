@@ -9,7 +9,16 @@ function views_bulk_operations_action_info() {
       'behavior' => array('changes_node_property'),
       'hooks' => array(),
     ),
-  );                         
+    'test_aggregate_action' => array(
+      'type' => 'node',
+      'description' => t('Test "aggregate" action'),
+      'aggregate' => TRUE,
+    ),
+  );   
+}
+
+function test_aggregate_action(&$nodes, $context) {
+  var_dump($nodes);
 }
 
 function taxonomy_action(&$node, $context) {
