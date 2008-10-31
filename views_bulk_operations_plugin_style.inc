@@ -1,22 +1,33 @@
 <?php
 // $Id$
 
+define('VBO_EXECUTION_DIRECT', 1);
+define('VBO_EXECUTION_BATCH', 2);
+define('VBO_EXECUTION_QUEUE', 3);
 
 class views_bulk_operations_plugin_style extends views_plugin_style_table {
   function options(&$options) {
     parent::options($options);
     $options['selected_operations'] = array();
-    $options['use_batch'] = TRUE;
+    $options['execution_type'] = VBO_EXECUTION_DIRECT;
     $options['display_type'] = 0;
     $this->populate_operations($options);
   }
 
   function options_form(&$form, &$form_values) {
     parent::options_form($form, $form_values);
-    $form['use_batch'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Use Batch API to process selected rows.'),
-      '#default_value' => $this->options['use_batch'],
+    $execution = array(
+      VBO_EXECUTION_DIRECT => t('Invoke them directly'),
+      VBO_EXECUTION_BATCH => t('Use Batch API'),
+    );
+    if (module_exists('job_queue')) {
+      $execution[VBO_EXECUTION_QUEUE] = t('Use <a href="@jobqueue">Job Queue</a>', array('@jobqueue' => url('http://drupal.org/project/job_queue'))); 
+    }
+    $form['execution_type'] = array(
+      '#type' => 'radios',
+      '#title' => t('To execute operations'),
+      '#default_value' => $this->options['execution_type'],
+      '#options' => $execution,
     );
     $form['display_type'] = array(
       '#type' => 'radios',

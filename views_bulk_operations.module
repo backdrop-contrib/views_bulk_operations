@@ -375,7 +375,7 @@ function views_bulk_operations_form_submit($form, &$form_state) {
   // FIXME Hack to force actions_do() to process any number of invocations. 
   // Check http://drupal.org/node/290282 to understand more.
   variable_set('actions_max_stack', 10000000);
-  if ($plugin->options['use_batch']) {
+  if ($plugin->options['execution_type'] == VBO_EXECUTION_BATCH) {
     $operations = array();
     foreach ($objects as $oid) {
       $operations[] = array('_views_bulk_operations_batch_process', array($operation, $oid, $params));
@@ -390,7 +390,7 @@ function views_bulk_operations_form_submit($form, &$form_state) {
     );  
     batch_set($batch);
   }
-  else {
+  else if ($plugin->options['execution_type'] == VBO_EXECUTION_DIRECT) {
     $context['results']['rows'] = 0;
     if ($operation['type'] == 'action') {
       _views_bulk_operations_action_process($operation, $objects, $params, $context);
@@ -400,6 +400,15 @@ function views_bulk_operations_form_submit($form, &$form_state) {
     }
     _views_bulk_operations_batch_finished(TRUE, $context['results'], array());
   }
+  else if (module_exists('job_queue') && $plugin->options['execution_type'] == VBO_EXECUTION_QUEUE) {
+    foreach ($objects as $oid) {
+      job_queue_add('_views_bulk_operations_batch_process', 
+        t('Perform %action on object %oid.', array('%action' => $operation['label'], '%oid' => $oid)), 
+        array($operation, $oid, $params));
+    }
+    drupal_set_message(t('Enqueued %action on objects %oid. Check the <a href="@queue">queued jobs page</a>.',
+      array('%action' => $operation['label'], '%oid' => implode(', ', $objects), '@queue' => url('admin/reports/job_queue'))));
+  }
 
   unset($form_state['storage']);
   $form_state['redirect'] = $_GET['q'];
@@ -408,7 +417,7 @@ function views_bulk_operations_form_submit($form, &$form_state) {
 /**
  * Callback for Batch API operations.
  */
-function _views_bulk_operations_batch_process($operation, $oid, $params, &$context) {
+function _views_bulk_operations_batch_process($operation, $oid, $params, &$context = NULL) {
   $info = _views_bulk_operations_object_info_for_type($operation['object']);
   if (!$info) return;
   $object = call_user_func($info['load'], $oid);
@@ -419,8 +428,10 @@ function _views_bulk_operations_batch_process($operation, $oid, $params, &$conte
     $args = array_merge(array(array($oid)), $params);
     call_user_func_array($operation['callback'], $args);
   }
-  $context['results']['log'][] = t('Performed %action on object %title.', array('%action' => $operation['label'], '%title' => $object->{$info['title']}));
-  $context['results']['rows'] += 1;
+  if ($context) {
+    $context['results']['log'][] = t('Performed %action on object %title.', array('%action' => $operation['label'], '%title' => $object->{$info['title']}));
+    $context['results']['rows'] += 1;
+  }
 }
 
 /**
