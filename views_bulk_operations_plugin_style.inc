@@ -38,6 +38,12 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
         t('Each action as a separate button'),
       ),
     );
+    $form['skip_confirmation'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Skip confirmation step'),
+      '#description' => t('Check this box to skip the confirmation page on this view and directly execute the operation.'),
+      '#default_value' => $this->options['skip_confirmation'],
+    );
     $form['selected_operations'] = array(
       '#type' => 'checkboxes',
       '#title' => t('Selected operations'),
