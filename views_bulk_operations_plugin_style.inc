@@ -11,6 +11,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
     $options['selected_operations'] = array();
     $options['execution_type'] = VBO_EXECUTION_DIRECT;
     $options['display_type'] = 0;
+    $options['skip_confirmation'] = FALSE;
     $this->populate_operations($options);
   }
 
