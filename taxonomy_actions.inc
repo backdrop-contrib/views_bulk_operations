@@ -46,7 +46,7 @@ function taxonomy_action_form($context) {
     '#type' => 'select',
     '#title' => t('Terms'),
     '#options' => $terms,
-    '#default_value' => $context['terms'],
+    '#default_value' => NULL,
     '#multiple' => TRUE,
     '#size' => min(20, count($terms)),
     '#description' => t('Choose the terms you want to associate with the nodes.'),
