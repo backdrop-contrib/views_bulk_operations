@@ -30,6 +30,11 @@ function taxonomy_action(&$node, $context) {
       }
     } else {
       // add terms
+      foreach ($terms as $add_tid => $term) {
+        if (array_key_exists($add_tid, $existing_terms)) {
+          unset($terms[$add_tid]);
+        }
+      }
       $terms = array_merge($terms, $existing_terms);
     }
   }
