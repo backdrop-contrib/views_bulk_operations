@@ -76,14 +76,19 @@ function theme_views_node_selector($element) {
     template_preprocess_views_view_table($vars);
     
     // Add checkboxes to the header and the rows.
-    $checkbox_header = array(theme('table_select_header_cell'));
-    $headers = array_merge($checkbox_header, $vars['header']);
+    $headers[] = theme('table_select_header_cell');
+    foreach ($vars['header'] as $field => $label) {
+      $headers[] = array('data' => $label, 'class' => "views-field views-field-{$vars['fields'][$field]}");
+    }
     
     $rows = array();
     foreach ($records as $num => $object) {
       $row = array();
       $row[] =  theme('checkbox', $element[$object->{$view->base_field}]);
-      $rows[] = array_merge($row, $vars['rows'][$num]) ;
+      foreach ($vars['rows'][$num] as $field => $content) {
+        $row[] = array('data' => $content, 'class' => "views-field views-field-{$vars['fields'][$field]}");
+      }
+      $rows[] = $row;
     }
   
     // Add the first row as option to select all records across all pages.
@@ -101,7 +106,7 @@ function theme_views_node_selector($element) {
       array_unshift($rows, $row);
     }
 
-    $output .= theme('table', $headers, $rows);
+    $output .= theme('table', $headers, $rows, array('class' => $vars['class']));
     $output .= theme('hidden', $element['select_all']);
   }
   return theme('form_element', $element, $output);
