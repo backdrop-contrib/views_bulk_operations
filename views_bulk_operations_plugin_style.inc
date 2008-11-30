@@ -12,6 +12,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
     $options['execution_type'] = VBO_EXECUTION_DIRECT;
     $options['display_type'] = 0;
     $options['skip_confirmation'] = FALSE;
+    $options['display_result'] = TRUE;
     $this->populate_operations($options);
   }
 
@@ -44,6 +45,12 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
       '#title' => t('Skip confirmation step'),
       '#description' => t('Check this box to skip the confirmation page on this view and directly execute the operation.'),
       '#default_value' => $this->options['skip_confirmation'],
+    );
+    $form['display_result'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Display processing result'),
+      '#description' => t('Check this box to let Drupal display a message with the result of processing the selected objects.'),
+      '#default_value' => $this->options['display_result'],
     );
     $form['selected_operations'] = array(
       '#type' => 'checkboxes',

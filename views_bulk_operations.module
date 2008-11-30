@@ -396,13 +396,18 @@ function views_bulk_operations_form_submit($form, &$form_state) {
     foreach ($objects as $oid) {
       $operations[] = array('_views_bulk_operations_batch_process', array($operation, $oid, $params));
     }
+
+    // Save the option in the session because Batch API doesn't give a way to 
+    // send a parameter to the finished callback.
+    $_SESSION['vbo_display_result'] = $plugin->options['display_result']; 
+
     $batch = array(
       'operations' => $operations,
       'finished' => '_views_bulk_operations_batch_finished',
       'title' => t('Performing %action on selected rows...', array('%action' => $operation['label'])),
-      'init_message' => t('Starting batch process.'),
-      'progress_message' => t('Processed @current out of @total.'),
-      'error_message' => t('Batch process has encountered an error.'),
+      //'init_message' => t('Starting batch process.'),
+      //'progress_message' => t('Processed @current out of @total.'),
+      //'error_message' => t('Batch process has encountered an error.'),
     );  
     batch_set($batch);
   }
@@ -414,7 +419,7 @@ function views_bulk_operations_form_submit($form, &$form_state) {
     else {
       _views_bulk_operations_operation_process($operation, $objects, $params, $context);
     }
-    _views_bulk_operations_batch_finished(TRUE, $context['results'], array());
+    _views_bulk_operations_batch_finished(TRUE, $context['results'], array(), $plugin->options['display_result']);
   }
   else if (module_exists('job_queue') && $plugin->options['execution_type'] == VBO_EXECUTION_QUEUE) {
     foreach ($objects as $oid) {
@@ -422,8 +427,10 @@ function views_bulk_operations_form_submit($form, &$form_state) {
         t('Perform %action on object %oid.', array('%action' => $operation['label'], '%oid' => $oid)), 
         array($operation, $oid, $params));
     }
-    drupal_set_message(t('Enqueued %action on objects %oid. Check the <a href="@queue">queued jobs page</a>.',
-      array('%action' => $operation['label'], '%oid' => implode(', ', $objects), '@queue' => url('admin/reports/job_queue'))));
+    if ($plugin->options['display_result']) {
+      drupal_set_message(t('Enqueued %action on objects %oid. Check the <a href="@queue">queued jobs page</a>.',
+        array('%action' => $operation['label'], '%oid' => implode(', ', $objects), '@queue' => url('admin/reports/job_queue'))));
+    }
   }
 
   unset($form_state['storage']);
@@ -484,7 +491,7 @@ function _views_bulk_operations_operation_process($operation, $objects, $params,
 /**
  * Called when all batch operations are complete.
  */
-function _views_bulk_operations_batch_finished($success, $results, $operations) {
+function _views_bulk_operations_batch_finished($success, $results, $operations, $display_result = NULL) {
   if ($success) {
     // Here we do something meaningful with the results.
     $message = t('!results rows processed:', array('!results' => $results['rows']));
@@ -497,8 +504,11 @@ function _views_bulk_operations_batch_finished($success, $results, $operations) 
     $message = t('An error occurred while processing @operation with arguments: @arguments', 
       array('@operation' => $error_operation[0], '@arguments' => print_r($error_operation[0], TRUE)));
   }
-  variable_set('actions_max_stack', 35);
-  drupal_set_message($message);
+  variable_set('actions_max_stack', 35); // reset the action stack which was set for just one invocation
+  if ($display_result || $_SESSION['vbo_display_result']) {
+    drupal_set_message($message);
+    $_SESSION['vbo_display_result'] = FALSE; // reset the option which was ued for just one invocation
+  }
 }
 
 /**
