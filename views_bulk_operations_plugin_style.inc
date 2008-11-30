@@ -153,6 +153,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
         'type'               => 'action',
         'object'             => $operation['type'],
         'aggregate'          => $operation['aggregate'],
+        'modifies_object'    => isset($operation['behavior']) && in_array('changes_node_property', $operation['behavior']),
       );
     }
 
@@ -169,6 +170,8 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
         'configurable' => FALSE,
         'parameters' => $action->parameters,
       );
+      $static_actions = actions_list();
+      $actions[$action->aid]['behavior'] = $static_actions[$action->callback]['behavior'];
     }
     return $actions;
   }

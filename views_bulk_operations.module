@@ -541,7 +541,7 @@ function _views_bulk_operations_action_do($action, $object, $context) {
   $action_do = $action['callback'];
   $context[$action['object']] = $object; // Add the object to the context for token support
   actions_do($action_do, $object, $context);
-  if ($action['object'] == 'node') { // Special case: save nodes explicitly
+  if ($action['object'] == 'node' && $action['modifies_object']) { // Save nodes explicitly if needed
     node_save($object);
   }
 }
