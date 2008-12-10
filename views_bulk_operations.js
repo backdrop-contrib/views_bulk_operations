@@ -1,6 +1,8 @@
 // $Id$
 
-Drupal.vboSelectAll = function() {
+Drupal.vbo = Drupal.vbo || {};
+
+Drupal.vbo.selectAll = function() {
   var table = this;
   var form = jQuery(table).parents('form');
 
@@ -40,9 +42,16 @@ Drupal.vboSelectAll = function() {
   }
 }
 
+Drupal.vbo.ajaxViewResponse = function(target, response) {
+  jQuery('form[id^=views-bulk-operations-form]').each(function() {
+    jQuery(this).attr('action', Drupal.settings.basePath + Drupal.settings.vbo.url);
+  });
+  jQuery('form table th.select-all').parents('table').each(Drupal.vbo.selectAll);
+}
+
 if (Drupal.jsEnabled) {
   jQuery(document).ready(function() {
-    jQuery('form table th.select-all').parents('table').each(Drupal.vboSelectAll);
+    jQuery('form table th.select-all').parents('table').each(Drupal.vbo.selectAll);
   })
 }
 
