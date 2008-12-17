@@ -16,8 +16,6 @@ define('VIEWS_BULK_OPS_STEP_SINGLE', 4);
 // confirmation page.
 define('VIEWS_BULK_OPS_MAX_CONFIRM_NODES', 10);
 
-include_once(drupal_get_path('module', 'views_bulk_operations') .'/taxonomy_actions.inc');
-
 /**
  * Implementation of hook_views_api().
  */
@@ -572,28 +570,6 @@ function theme_views_bulk_operations_confirmation($objects, $view) {
 }
 
 /**
- * Implementation of hook_node_operations().
- */
-function views_bulk_operations_node_operations() {
-  $operations = array(
-    'bulk_delete' => array(
-      'label' => t('Delete'),
-      'callback' => 'views_bulk_operations_delete_nodes',
-    ),
-  );
-  return $operations;
-}
-
-/**
- * Define node deletion operation.
- */
-function views_bulk_operations_delete_nodes($nodes) {
-  foreach ($nodes as $nid) {
-    node_delete($nid);
-  }
-}
-
-/**
  * Implementation of hook_forms().
  * 
  * Force each instance of function to use the same callback.
@@ -686,14 +662,12 @@ function views_bulk_operations_requirements($phase) {
  */
 function views_bulk_operations_action_info() {
   $actions = array();
-  if (module_exists('taxonomy')) {
-    $actions['taxonomy_action'] = array(
-      'type' => 'node',
-      'description' => t('Modify node\'s taxonomy terms'),
-      'configurable' => TRUE,
-      'behavior' => array('changes_node_property'),
-      'hooks' => array(),
-    );
+  $files = file_scan_directory(drupal_get_path('module', 'views_bulk_operations'), '(.*).action.inc');
+  if ($files) foreach ($files as $file) {
+    require_once($file->filename);
+    $action_info_fn = str_replace('.', '_', basename($file->filename, '.inc')).'_info';
+    $action_info = call_user_func($action_info_fn);
+    if (is_array($action_info)) $actions += $action_info;
   }
   return $actions;
 }

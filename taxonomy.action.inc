@@ -4,6 +4,16 @@ define('TAXONOMY_ACTION_ADD', 0);
 define('TAXONOMY_ACTION_REPLACE', 1);
 define('TAXONOMY_ACTION_DELETE', 2);
 
+function taxonomy_action_info() {
+  if (!module_exists('taxonomy')) return array();
+  return array('taxonomy_action' => array(
+    'type' => 'node',
+    'description' => t('Modify node\'s taxonomy terms'),
+    'configurable' => TRUE,
+    'behavior' => array('changes_node_property'),
+  ));
+}
+
 function taxonomy_action(&$node, $context) {
   if (empty($context['terms']) && $context['do'] == TAXONOMY_ACTION_REPLACE) { // Just delete terms
     taxonomy_node_delete($node);
