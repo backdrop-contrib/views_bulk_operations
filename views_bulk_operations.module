@@ -56,6 +56,7 @@ function views_bulk_operations_theme() {
  */
 function theme_views_node_selector($element) {
   drupal_add_js(drupal_get_path('module', 'views_bulk_operations').'/views_bulk_operations.js');
+  require_once(drupal_get_path('module', 'views').'/theme/theme.inc');
 
   $view = $element['#view'];
   $sets = $element['#sets'];
