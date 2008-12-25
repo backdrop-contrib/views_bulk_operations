@@ -82,7 +82,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
   function get_selected_operations() {
     $selected = array();
     foreach (array_filter($this->options['selected_operations']) as $key => $operation) {
-      $selected[$key] = $this->options['all_operations'][$key]['label'];
+      $selected[$key] = t($this->options['all_operations'][$key]['label']);
     }
     return $selected;
   }
