@@ -4,7 +4,7 @@
 function delete_action_info() {
   return array('delete_action' => array(
     'type' => 'node',
-    'description' => t('Delete selected nodes'),
+    'description' => t('Delete node'),
   ));
 }
 
