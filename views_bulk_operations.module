@@ -226,7 +226,7 @@ function views_bulk_operations_form($form_state, $plugin) {
           '#prefix' => '<div id="views-bulk-operations-select">',
           '#suffix' => '</div>',
         );
-        $form['select'] += _views_bulk_operations_action_form($operation);
+        $form['select'] += _views_bulk_operations_action_form($operation, $plugin->view);
       }
       $form['objects'] = array(
         '#type' => 'views_node_selector',
@@ -246,7 +246,7 @@ function views_bulk_operations_form($form_state, $plugin) {
     
     case VIEWS_BULK_OPS_STEP_CONFIG:
       $operation = $plugin->get_operation_info($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['operation']);
-      $form += _views_bulk_operations_action_form($operation);
+      $form += _views_bulk_operations_action_form($operation, $plugin->view);
       $form['execute'] = array(
         '#type' => 'submit',
         '#value' => t('Next'),
@@ -514,9 +514,9 @@ function _views_bulk_operations_batch_finished($success, $results, $operations, 
 /**
  * Let the configurable action provide its configuration form.
  */
-function _views_bulk_operations_action_form($action) {
+function _views_bulk_operations_action_form($action, $view) {
   $action_form = $action['callback'].'_form';
-  return call_user_func($action_form, array());
+  return call_user_func($action_form, array('view' => $view));
 }
 
 /**
