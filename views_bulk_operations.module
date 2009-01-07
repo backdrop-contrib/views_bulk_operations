@@ -625,8 +625,7 @@ function views_bulk_operations_object_info() {
 }
 
 function _views_bulk_operations_object_info_for_view($view) {
-  $objects = module_invoke_all('object_info');
-  foreach ($objects as $info) {
+  foreach (views_bulk_operations_get_object_info() as $info) {
     if ($info['base_table'] == $view->base_table) {
       return $info;
     }
@@ -636,7 +635,7 @@ function _views_bulk_operations_object_info_for_view($view) {
 }
 
 function _views_bulk_operations_object_info_for_type($type) {
-  $objects = module_invoke_all('object_info');
+  $objects = views_bulk_operations_get_object_info();
   if (!isset($objects[$type])) {
     watchdog('views_bulk_operations', 'Could not find object info for type @type.', array('@type' => $type), WATCHDOG_ERROR);
     return NULL;
@@ -682,5 +681,13 @@ function views_bulk_operations_action_info() {
  */
 function views_bulk_operations_ajax_data_alter(&$object, $type, $view) {
   $object->__callbacks[] = 'Drupal.vbo.ajaxViewResponse';
+}
+
+function views_bulk_operations_get_object_info($reset = FALSE) {
+  static $objects = array();
+  if ($reset || empty($objects)) {
+    $objects = module_invoke_all('object_info');
+  }
+  return $objects;
 }
 
