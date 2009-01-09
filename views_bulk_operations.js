@@ -7,17 +7,16 @@ Drupal.vbo.selectAll = function() {
   var form = jQuery(table).parents('form');
 
   var thSelectAll = jQuery('th.select-all', table).click(function() {
-    cbSelectAll = jQuery('input.form-checkbox', thSelectAll)[0];
     setSelectAll(false);
-    jQuery('input#vbo-select-all-pages', table).click(function() {
-      setSelectAll(true);
-    });
-    jQuery('input#vbo-select-this-page', table).click(function() {
-      setSelectAll(false);
-    });
-    jQuery('td input:checkbox', table).click(function() {
-      setSelectAll($('input#edit-objects-select-all', form).attr('value') == 1);
-    });
+  });
+  jQuery('input#vbo-select-all-pages', table).click(function() {
+    setSelectAll(true);
+  });
+  jQuery('input#vbo-select-this-page', table).click(function() {
+    setSelectAll(false);
+  });
+  jQuery('td input:checkbox', table).click(function() {
+    setSelectAll(jQuery('input#edit-objects-select-all', form).attr('value') == 1);
   });
 
   function setSelectAll(all) {
@@ -46,19 +45,30 @@ Drupal.vbo.ajaxViewResponse = function(target, response) {
   jQuery('form[id^=views-bulk-operations-form]').each(function() {
     jQuery(this).attr('action', Drupal.settings.basePath + Drupal.settings.vbo.url);
   });
+  Drupal.vbo.startUp(); // re-initialize VBO behaviours after an AJAX update
+}
+
+Drupal.vbo.startUp = function() {
   jQuery('form table th.select-all').parents('table').each(Drupal.vbo.selectAll);
+  jQuery('tr.rowclick').click(function(event) {
+    if (event.target.type !== 'checkbox') {
+      checkbox = jQuery(':checkbox', this)[0];
+      checked = checkbox.checked;
+      // trigger() toggles the checkmark *after* the event is set, 
+      // whereas manually clicking the checkbox toggles it *beforehand*.
+      // that's why we manually set the checkmark first, then trigger the
+      // event (so that listeners get notified), then re-set the checkmark
+      // which the trigger will have toggled. yuck!
+      checkbox.checked = !checked;
+      jQuery(checkbox).trigger('click');
+      checkbox.checked = !checked;
+    }
+  });
 }
 
 if (Drupal.jsEnabled) {
   jQuery(document).ready(function() {
-    jQuery('form table th.select-all').parents('table').each(Drupal.vbo.selectAll);
-    jQuery('tr.rowclick').click(function(event) {
-      if (event.target.type !== 'checkbox') {
-        checkbox = jQuery(':checkbox', this);
-        checkbox.trigger('click');
-        jQuery(this)[ checkbox.attr('checked') ? 'addClass' : 'removeClass' ]('selected');
-      }
-    });
+    Drupal.vbo.startUp();
   })
 }
 
