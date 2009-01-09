@@ -82,10 +82,10 @@ function theme_views_node_selector($element) {
     
     $rows = array();
     foreach ($records as $num => $object) {
-      $row = array();
-      $row[] =  theme('checkbox', $element[$object->{$view->base_field}]);
+      $row = array('class' => 'rowclick', 'data' => array());
+      $row['data'][] =  theme('checkbox', $element[$object->{$view->base_field}]);
       foreach ($vars['rows'][$num] as $field => $content) {
-        $row[] = array('data' => $content, 'class' => "views-field views-field-{$vars['fields'][$field]}");
+        $row['data'][] = array('data' => $content, 'class' => "views-field views-field-{$vars['fields'][$field]}");
       }
       $rows[] = $row;
     }

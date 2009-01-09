@@ -52,6 +52,13 @@ Drupal.vbo.ajaxViewResponse = function(target, response) {
 if (Drupal.jsEnabled) {
   jQuery(document).ready(function() {
     jQuery('form table th.select-all').parents('table').each(Drupal.vbo.selectAll);
+    jQuery('tr.rowclick').click(function(event) {
+      if (event.target.type !== 'checkbox') {
+        checkbox = jQuery(':checkbox', this);
+        checkbox.trigger('click');
+        jQuery(this)[ checkbox.attr('checked') ? 'addClass' : 'removeClass' ]('selected');
+      }
+    });
   })
 }
 
