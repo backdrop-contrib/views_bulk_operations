@@ -161,6 +161,7 @@ function views_bulk_operations_form($form_state, $plugin) {
       case VIEWS_BULK_OPS_STEP_SINGLE:
       case VIEWS_BULK_OPS_STEP_CONFIG:
         $step = VIEWS_BULK_OPS_STEP_CONFIRM;
+        break;
       }
   }
   $form['step'] = array(
@@ -463,18 +464,11 @@ function _views_bulk_operations_batch_process($operation, $oid, $params, &$conte
 function _views_bulk_operations_action_process($operation, $objects, $params, &$context) {
   $info = _views_bulk_operations_object_info_for_type($operation['object']);
   if (!$info) return;
-  if (!empty($operation['aggregate'])) { // Send all objects to the action
-    call_user_func($operation['callback'], $objects, $params);
-    $context['results']['log'][] = t('Performed %action on objects %oids.', array('%action' => $operation['label'], '%oids' => implode(',', $objects)));
-    $context['results']['rows'] += count($objects);
-  }
-  else { // One-by-one
-    foreach ($objects as $oid) {
-      $object = call_user_func($info['load'], $oid);
-      _views_bulk_operations_action_do($operation, $object, $params);
-      $context['results']['log'][] = t('Performed %action on object %title.', array('%action' => $operation['label'], '%title' => $object->{$info['title']}));
-      $context['results']['rows'] += 1;
-    }
+  foreach ($objects as $oid) {
+    $object = call_user_func($info['load'], $oid);
+    _views_bulk_operations_action_do($operation, $object, $params);
+    $context['results']['log'][] = t('Performed %action on object %title.', array('%action' => $operation['label'], '%title' => $object->{$info['title']}));
+    $context['results']['rows'] += 1;
   }
 }
 

@@ -138,10 +138,9 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
         'label'              => $operation['description'],
         'callback'           => $callback,
         'callback arguments' => isset($operation['parameters']) ? $operation['parameters'] : array(),
-        'configurable'       => isset($operation['configurable']) ? $operation['configurable'] : '',
+        'configurable'       => isset($operation['configurable']) ? $operation['configurable'] : false,
         'type'               => 'action',
         'object'             => $operation['type'],
-        'aggregate'          => isset($operation['aggregate']) ? $operation['aggregate'] : '',
         'modifies_object'    => isset($operation['behavior']) && in_array('changes_node_property', $operation['behavior']),
       );
     }
