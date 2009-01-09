@@ -22,7 +22,7 @@ Drupal.vbo.selectAll = function() {
   function setSelectAll(all) {
     cbSelectAll = jQuery('input.form-checkbox', thSelectAll)[0];
     if (cbSelectAll.checked) {
-      tdSelectAll = jQuery('td.view-field-select-all', table).css('display', 'table-cell');
+      tdSelectAll = jQuery('td.view-field-select-all', table).css('display', jQuery.browser.msie ? 'inline-block' : 'table-cell');
       if (all) {
         jQuery('span#vbo-this-page', tdSelectAll).css('display', 'none');
         jQuery('span#vbo-all-pages', tdSelectAll).css('display', 'inline');
