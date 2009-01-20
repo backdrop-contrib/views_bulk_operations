@@ -555,7 +555,7 @@ function theme_views_bulk_operations_confirmation($objects, $view) {
         break;
       }
       if ($object = call_user_func($info['load'], $oid)) {
-        $output .= '<li>'. $object->{$info['title']} .'</li>';
+        $output .= '<li>'. check_plain($object->{$info['title']}) .'</li>';
         $count++;
       }
     }
