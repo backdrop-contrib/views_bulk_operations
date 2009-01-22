@@ -584,7 +584,7 @@ function views_bulk_operations_forms() {
 }
 
 /**
- * Implementation of hook_object_info()
+ * Implementation of hook_views_bulk_operations_object_info()
  *
  * Hook used by VBO to be able to handle different objects as does Views 2.
  *
@@ -595,7 +595,7 @@ function views_bulk_operations_forms() {
  *  'title' => an attribute on the object that returns a human-friendly identifier of the object.
  *
  */
-function views_bulk_operations_object_info() {
+function views_bulk_operations_views_bulk_operations_object_info() {
   return array(
     'node' => array(
       'type' => 'node',
@@ -680,7 +680,7 @@ function views_bulk_operations_ajax_data_alter(&$object, $type, $view) {
 function views_bulk_operations_get_object_info($reset = FALSE) {
   static $objects = array();
   if ($reset || empty($objects)) {
-    $objects = module_invoke_all('object_info');
+    $objects = module_invoke_all('views_bulk_operations_object_info');
   }
   return $objects;
 }
