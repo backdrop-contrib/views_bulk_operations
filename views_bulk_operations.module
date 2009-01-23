@@ -140,7 +140,7 @@ function views_bulk_operations_form($form_state, $plugin) {
 
   if (!isset($form_state['storage']['step'])) {
     drupal_add_js(array('vbo' => array('url' => $_GET['q'])), 'setting');
-    if (count($plugin->get_selected_operations()) == 1) {
+    if (count($plugin->get_selected_operations()) == 1 && $plugin->options['merge_single_action']) {
       $step = VIEWS_BULK_OPS_STEP_SINGLE;
     }
     else {

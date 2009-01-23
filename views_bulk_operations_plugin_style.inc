@@ -13,6 +13,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
     $options['display_type'] = 0;
     $options['skip_confirmation'] = FALSE;
     $options['display_result'] = TRUE;
+    $options['merge_single_action'] = TRUE;
     $this->populate_operations($options);
   }
 
@@ -51,6 +52,12 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
       '#title' => t('Display processing result'),
       '#description' => t('Check this box to let Drupal display a message with the result of processing the selected objects.'),
       '#default_value' => $this->options['display_result'],
+    );
+    $form['merge_single_action'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Merge single action\'s form with node selection view'),
+      '#description' => t('In case only one action is selected *and* this action is configurable, display its action form along with the node selection view.'),
+      '#default_value' => $this->options['merge_single_action'],
     );
     $form['selected_operations'] = array(
       '#type' => 'checkboxes',
