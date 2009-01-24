@@ -148,7 +148,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
         'configurable'       => isset($operation['configurable']) ? $operation['configurable'] : false,
         'type'               => 'action',
         'object'             => $operation['type'],
-        'modifies_object'    => isset($operation['behavior']) && in_array('changes_node_property', $operation['behavior']),
+        'modifies object'    => isset($operation['behavior']) && in_array('changes_node_property', $operation['behavior']),
       );
     }
 
@@ -157,6 +157,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
 
   private function get_custom_actions() {
     $actions = array();
+    $static_actions = actions_list();
     $result = db_query("SELECT * FROM {actions} WHERE parameters > ''");
     while ($action = db_fetch_object($result)) {
       $actions[$action->aid] = array(
@@ -165,7 +166,6 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
         'configurable' => FALSE,
         'parameters' => $action->parameters,
       );
-      $static_actions = actions_list();
       $actions[$action->aid]['behavior'] = $static_actions[$action->callback]['behavior'];
     }
     return $actions;
