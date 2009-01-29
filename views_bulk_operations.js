@@ -41,16 +41,9 @@ Drupal.vbo.selectAll = function() {
   }
 }
 
-Drupal.vbo.ajaxViewResponse = function(target, response) {
-  jQuery('form[id^=views-bulk-operations-form]').each(function() {
-    jQuery(this).attr('action', Drupal.settings.basePath + Drupal.settings.vbo.url);
-  });
-  Drupal.vbo.startUp(); // re-initialize VBO behaviours after an AJAX update
-}
-
-Drupal.vbo.startUp = function() {
-  jQuery('form table th.select-all').parents('table').each(Drupal.vbo.selectAll);
-  jQuery('tr.rowclick').click(function(event) {
+Drupal.vbo.startUp = function(context) {
+  jQuery('form table th.select-all', context).parents('table').each(Drupal.vbo.selectAll);
+  jQuery('tr.rowclick', context).click(function(event) {
     if (event.target.type !== 'checkbox') {
       checkbox = jQuery(':checkbox', this)[0];
       checked = checkbox.checked;
@@ -66,9 +59,10 @@ Drupal.vbo.startUp = function() {
   });
 }
 
-if (Drupal.jsEnabled) {
-  jQuery(document).ready(function() {
-    Drupal.vbo.startUp();
-  })
+Drupal.behaviors.vbo = function(context) {
+  jQuery('form[id^=views-bulk-operations-form]').each(function() {
+    jQuery(this).attr('action', Drupal.settings.basePath + Drupal.settings.vbo.url);
+  });
+  Drupal.vbo.startUp(context);
 }
 

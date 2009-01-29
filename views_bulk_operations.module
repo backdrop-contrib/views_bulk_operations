@@ -658,17 +658,6 @@ function views_bulk_operations_action_info() {
   return $actions;
 }
 
-/**
- * Implementation of hook_ajax_data_alter().
- *
- * Used to invoked our own JavaScript function after a Views Ajax call. 
- * Our function resets the VBO form action to its original state, 
- * which is altered for some reason by Views.
- */
-function views_bulk_operations_ajax_data_alter(&$object, $type, $view) {
-  $object->__callbacks[] = 'Drupal.vbo.ajaxViewResponse';
-}
-
 function views_bulk_operations_get_object_info($reset = FALSE) {
   static $objects = array();
   if ($reset || empty($objects)) {
