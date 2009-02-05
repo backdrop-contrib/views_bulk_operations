@@ -164,7 +164,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
         'description' => $action->description,
         'type' => $action->type,
         'configurable' => FALSE,
-        'parameters' => $action->parameters,
+        'parameters' => unserialize($action->parameters),
       );
       $actions[$action->aid]['behavior'] = $static_actions[$action->callback]['behavior'];
     }
