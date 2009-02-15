@@ -137,9 +137,9 @@ function views_node_selector_process($element, $edit) {
  */
 function views_bulk_operations_form($form_state, $plugin) {
   drupal_add_css(drupal_get_path('module', 'views_bulk_operations') . '/views_bulk_operations.css', 'module');
+  drupal_add_js(array('vbo' => array('url' => url($_GET['q']))), 'setting');
 
   if (!isset($form_state['storage']['step'])) {
-    drupal_add_js(array('vbo' => array('url' => $_GET['q'])), 'setting');
     if (count($plugin->get_selected_operations()) == 1 && $plugin->options['merge_single_action']) {
       $step = VIEWS_BULK_OPS_STEP_SINGLE;
     }

@@ -61,7 +61,7 @@ Drupal.vbo.startUp = function(context) {
 
 Drupal.behaviors.vbo = function(context) {
   jQuery('form[id^=views-bulk-operations-form]').each(function() {
-    jQuery(this).attr('action', Drupal.settings.basePath + Drupal.settings.vbo.url);
+    jQuery(this).attr('action', Drupal.settings.vbo.url);
   });
   Drupal.vbo.startUp(context);
 }
