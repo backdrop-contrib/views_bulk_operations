@@ -134,6 +134,16 @@ function views_node_selector_process($element, $edit) {
 }
 
 /**
+ * Implementation of hook_init().
+ */
+function views_bulk_operations_init() {
+  // Reset selection if we're not in the view anymore.
+  if (!isset($_SESSION['vbo_selection'][$_GET['q']])) {
+    unset($_SESSION['vbo_selection']);
+  }
+}
+
+/**
  * Define multistep form for selecting and executing an operation.
  */
 function views_bulk_operations_form($form_state, $plugin) {
