@@ -51,7 +51,15 @@ Drupal.vbo.selectAll = function() {
 }
 
 Drupal.vbo.startUp = function(context) {
+  // Reset the form action that Views Ajax might destroy.
+  $('form[id^=views-bulk-operations-form]').each(function() {
+    $(this).attr('action', Drupal.settings.vbo.url);
+  });
+
+  // Set up the VBO table for select-all functionality.
   $('form table:has(th.select-all)', context).each(this.selectAll);
+
+  // Set up the ability to click anywhere on the row to select it.
   $('tr.rowclick', context).click(function(event) {
     if (event.target.type !== 'checkbox') {
       $(':checkbox', this).each(function() {
@@ -70,9 +78,11 @@ Drupal.vbo.startUp = function(context) {
 }
 
 Drupal.behaviors.vbo = function(context) {
-  $('form[id^=views-bulk-operations-form]').each(function() {
-    $(this).attr('action', Drupal.settings.vbo.url);
-  });
+  // Force Firefox to reload the page if Back is hit.
+  // https://developer.mozilla.org/en/Using_Firefox_1.5_caching
+  window.onunload = function(){}
+
+  // Set up VBO UI.
   Drupal.vbo.startUp(context);
 }
 
