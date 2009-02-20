@@ -128,7 +128,7 @@ function views_node_selector_process($element, $edit) {
 
   // Ummm unset the #options so that FAPI doesn't give me the "Illegal choice %choice in !name element" error.
   unset($element['#options']);
-  $element['select_all'] = array('#type' => 'hidden');
+  $element['select_all'] = array('#type' => 'hidden', '#default_value' => $element['#value']['select_all']);
 
   return $element; 
 }
@@ -138,8 +138,8 @@ function views_node_selector_process($element, $edit) {
  */
 function views_bulk_operations_init() {
   // Reset selection if we're not in the view anymore.
-  if (!isset($_SESSION['vbo_selection'][$_GET['q']])) {
-    unset($_SESSION['vbo_selection']);
+  if (!isset($_SESSION['vbo_values'][$_GET['q']])) {
+    unset($_SESSION['vbo_values']);
   }
 }
 
@@ -153,9 +153,9 @@ function views_bulk_operations_form($form_state, $plugin) {
   drupal_add_js(array('vbo' => array('url' => url($_GET['q']))), 'setting');
 
   // If there's a session variable on this view, pre-load the old values.
-  if (isset($_SESSION['vbo_selection'][$_GET['q']])) {
-    $selection = $_SESSION['vbo_selection'][$_GET['q']];
-    drupal_add_js(array('vbo' => array('select_all' => $selection['select_all'])), 'setting');
+  if (isset($_SESSION['vbo_values'][$_GET['q']])) {
+    $default_objects = $_SESSION['vbo_values'][$_GET['q']]['objects'];
+    $default_operation = $_SESSION['vbo_values'][$_GET['q']]['operation'];
   }
 
   if (!isset($form_state['storage']['step'])) {
@@ -209,7 +209,7 @@ function views_bulk_operations_form($form_state, $plugin) {
         '#view' => $plugin->view,
         // Sets for grouping.
         '#sets' => $plugin->sets,
-        '#value' => $selection,
+        '#value' => $default_objects,
         '#prefix' => '<div class="views-node-selector">',
         '#suffix' => '</div>',
       );
@@ -218,6 +218,7 @@ function views_bulk_operations_form($form_state, $plugin) {
         $form['select']['operation'] = array(
           '#type' => 'select',
           '#options' => array(0 => t('- Choose an operation -')) + $plugin->get_selected_operations(),
+          '#default_value' => $default_operation,
           '#prefix' => '<div id="views-bulk-operations-dropdown">',
           '#suffix' => '</div>',             
         );
@@ -258,7 +259,7 @@ function views_bulk_operations_form($form_state, $plugin) {
         '#view' => $plugin->view,
         // Sets for grouping.
         '#sets' => $plugin->sets,
-        '#value' => $selection,
+        '#value' => $objects,
         '#prefix' => '<div class="views-node-selector">',
         '#suffix' => '</div>',
       );
@@ -354,7 +355,7 @@ function views_bulk_operations_form_submit($form, &$form_state) {
   switch ($form_state['values']['step']) {
   case VIEWS_BULK_OPS_STEP_VIEW:
       $form_state['storage']['step'] = $form_state['values']['step'];
-      $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW] = $form_state['values'];
+      $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW] = $_SESSION['vbo_values'][$_GET['q']] = $form_state['values'];
       _views_bulk_operations_adjust_selection($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['objects'], $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['filters'], $plugin);
       $operation = $plugin->get_operation_info($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['operation']);
       if (!$operation['configurable'] && $plugin->options['skip_confirmation']) {
@@ -363,7 +364,7 @@ function views_bulk_operations_form_submit($form, &$form_state) {
       return;
     case VIEWS_BULK_OPS_STEP_SINGLE:
       $form_state['storage']['step'] = $form_state['values']['step'];
-      $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW] = $form_state['values'];
+      $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW] = $_SESSION['vbo_values'][$_GET['q']] = $form_state['values'];
       _views_bulk_operations_adjust_selection($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['objects'], $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['filters'], $plugin);
       $form_state['storage'][VIEWS_BULK_OPS_STEP_CONFIG] = $form_state['values'];
       if ($plugin->options['skip_confirmation']) {
@@ -382,7 +383,7 @@ function views_bulk_operations_form_submit($form, &$form_state) {
   }
 
   // Clean up unneeded SESSION variables.
-  unset($_SESSION['vbo_selection'][$_GET['q']]);
+  unset($_SESSION['vbo_values'][$_GET['q']]);
 
   $operation = $plugin->get_operation_info($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['operation']);
   $params = array();
@@ -448,9 +449,6 @@ function views_bulk_operations_form_submit($form, &$form_state) {
 
 function _views_bulk_operations_adjust_selection(&$objects, $filters, $plugin) {
   $objects = array_filter($objects);
-
-  // Save selection in session to use it in case of Back button.
-  $_SESSION['vbo_selection'][$_GET['q']] = $objects;
 
   if ($objects['select_all']) {
     $objects = array();

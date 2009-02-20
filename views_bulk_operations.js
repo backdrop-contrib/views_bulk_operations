@@ -18,13 +18,13 @@ Drupal.vbo.selectAll = function() {
     setSelectAll(false);
   });
   var checkboxes = $('td input:checkbox', table).click(function() {
-    setSelectAll($('input#edit-objects-select-all', form).attr('value') == 1);
+    setSelectAll($('input#edit-objects-select-all', form).val() == 1);
   }).each(function() {
     $(this).parents('tr:first')[ this.checked ? 'addClass' : 'removeClass' ]('selected');
   });
 
   var setSelectAll = function(all) {
-    $('input#edit-objects-select-all', form).attr('value', all ? 1 : 0);
+    $('input#edit-objects-select-all', form).val(all ? 1 : 0);
     $('th.select-all input:checkbox', table).each(function() {
       if (this.checked) {
         $('td.view-field-select-all', table).css('display', $.browser.msie ? 'inline-block' : 'table-cell');
@@ -42,7 +42,7 @@ Drupal.vbo.selectAll = function() {
     $('th.select-all input:checkbox', table).each(function() {
       $(this).attr('title', state ? strings.selectNone : strings.selectAll);
       this.checked = state;
-      setSelectAll(Drupal.settings.vbo.select_all);
+      setSelectAll($('input#edit-objects-select-all', form).val() == 1);
     });
   };
 
