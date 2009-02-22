@@ -163,6 +163,10 @@ function views_bulk_operations_form($form_state, $plugin) {
     $default_objects = $_SESSION['vbo_values'][$_GET['q']]['objects'];
     $default_operation = $_SESSION['vbo_values'][$_GET['q']]['operation'];
   }
+  else {
+    $default_objects = array();
+    $default_operation = null;
+  }
 
   if (!isset($form_state['storage']['step'])) {
     if (count($plugin->get_selected_operations()) == 1 && $plugin->options['merge_single_action']) {
@@ -215,7 +219,7 @@ function views_bulk_operations_form($form_state, $plugin) {
         '#view' => $plugin->view,
         // Sets for grouping.
         '#sets' => $plugin->sets,
-        '#value' => $default_objects,
+        '#value' => array_filter($default_objects),
         '#prefix' => '<div class="views-node-selector">',
         '#suffix' => '</div>',
       );
@@ -265,7 +269,7 @@ function views_bulk_operations_form($form_state, $plugin) {
         '#view' => $plugin->view,
         // Sets for grouping.
         '#sets' => $plugin->sets,
-        '#value' => $objects,
+        '#value' => array_filter($default_objects),
         '#prefix' => '<div class="views-node-selector">',
         '#suffix' => '</div>',
       );
