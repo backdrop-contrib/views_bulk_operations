@@ -294,8 +294,7 @@ function views_bulk_operations_form($form_state, $plugin) {
         '#value' => t('<a href="@view">Cancel</a>', array('@view' => url($_GET['q'], array('query' => $query)))),
       );
       drupal_set_title(t('Set parameters for \'%action\'', array('%action' => $operation['label'])));
-      $plugin->view->pager['use_pager'] = FALSE;
-      $plugin->view->exposed_widgets = NULL;
+      _views_bulk_operations_strip_view($plugin->view);
       break;
     
     case VIEWS_BULK_OPS_STEP_CONFIRM:
@@ -306,8 +305,7 @@ function views_bulk_operations_form($form_state, $plugin) {
         t('Are you sure you want to perform \'%action\' on selected rows?', array('%action' => $operation['label'])),
         $query ? array('path' => $_GET['q'], 'query' => $query) : array('path' => $_GET['q']),
         theme('views_bulk_operations_confirmation', $objects, $plugin->view)); 
-      $plugin->view->pager['use_pager'] = FALSE;
-      $plugin->view->exposed_widgets = NULL;
+      _views_bulk_operations_strip_view($plugin->view);
       break;
   }
  
@@ -316,6 +314,15 @@ function views_bulk_operations_form($form_state, $plugin) {
   $form['#validate'][] = 'views_bulk_operations_form_validate';
   $form['#cache'] = true;
   return $form;
+}
+
+function _views_bulk_operations_strip_view(&$view) {
+  $view->pager['use_pager'] = FALSE;
+  $view->exposed_widgets = NULL;
+  $view->display_handler->set_option('header', '');
+  $view->display_handler->set_option('footer', '');
+  $view->attachment_before = '';
+  $view->attachment_after = '';
 }
 
 /**
