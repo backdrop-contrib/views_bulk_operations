@@ -128,7 +128,7 @@ function views_node_selector_process($element, $edit) {
 
   // Ummm unset the #options so that FAPI doesn't give me the "Illegal choice %choice in !name element" error.
   unset($element['#options']);
-  $element['select_all'] = array('#type' => 'hidden', '#default_value' => isset($element['#value']['select_all']) ? $element['#value']['select_all'] : null);
+  $element['select_all'] = array('#type' => 'hidden', '#default_value' => @$element['#value']['select_all']);
 
   return $element; 
 }
@@ -538,7 +538,7 @@ function _views_bulk_operations_batch_finished($success, $results, $operations, 
       array('@operation' => $error_operation[0], '@arguments' => print_r($error_operation[0], TRUE)));
   }
   variable_set('actions_max_stack', 35); // reset the action stack which was set for just one invocation
-  if ($display_result || $_SESSION['vbo_display_result']) {
+  if ($display_result || @$_SESSION['vbo_display_result']) {
     drupal_set_message($message);
     $_SESSION['vbo_display_result'] = FALSE; // reset the option which was ued for just one invocation
   }
