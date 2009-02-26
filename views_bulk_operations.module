@@ -141,6 +141,12 @@ function views_bulk_operations_init() {
   if (!isset($_SESSION['vbo_values'][$_GET['q']])) {
     unset($_SESSION['vbo_values']);
   }
+
+  // Automatically include the action files.
+  $files = file_scan_directory(drupal_get_path('module', 'views_bulk_operations'), '(.*).action.inc$');
+  if ($files) foreach ($files as $file) {
+    require_once($file->filename);
+  }
 }
 
 /**
