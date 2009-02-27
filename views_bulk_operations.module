@@ -181,7 +181,7 @@ function views_bulk_operations_form($form_state, $plugin) {
     else {
       $step = VIEWS_BULK_OPS_STEP_VIEW;
     }
-    $form['filters'] = array(
+    $form['exposed_input'] = array(
       '#type' => 'value',
       '#value' => $plugin->view->get_exposed_input(),
     );
@@ -379,7 +379,7 @@ function views_bulk_operations_form_submit($form, &$form_state) {
   case VIEWS_BULK_OPS_STEP_VIEW:
       $form_state['storage']['step'] = $form_state['values']['step'];
       $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW] = $_SESSION['vbo_values'][$_GET['q']] = $form_state['values'];
-      _views_bulk_operations_adjust_selection($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['objects'], $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['filters'], $plugin);
+      _views_bulk_operations_adjust_selection($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['objects'], $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['exposed_input'], $plugin);
       $operation = $plugin->get_operation_info($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['operation']);
       if (!$operation['configurable'] && $plugin->options['skip_confirmation']) {
         break; // Go directly to execution
@@ -388,7 +388,7 @@ function views_bulk_operations_form_submit($form, &$form_state) {
     case VIEWS_BULK_OPS_STEP_SINGLE:
       $form_state['storage']['step'] = $form_state['values']['step'];
       $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW] = $_SESSION['vbo_values'][$_GET['q']] = $form_state['values'];
-      _views_bulk_operations_adjust_selection($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['objects'], $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['filters'], $plugin);
+      _views_bulk_operations_adjust_selection($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['objects'], $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['exposed_input'], $plugin);
       $form_state['storage'][VIEWS_BULK_OPS_STEP_CONFIG] = $form_state['values'];
       if ($plugin->options['skip_confirmation']) {
         break; // Go directly to execution
@@ -470,23 +470,18 @@ function views_bulk_operations_form_submit($form, &$form_state) {
   $form_state['redirect'] = $_GET['q'];
 }
 
-function _views_bulk_operations_adjust_selection(&$objects, $filters, $plugin) {
+function _views_bulk_operations_adjust_selection(&$objects, $exposed_input, $plugin) {
   $objects = array_filter($objects);
-
-  if (!empty($objects['select_all'])) {
+  if (isset($objects['select_all'])) {
     $objects = array();
-    $plugin->view->pager['use_pager'] = FALSE;
-    $plugin->view->pager['items_per_page'] = 0;
-    $plugin->view->executed = FALSE;
-    $plugin->view->built = FALSE;
-    $plugin->view->set_arguments($filters);
-    $plugin->view->execute();
-    foreach ($plugin->view->result as $result) {
-      $objects[$result->{$plugin->view->base_field}] = $result->{$plugin->view->base_field};
+    $view = views_get_view($plugin->view->vid ? $plugin->view->vid : $plugin->view->name);
+    $view->pager['use_pager'] = FALSE;
+    $view->pager['items_per_page'] = 0;
+    $view->set_exposed_input($exposed_input);
+    $view->execute($plugin->view->current_display);
+    foreach ($view->result as $result) {
+      $objects[$result->{$view->base_field}] = $result->{$view->base_field};
     }
-  }
-  else {
-    unset($objects['select_all']);
   }
 }
 
