@@ -294,7 +294,7 @@ function views_bulk_operations_form($form_state, $plugin) {
         '#type' => 'submit',
         '#value' => t('Next'),
       );
-      $query = drupal_query_string_encode($_GET, array('q'));
+      $query = drupal_query_string_encode($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['exposed_input']);
       $form['cancel'] = array(
         '#type' => 'markup',
         '#value' => t('<a href="@view">Cancel</a>', array('@view' => url($_GET['q'], array('query' => $query)))),
@@ -305,11 +305,11 @@ function views_bulk_operations_form($form_state, $plugin) {
     
     case VIEWS_BULK_OPS_STEP_CONFIRM:
       $operation = $plugin->get_operation_info($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['operation']);
-      $query = drupal_query_string_encode($_GET, array('q'));
+      $query = drupal_query_string_encode($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['exposed_input']);
       $objects = $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['objects'];
       $form = confirm_form($form,
         t('Are you sure you want to perform \'%action\' on selected rows?', array('%action' => $operation['label'])),
-        $query ? array('path' => $_GET['q'], 'query' => $query) : array('path' => $_GET['q']),
+        array('path' => $_GET['q'], 'query' => $query),
         theme('views_bulk_operations_confirmation', $objects, $plugin->view)); 
       _views_bulk_operations_strip_view($plugin->view);
       break;
