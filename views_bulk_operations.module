@@ -422,10 +422,13 @@ function views_bulk_operations_form_submit($form, &$form_state) {
     $params += $operation['callback arguments'];
   }
   $objects = $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['objects'];
-  
-  // FIXME Hack to force actions_do() to process any number of invocations. 
-  // Check http://drupal.org/node/290282 to understand more.
-  variable_set('actions_max_stack', 10000000);
+
+  if (version_compare(VERSION, '6.10', '<')) {
+    // Hack to force actions_do() to process any number of invocations. 
+    // Check http://drupal.org/node/290282 to understand more.
+    // This was fixed as of D6.10: http://cvs.drupal.org/viewvc.py/drupal/drupal/includes/actions.inc?view=log&pathrev=DRUPAL-6-10
+    variable_set('actions_max_stack', 10000000);
+  }
   if ($plugin->options['execution_type'] == VBO_EXECUTION_BATCH) {
     $operations = array();
     foreach ($objects as $oid) {
@@ -440,9 +443,6 @@ function views_bulk_operations_form_submit($form, &$form_state) {
       'operations' => $operations,
       'finished' => '_views_bulk_operations_batch_finished',
       'title' => t('Performing %action on selected rows...', array('%action' => $operation['label'])),
-      //'init_message' => t('Starting batch process.'),
-      //'progress_message' => t('Processed @current out of @total.'),
-      //'error_message' => t('Batch process has encountered an error.'),
     );  
     batch_set($batch);
   }
@@ -536,7 +536,6 @@ function _views_bulk_operations_operation_process($operation, $objects, $params,
  */
 function _views_bulk_operations_batch_finished($success, $results, $operations, $display_result = NULL) {
   if ($success) {
-    // Here we do something meaningful with the results.
     $message = t('!results rows processed:', array('!results' => $results['rows']));
     $message .= theme('item_list', $results['log']);
   }
@@ -547,10 +546,13 @@ function _views_bulk_operations_batch_finished($success, $results, $operations, 
     $message = t('An error occurred while processing @operation with arguments: @arguments', 
       array('@operation' => $error_operation[0], '@arguments' => print_r($error_operation[0], TRUE)));
   }
-  variable_set('actions_max_stack', 35); // reset the action stack which was set for just one invocation
+  if (version_compare(VERSION, '6.10', '<')) {
+    // See http://cvs.drupal.org/viewvc.py/drupal/drupal/includes/actions.inc?view=log&pathrev=DRUPAL-6-10
+    variable_set('actions_max_stack', 35);
+  }
   if ($display_result || @$_SESSION['vbo_display_result']) {
     drupal_set_message($message);
-    $_SESSION['vbo_display_result'] = FALSE; // reset the option which was ued for just one invocation
+    unset($_SESSION['vbo_display_result']); // unset the option which was used for just one invocation
   }
 }
 
