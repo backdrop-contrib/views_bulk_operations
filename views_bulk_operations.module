@@ -579,9 +579,17 @@ function _views_bulk_operations_action_submit($action, $form, $form_values) {
 }
 
 function _views_bulk_operations_action_do($action, $object, $context) {
-  $action_do = $action['callback'];
+  if (module_exists('actions_permissions')) {
+    $perm = 'execute ' . $action['label'] . ' (' . $action['callback'] . ')';
+    if (!user_access($perm)) {
+      global $user;
+      watchdog('actions permissions', 'An attempt by user %user to !perm was blocked due to insufficient permissions.', 
+        array('!perm' => $perm, '%user' => $user->name), WATCHDOG_ALERT);
+      drupal_access_denied(); 
+    }
+  }
   $context[$action['object']] = $object; // Add the object to the context for token support
-  actions_do($action_do, $object, $context);
+  actions_do($action['callback'], $object, $context);
   if ($action['object'] == 'node' && $action['modifies object']) { // Save nodes explicitly if needed
     node_save($object);
   }
