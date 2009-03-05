@@ -125,12 +125,12 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
   private function populate_operations(&$options) {
     $operations = array();
 
-    $objects = views_bulk_operations_get_object_info();
-    foreach ($objects as $object_type => $info) {
+    module_load_include('inc', 'node', 'node.admin');
+    foreach (views_bulk_operations_get_object_info() as $object_type => $info) {
       $hook_name = $object_type .'_operations';
       foreach (module_invoke_all($hook_name) as $operation) {
-        if (empty($operation['callback'])) { continue; }
-        $key = md5($operation['callback'] . $operation['label']);
+        if (empty($operation['callback'])) continue;
+        $key = md5($operation['callback'] . (isset($operation['callback arguments']) ? serialize($operation['callback arguments']) : ''));
         $operations[$key] = array(
           'label'              => $operation['label'],
           'callback'           => $operation['callback'],
@@ -144,7 +144,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
 
     $action_operations = actions_list() + $this->get_custom_actions();
     foreach ($action_operations as $callback => $operation) {
-      $key = md5($callback . $operation['description']);
+      $key = md5($callback);
       $operations[$key] = array(
         'label'              => $operation['description'],
         'callback'           => $callback,
