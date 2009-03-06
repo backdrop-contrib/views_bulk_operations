@@ -83,7 +83,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
     else {
       $form_suffix = 1;
     }
-    return drupal_get_form('views_bulk_operations_form_' . $form_suffix, $this);
+    return drupal_get_form('views_bulk_operations_form__' . $form_suffix, $this);
   }
 
   function get_selected_operations() {
