@@ -85,7 +85,7 @@ function theme_views_bulk_operations_fields_action_form(&$form) {
                 <ul>
                 <li>Will override the value specified in the field widget.</li>
                 <li>Should not include &lt;?php ?&gt; delimiters.</li>
-                <li>If in doubt, refer to <a target="_blank" href="@link_devel">devel.module</a> \'devel load\' tab on a content page to figure out the expected format.</li>
+                <li>If in doubt, refer to <a target="_blank" href="@link_devel">devel.module</a> \'Dev load\' tab on a content page to figure out the expected format.</li>
                 </ul>', array('@link_devel' => 'http://www.drupal.org/project/devel'));
   $output .= theme('table', $header, $rows); 
   return $output;
