@@ -72,7 +72,7 @@ function views_bulk_operations_fields_action_form($context) {
 
 function theme_views_bulk_operations_fields_action_form(&$form) {
   drupal_add_js(drupal_get_path('module', 'views_bulk_operations').'/fields.action.js');
-  $header = array(t('Enable'), t('Field'), t('Code'));
+  $header = array(theme('table_select_header_cell'), t('Field'), t('Code'));
   $rows = array();
   foreach ($form['#field_info'] as $field_name => $field) {
     $rows[] = array(
