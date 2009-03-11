@@ -40,7 +40,7 @@ function views_bulk_operations_fields_action_form($context) {
 
     // The field info and widget.
     $form['#field_info'][$field['field_name']] = $field;
-    $form['field_info']['#value'][$field['field_name']] = $field;
+    $form['field_info']['#value'][] = $field['field_name'];
     $form += (array)content_field_form($form, $form_state, $field);
     $form[$field['field_name']] += array('#weight' => $weight++, '#prefix' => '<div class="fields-action-togglable">', '#suffix' => '</div>');
 
@@ -74,7 +74,7 @@ function theme_views_bulk_operations_fields_action_form(&$form) {
   drupal_add_js(drupal_get_path('module', 'views_bulk_operations').'/fields.action.js');
   $header = array(theme('table_select_header_cell'), t('Field'), t('Code'));
   $rows = array();
-  foreach ($form['#field_info'] as $field_name => $field) {
+  foreach ($form['field_info']['#value'] as $field_name) {
     $rows[] = array(
       drupal_render($form[$field_name . '_check']),
       drupal_render($form[$field_name]),
@@ -94,7 +94,8 @@ function theme_views_bulk_operations_fields_action_form(&$form) {
 function views_bulk_operations_fields_action_validate($form, $form_state) {
   $field_types = _content_field_types();
   $chosen = 0;
-  foreach ($form['#field_info'] as $field_name => $field) {
+  foreach ($form_state['values']['field_info'] as $field_name) {
+    $field = content_fields($field_name);
     if ($form_state['values'][$field_name . '_check']) {
       $chosen++;
       $function = $field_types[$field['type']]['module'] .'_field';
@@ -113,7 +114,7 @@ function views_bulk_operations_fields_action_validate($form, $form_state) {
 
 function views_bulk_operations_fields_action_submit($form, $form_state) {
   $values = array();
-  foreach ($form_state['values']['field_info'] as $field_name => $field) {
+  foreach ($form_state['values']['field_info'] as $field_name) {
     $values[$field_name] = $form_state['values'][$field_name];
     $values[$field_name . '_check'] = $form_state['values'][$field_name . '_check'];
     $values[$field_name . '_code'] = $form_state['values'][$field_name . '_code'];
