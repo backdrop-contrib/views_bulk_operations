@@ -342,6 +342,7 @@ function _views_bulk_operations_strip_view(&$view) {
 
 function theme_views_bulk_operations_form($form) {
   $function = 'theme_' . $form['operation']['#value']['callback'] . '_form';
+  $output = '';
   if (function_exists($function)) {
     $output = $function($form);
   }
