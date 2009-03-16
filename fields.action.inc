@@ -162,7 +162,6 @@ function _views_bulk_operations_fields_action_non_cck($type) {
 
   // Iterate on known fields.
   foreach (array('title', 'body', 'format', 'revision', 'log', 'name', 'date', 'status', 'promote', 'sticky', 'comment') as $field_name) {
-    if ($field_name == 'cck') continue;
     $path = array_key_path($field_name, $form);
     if ($path === FALSE) continue;
     $field_def = array_path($form, array_merge($path, (array)$field_name));
