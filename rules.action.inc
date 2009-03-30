@@ -12,6 +12,7 @@ function views_bulk_operations_rules_action_info() {
         'parameters' => array('ruleset' => $ruleset_key),
         'description' => $ruleset['label'],
         'configurable' => false,
+        'rules_ignore' => true,
       );
       eval(<<<EOS
 if (!function_exists('views_bulk_operations_ruleset_action_{$ruleset_key}')) {
