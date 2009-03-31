@@ -165,7 +165,10 @@ function _views_bulk_operations_fields_action_non_cck($type) {
     $path = array_key_path($field_name, $form);
     if ($path === FALSE) continue;
     $field_def = array_path($form, array_merge($path, (array)$field_name));
-    if (isset($field_def['#type']) && $field_def['#type'] != 'value' && $field_def['#type'] != 'hidden') {
+    if (is_array($field_def) && 
+        (!isset($field_def['#access']) || $field_def['#access']) &&
+        (isset($field_def['#type']) && $field_def['#type'] != 'value' && $field_def['#type'] != 'hidden')
+    ) {
       $field_def['#required'] = FALSE;
       $return[$field_name] = array(
         'field_name' => $field_name,
