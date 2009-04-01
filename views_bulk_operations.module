@@ -518,6 +518,7 @@ function _views_bulk_operations_adjust_selection(&$objects, $exposed_input, $plu
     $view->pager['use_pager'] = FALSE;
     $view->pager['items_per_page'] = 0;
     $view->set_exposed_input($exposed_input);
+    $view->ignore_fields = TRUE; // we don't need the fields here so we tell our style plugin to ignore them
     $view->execute($plugin->view->current_display);
     foreach ($view->result as $result) {
       $objects[$result->{$view->base_field}] = $result->{$view->base_field};
