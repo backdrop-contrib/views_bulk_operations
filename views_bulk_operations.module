@@ -66,10 +66,10 @@ function theme_views_node_selector($element) {
 
   // Don't add the vbo setting twice.
   $javascript = drupal_add_js();
-  $found = false;
+  $found = FALSE;
   if (!empty($javascript['setting'])) foreach ($javascript['setting'] as $setting) {
     if (is_array($setting) && isset($setting['vbo']) && isset($setting['vbo']['url'])) {
-      $found = true;
+      $found = TRUE;
       break;
     }
   }
@@ -338,7 +338,7 @@ function views_bulk_operations_form($form_state, $plugin) {
   // Use views_bulk_operations_form_submit() for form submit, regardless of form_id.
   $form['#submit'][] = 'views_bulk_operations_form_submit';
   $form['#validate'][] = 'views_bulk_operations_form_validate';
-  $form['#cache'] = true;
+  $form['#cache'] = TRUE;
   return $form;
 }
 
@@ -485,7 +485,10 @@ function views_bulk_operations_form_submit($form, &$form_state) {
     batch_set($batch);
   }
   else if ($plugin->options['execution_type'] == VBO_EXECUTION_DIRECT) {
+    set_time_limit(0);
+
     $context['results']['rows'] = 0;
+    $context['results']['time'] = microtime(TRUE);
     if ($operation['type'] == 'action') {
       _views_bulk_operations_action_process($operation, $objects, $params, $context);
     }
@@ -575,7 +578,7 @@ function _views_bulk_operations_operation_process($operation, $objects, $params,
  */
 function _views_bulk_operations_batch_finished($success, $results, $operations, $display_result = NULL) {
   if ($success) {
-    $message = t('!results rows processed:', array('!results' => $results['rows']));
+    $message = t('!results rows processed in about !time ms:', array('!results' => $results['rows'], '!time' => round((microtime(TRUE) - $results['time']) * 1000)));
     $message .= theme('item_list', $results['log']);
   }
   else {
@@ -698,7 +701,7 @@ function views_bulk_operations_views_bulk_operations_object_info() {
     'node' => array(
       'type' => 'node',
       'base_table' => 'node',
-      'load' => 'node_load',
+      'load' => '_views_bulk_operations_node_load',
       'title' => 'title',
     ),
     'user' => array(
@@ -714,6 +717,10 @@ function views_bulk_operations_views_bulk_operations_object_info() {
       'title' => 'subject',
     ),
   );
+}
+
+function _views_bulk_operations_node_load($nid) {
+  return node_load($nid, NULL, TRUE);
 }
 
 function _views_bulk_operations_object_info_for_view($view) {
