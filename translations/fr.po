@@ -53,7 +53,7 @@ msgstr ""
 " Notez que c'est au script d'enregistrer le noeud une fois qu'il a fini de le modifier."
 
 #: taxonomy.action.inc:12
-msgid "Modify node's taxonomy terms"
+msgid "Modify node taxonomy terms"
 msgstr "Modifier les termes de taxonomies du noeud"
 
 #: taxonomy.action.inc:74
@@ -158,19 +158,19 @@ msgstr "Opérations sélectionnées"
 
 #: views_bulk_operations.module:98
 msgid "All <strong>!objects</strong> rows on this page are selected."
-msgstr "Toutes  les lignes de <strong>!objects</strong> sur cette page ont été sélectionnées."
+msgstr "Les <strong>!objects</strong> lignes sur cette page seulement ont été sélectionnées."
 
 #: views_bulk_operations.module:99
 msgid "Select all !objects rows in this view."
-msgstr "Sélectionner toutes les lignes de !objects sur cette vue."
+msgstr "Sélectionner les !objects lignes sur cette vue."
 
 #: views_bulk_operations.module:100
 msgid "All <strong>!objects</strong> rows in this view are selected."
-msgstr "Toutes  les lignes de <strong>!objects</strong> de cette vue ont été sélectionnées."
+msgstr "Les <strong>!objects</strong> lignes sur cette vue ont été sélectionnées."
 
 #: views_bulk_operations.module:101
 msgid "Select only !objects rows on this page."
-msgstr "Sélectionner seulement les lignes de !objects sur cette vue."
+msgstr "Sélectionner les !objects lignes sur cette page seulement."
 
 #: views_bulk_operations.module:219
 msgid "Bulk operations"
@@ -238,7 +238,7 @@ msgstr "Une erreur est survenue lors du traitement de @operation avec les argume
 
 #: views_bulk_operations.module:599
 msgid "You selected !count rows of an unknown object type."
-msgstr "Vous avez sélectionné !count lignes d'un type d'ogbet inconnu."
+msgstr "Vous avez sélectionné !count lignes d'un type d'objet inconnu."
 
 #: views_bulk_operations.module:602
 msgid "You selected the following !count rows:"
@@ -250,7 +250,7 @@ msgstr "... et il en reste !remaining"
 
 #: views_bulk_operations.module:700
 msgid "Your PHP installation is too old. Views Bulk Operations requires at least PHP %version."
-msgstr "Votre installation de PHP est trop ancienne. Views Bulk Operations raquiert au minimum PHP %version."
+msgstr "Votre installation de PHP est trop ancienne. Views Bulk Operations requiert au minimum PHP %version."
 
 #: views_bulk_operations.module:679;686;0
 msgid "views_bulk_operations"
@@ -270,7 +270,7 @@ msgstr "Views Bulk Operations"
 
 #: views_bulk_operations.info:0
 msgid "Exposes new Views style 'Bulk Operations' for selecting multiple nodes and applying operations on them."
-msgstr "Expose un nouveau style de Vues 'Opération en masse', afin de sélectionner plusieurs noeuds et leur appliquer des opérations."
+msgstr "Expose un nouveau style de Vues 'Opérations en masse', afin de sélectionner plusieurs noeuds et leur appliquer des opérations."
 
 #: views_bulk_operations.info:0
 msgid "Views"
