@@ -533,9 +533,14 @@ function _views_bulk_operations_adjust_selection(&$objects, $exposed_input, $plu
  * Callback for Batch API operations.
  */
 function _views_bulk_operations_batch_process($operation, $oid, $params, &$context = NULL) {
+  if ($context && !isset($context['time'])) {
+    $context['results']['time'] = microtime(TRUE);
+  }
+
   $info = _views_bulk_operations_object_info_for_type($operation['object']);
   if (!$info) return;
   $object = call_user_func($info['load'], $oid);
+
   if ($operation['type'] == 'action') {
     _views_bulk_operations_action_do($operation, $object, $params);
   }
