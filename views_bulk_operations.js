@@ -61,7 +61,7 @@ Drupal.vbo.startUp = function(context) {
 
   // Set up the ability to click anywhere on the row to select it.
   $('tr.rowclick', context).click(function(event) {
-    if (event.target.type !== 'checkbox') {
+    if (event.target.type !== 'checkbox' && event.target.tagName.toLowerCase() !== 'a') {
       $(':checkbox', this).each(function() {
         var checked = this.checked;
         // trigger() toggles the checkmark *after* the event is set, 
