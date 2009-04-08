@@ -313,11 +313,13 @@ function views_bulk_operations_form($form_state, $plugin) {
       $form['execute'] = array(
         '#type' => 'submit',
         '#value' => t('Next'),
+        '#weight' => 98,
       );
       $query = drupal_query_string_encode($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['exposed_input']);
       $form['cancel'] = array(
         '#type' => 'markup',
         '#value' => t('<a href="@view">Cancel</a>', array('@view' => url($_GET['q'], array('query' => $query)))),
+        '#weight' => 99,
       );
       drupal_set_title(t('Set parameters for \'%action\'', array('%action' => $operation['label'])));
       _views_bulk_operations_strip_view($plugin->view);
