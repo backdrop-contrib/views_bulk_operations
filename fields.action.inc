@@ -20,7 +20,7 @@ function views_bulk_operations_fields_action_form($context) {
   module_load_include('inc', 'content', 'includes/content.node_form');
   $form = array();
   $form_state = array();
-  $node = array('type' => '');
+  $node = array();
   $weight = -100;
   if (isset($context['selection'])) {
     $fields = array();
@@ -147,6 +147,7 @@ function views_bulk_operations_fields_action(&$node, $context) {
       $node->$field_name = $value;
     }
   }
+  node_submit($node);
 }
 
 function _views_bulk_operations_fields_action_non_cck($type) {
