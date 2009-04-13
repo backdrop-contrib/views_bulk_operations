@@ -237,7 +237,6 @@ function views_bulk_operations_form($form_state, $plugin) {
       $form['objects'] = array(
         '#type' => 'views_node_selector',
         '#view' => $plugin->view,
-        // Sets for grouping.
         '#sets' => $plugin->sets,
         '#value' => array_filter($default_objects),
         '#prefix' => '<div class="views-node-selector">',
@@ -276,22 +275,23 @@ function views_bulk_operations_form($form_state, $plugin) {
       $operation = $plugin->get_operation_info($ops[0]);
       $form['operation'] = array('#type' => 'value', '#value' => $ops[0]);
       if ($operation['configurable']) {
+        /*
         $form['select'] = array(
           '#type' => 'fieldset',
           '#title' => $operation['label'],
           '#prefix' => '<div id="views-bulk-operations-select">',
           '#suffix' => '</div>',
         );
+        */
         $selection = array();
         foreach ($plugin->view->result as $result) {
           $selection[$result->{$plugin->view->base_field}] = $result->{$plugin->view->base_field};
         }
-        $form['select'] += _views_bulk_operations_action_form($operation, $plugin->view, $selection);
+        $form += _views_bulk_operations_action_form($operation, $plugin->view, $selection);
       }
       $form['objects'] = array(
         '#type' => 'views_node_selector',
         '#view' => $plugin->view,
-        // Sets for grouping.
         '#sets' => $plugin->sets,
         '#value' => array_filter($default_objects),
         '#prefix' => '<div class="views-node-selector">',
@@ -303,11 +303,11 @@ function views_bulk_operations_form($form_state, $plugin) {
         '#prefix' => '<div id="views-bulk-operations-submit">',
         '#suffix' => '</div>',             
       );
+      $form['#theme'] = 'views_bulk_operations_form';
       break;
     
     case VIEWS_BULK_OPS_STEP_CONFIG:
       $operation = $plugin->get_operation_info($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['operation']);
-      $form['#theme'] = 'views_bulk_operations_form';
       $form['operation'] = array('#type' => 'value', '#value' => $operation);
       $form += _views_bulk_operations_action_form($operation, $plugin->view, array_filter($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['objects']));
       $form['execute'] = array(
@@ -321,6 +321,7 @@ function views_bulk_operations_form($form_state, $plugin) {
         '#value' => t('<a href="@view">Cancel</a>', array('@view' => url($_GET['q'], array('query' => $query)))),
         '#weight' => 99,
       );
+      $form['#theme'] = 'views_bulk_operations_form';
       drupal_set_title(t('Set parameters for \'%action\'', array('%action' => $operation['label'])));
       _views_bulk_operations_strip_view($plugin->view);
       break;
@@ -354,7 +355,8 @@ function _views_bulk_operations_strip_view(&$view) {
 }
 
 function theme_views_bulk_operations_form($form) {
-  $function = 'theme_' . $form['operation']['#value']['callback'] . '_form';
+  $operation = is_array($form['operation']['#value']) ? $form['operation']['#value'] : $form['plugin']['#value']->get_operation_info($form['operation']['#value']);
+  $function = 'theme_' . $operation['callback'] . '_form';
   $output = '';
   if (function_exists($function)) {
     $output = $function($form);
