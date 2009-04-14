@@ -161,6 +161,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
       );
     }
 
+    uasort($operations, create_function('$a, $b', 'return strcasecmp($a["label"], $b["label"]);'));
     $options['all_operations'] = $operations;
   }
 
