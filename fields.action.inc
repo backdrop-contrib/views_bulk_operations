@@ -145,9 +145,16 @@ function views_bulk_operations_fields_action(&$node, $context) {
         $value = $context[$field_name];
       }
       $node->$field_name = $value;
+      if ($field_name == 'name') { // special case: fix uid when given author name
+        if ($account = user_load(array('name' => $node->name))) {
+          $node->uid = $account->uid;
+        }
+        else {
+          $node->uid = 0;
+        }
+      }
     }
   }
-  node_submit($node);
 }
 
 function _views_bulk_operations_fields_action_non_cck($type) {
