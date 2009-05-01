@@ -504,12 +504,20 @@ function views_bulk_operations_form_submit($form, &$form_state) {
   else if (module_exists('job_queue') && $plugin->options['execution_type'] == VBO_EXECUTION_QUEUE) {
     foreach ($objects as $oid) {
       job_queue_add('_views_bulk_operations_batch_process', 
-        t('Perform %action on object %oid.', array('%action' => $operation['label'], '%oid' => $oid)), 
+        t('Perform %action on @type %oid.', array(
+          '%action' => $operation['label'],
+          '@type' => t($operation['object']),
+          '%oid' => $oid
+        )), 
         array($operation, $oid, $params));
     }
     if ($plugin->options['display_result']) {
-      drupal_set_message(t('Enqueued %action on objects %oid. Check the <a href="@queue">queued jobs page</a>.',
-        array('%action' => $operation['label'], '%oid' => implode(', ', $objects), '@queue' => url('admin/reports/job_queue'))));
+      drupal_set_message(t('Enqueued %action on @types %oid. Check the <a href="@queue">queued jobs page</a>.', array(
+        '%action' => $operation['label'], 
+        '@types' => format_plural(count($objects), t($operation['object']), t($operation['object'] .'s')),
+        '%oid' => implode(', ', $objects), 
+        '@queue' => url('admin/reports/job_queue')
+      )));
     }
   }
 
@@ -554,7 +562,11 @@ function _views_bulk_operations_batch_process($operation, $oid, $params, &$conte
   }
 
   if ($context) {
-    $context['results']['log'][] = t('Performed %action on object %title.', array('%action' => $operation['label'], '%title' => $object->{$info['title']}));
+    $context['results']['log'][] = t('Performed %action on @type %title.', array(
+      '%action' => $operation['label'], 
+      '@type' => t($operation['object']),
+      '%title' => $object->{$info['title']},
+    ));
     if (isset($context['results']['rows'])) {
       $context['results']['rows'] += 1;
     }
@@ -573,7 +585,11 @@ function _views_bulk_operations_action_process($operation, $objects, $params, &$
   foreach ($objects as $oid) {
     $object = call_user_func($info['load'], $oid);
     _views_bulk_operations_action_do($operation, $object, $params);
-    $context['results']['log'][] = t('Performed %action on object %title.', array('%action' => $operation['label'], '%title' => $object->{$info['title']}));
+    $context['results']['log'][] = t('Performed %action on @type %title.', array(
+      '%action' => $operation['label'], 
+      '@type' => t($operation['object']),
+      '%title' => $object->{$info['title']},
+    ));
     $context['results']['rows'] += 1;
   }
 }
@@ -584,7 +600,11 @@ function _views_bulk_operations_action_process($operation, $objects, $params, &$
 function _views_bulk_operations_operation_process($operation, $objects, $params, &$context) {
   $args = array_merge(array($objects), $params);
   call_user_func_array($operation['callback'], $args);
-  $context['results']['log'][] = t('Performed %action on objects %oids.', array('%action' => $operation['label'], '%oids' => implode(',', $objects)));
+  $context['results']['log'][] = t('Performed %action on @types %oids.', array(
+    '%action' => $operation['label'], 
+    '@types' => format_plural(count($objects), t($operation['object']), t($operation['object']  .'s')),
+    '%oids' => implode(',', $objects),
+  ));
   $context['results']['rows'] += count($objects);
 }
 
