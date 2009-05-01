@@ -4,3 +4,4 @@ description = Exposes new Views style 'Bulk Operations' for selecting multiple n
 dependencies[] = views
 package = Views
 core = 6.x
+php = 5.0
