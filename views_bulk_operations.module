@@ -474,12 +474,14 @@ function views_bulk_operations_form_submit($form, &$form_state) {
   if ($plugin->options['execution_type'] == VBO_EXECUTION_BATCH) {
     $operations = array();
     foreach ($objects as $oid) {
-      $operations[] = array('_views_bulk_operations_batch_process', array($operation, $oid, $params));
+      $operations[] = array('_views_bulk_operations_batch_process', array($oid));
     }
 
-    // Save the option in the session because Batch API doesn't give a way to 
+    // Save the options in the session because Batch API doesn't give a way to 
     // send a parameter to the finished callback.
-    $_SESSION['vbo_display_result'] = $plugin->options['display_result']; 
+    $_SESSION['vbo_options']['display_result'] = $plugin->options['display_result'];
+    $_SESSION['vbo_options']['operation'] = $operation;
+    $_SESSION['vbo_options']['params'] = $params;
 
     $batch = array(
       'operations' => $operations,
@@ -544,7 +546,10 @@ function _views_bulk_operations_adjust_selection(&$objects, $exposed_input, $plu
 /**
  * Callback for Batch API operations.
  */
-function _views_bulk_operations_batch_process($operation, $oid, $params, &$context = NULL) {
+function _views_bulk_operations_batch_process($oid, &$context = NULL) {
+  $operation = $_SESSION['vbo_options']['operation'];
+  $params = $_SESSION['vbo_options']['params'];
+
   if ($context && !isset($context['results']['time'])) {
     $context['results']['time'] = microtime(TRUE);
   }
@@ -627,10 +632,10 @@ function _views_bulk_operations_batch_finished($success, $results, $operations, 
     // See http://cvs.drupal.org/viewvc.py/drupal/drupal/includes/actions.inc?view=log&pathrev=DRUPAL-6-10
     variable_set('actions_max_stack', 35);
   }
-  if ($display_result || @$_SESSION['vbo_display_result']) {
+  if ($display_result || @$_SESSION['vbo_options']['display_result']) {
     drupal_set_message($message);
-    unset($_SESSION['vbo_display_result']); // unset the option which was used for just one invocation
   }
+  unset($_SESSION['vbo_options']); // unset the options which were used for just one invocation
 }
 
 /**
