@@ -567,6 +567,16 @@ function _views_bulk_operations_queue_process($oid, $operation, $params, $uid, $
   $info = _views_bulk_operations_object_info_for_type($operation['object']);
   if (!$info) return;
   $object = call_user_func($info['load'], $oid);
+  $account = user_load(array('uid' => $uid));
+  if (!_views_bulk_operations_object_permission($operation, $object, $account)) {
+    watchdog('views bulk operations', 'Skipped %action on @type %title due to insufficient permissions.', array(
+      '%action' => $operation['label'], 
+      '@type' => t($operation['object']),
+      '%title' => $object->{$info['title']},
+    ), WATCHDOG_ALERT);
+    return;
+  }
+
   _views_bulk_operations_action_do($operation, $oid, $object, $params, $uid);
 
   if ($display_result) {
@@ -592,6 +602,15 @@ function _views_bulk_operations_batch_process($oid, &$context) {
   $info = _views_bulk_operations_object_info_for_type($operation['object']);
   if (!$info) return;
   $object = call_user_func($info['load'], $oid);
+  if (!_views_bulk_operations_object_permission($operation, $object)) {
+    $context['results']['log'][] = t('Skipped %action on @type %title due to insufficient permissions.', array(
+      '%action' => $operation['label'], 
+      '@type' => t($operation['object']),
+      '%title' => $object->{$info['title']},
+    ));
+    return;
+  }
+
   _views_bulk_operations_action_do($operation, $oid, $object, $params);
 
   $context['results']['log'][] = t('Performed %action on @type %title.', array(
@@ -633,8 +652,26 @@ function _views_bulk_operations_batch_finished($success, $results, $operations, 
  * Direct execution operations.
  */
 function _views_bulk_operations_direct_process($operation, $objects, $params, &$context) {
+  $info = _views_bulk_operations_object_info_for_type($operation['object']);
+  if (!$info) return;
+
   if ($operation['aggregate'] != VBO_AGGREGATE_FORBIDDEN) {
+    if (isset($info['access'])) {
+      foreach ($objects as $i => $oid) {
+        $object = call_user_func($info['load'], $oid);
+        if (!_views_bulk_operations_object_permission($operation, $object)) {
+          unset($objects[$i]);
+          $context['results']['log'][] = t('Skipped %action on @type %title due to insufficient permissions.', array(
+            '%action' => $operation['label'], 
+            '@type' => t($operation['object']),
+            '%title' => $object->{$info['title']},
+          ));
+        }
+      }
+    }
+
     _views_bulk_operations_action_aggregate_do($operation, $objects, $params);
+    
     $context['results']['log'][] = t('Performed aggregate %action on @types %oids.', array(
       '%action' => $operation['label'], 
       '@types' => format_plural(count($objects), t($operation['object']), t($operation['object']  .'s')),
@@ -643,10 +680,18 @@ function _views_bulk_operations_direct_process($operation, $objects, $params, &$
     $context['results']['rows'] += count($objects);
   }
   else foreach ($objects as $oid) {
-    $info = _views_bulk_operations_object_info_for_type($operation['object']);
-    if (!$info) return;
     $object = call_user_func($info['load'], $oid);
+    if (!_views_bulk_operations_object_permission($operation, $object)) {
+      $context['results']['log'][] = t('Skipped %action on @type %title due to insufficient permissions.', array(
+        '%action' => $operation['label'], 
+        '@type' => t($operation['object']),
+        '%title' => $object->{$info['title']},
+      ));
+      continue;
+    }
+    
     _views_bulk_operations_action_do($operation, $oid, $object, $params);
+    
     $context['results']['log'][] = t('Performed %action on @type %title.', array(
       '%action' => $operation['label'], 
       '@type' => t($operation['object']),
@@ -663,8 +708,9 @@ function _views_bulk_operations_direct_finished($success, $results, $operations,
 /**
  * Execute one operation.
  */
-function _views_bulk_operations_action_do($operation, $oid, $object, $params, $uid = NULL) {
-  _views_bulk_operations_action_permission($operation, isset($uid) ? user_load(array('uid' => $uid)) : NULL);
+function _views_bulk_operations_action_do($operation, $oid, $object, $params, $account = NULL) {
+  _views_bulk_operations_action_permission($operation, $account);
+
   if ($operation['type'] == 'action') {
     $params[$operation['object']] = $object; // Add the object to the context for token support
     actions_do($operation['callback'], $object, $params);
@@ -694,7 +740,7 @@ function _views_bulk_operations_action_aggregate_do($operation, $objects, $param
 }
 
 /**
- * Verify access permission to operation.
+ * Verify access permission to execute operation.
  */
 function _views_bulk_operations_action_permission($operation, $account = NULL) {
   if (module_exists('actions_permissions')) {
@@ -706,6 +752,16 @@ function _views_bulk_operations_action_permission($operation, $account = NULL) {
       drupal_access_denied(); 
     }
   }
+}
+
+/**
+ * Verify access permission to operate on object.
+ */
+function _views_bulk_operations_object_permission($operation, $object, $account = NULL) {
+  $info = _views_bulk_operations_object_info_for_type($operation['object']);
+  if (!isset($info['access'])) return TRUE;
+  $op = $operation['modifies object'] ? 'update' : 'view';
+  return call_user_func($info['access'], $op, $object, $account);
 }
 
 /**
@@ -785,8 +841,9 @@ function views_bulk_operations_forms() {
  * The array returned for each object type contains:
  *  'type' => the object type name, should be the same as 'type' field in actions. 
  *  'base_table' => the Views 2 table name corresponding to that object type, should be the same as the $view->base_table attribute.
- *  'load' => a function that given a $id, loads the corresponding object
+ *  'load' => a function($id) that returns the corresponding object.
  *  'title' => an attribute on the object that returns a human-friendly identifier of the object.
+ *  'access' (optional) => a function($op, $node, $account = NULL) that behaves like node_access().
  *
  */
 function views_bulk_operations_views_bulk_operations_object_info() {
@@ -796,6 +853,7 @@ function views_bulk_operations_views_bulk_operations_object_info() {
       'base_table' => 'node',
       'load' => '_views_bulk_operations_node_load',
       'title' => 'title',
+      'access' => 'node_access',
     ),
     'user' => array(
       'type' => 'user',
