@@ -834,20 +834,6 @@ function _views_bulk_operations_object_info_for_type($type) {
   return $objects[$type];
 }
 
-define ('VIEWS_BULK_OPS_MINIMAL_PHP', '5.0.0');
-
-/**
- * Implementation of hook_requirements().
- */
-function views_bulk_operations_requirements($phase) {
-  $requirements = array();
-  if (version_compare(phpversion(), VIEWS_BULK_OPS_MINIMAL_PHP) < 0) {
-    $requirements['php']['description'] = t('Your PHP installation is too old. Views Bulk Operations requires at least PHP %version.', array('%version' => VIEWS_BULK_OPS_MINIMAL_PHP));
-    $requirements['php']['severity'] = REQUIREMENT_ERROR;
-  }
-  return $requirements;
-}
-
 /**
  * Implementation of hook_action_info().
  */
