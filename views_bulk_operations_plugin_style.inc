@@ -140,10 +140,13 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
           'label'              => $operation['label'],
           'callback'           => $operation['callback'],
           'callback arguments' => isset($operation['callback arguments']) ? $operation['callback arguments'] : array(),
-          'configurable'       => isset($operation['configurable']) ? $operation['configurable'] : false,
+          'configurable'       => isset($operation['configurable']) ? $operation['configurable'] : FALSE,
           'type'               => 'operation',
           'object'             => $object_type,
         );
+        if ($object_type == 'node') {
+          $operations[$key]['modifies object'] = TRUE; // assume all node_operations modify the nodes
+        }
       }
     }
 
@@ -154,7 +157,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
         'label'              => $operation['description'],
         'callback'           => $callback,
         'callback arguments' => isset($operation['parameters']) ? $operation['parameters'] : array(),
-        'configurable'       => isset($operation['configurable']) ? $operation['configurable'] : false,
+        'configurable'       => isset($operation['configurable']) ? $operation['configurable'] : FALSE,
         'type'               => 'action',
         'object'             => $operation['type'],
         'modifies object'    => isset($operation['behavior']) && in_array('changes_node_property', $operation['behavior']),

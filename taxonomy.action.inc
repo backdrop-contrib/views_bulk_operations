@@ -91,7 +91,7 @@ function views_bulk_operations_taxonomy_action_form($context) {
   $form['taxonomy'] = array(
     '#type' => 'fieldset',
     '#title' => t('Vocabularies'),
-    '#tree' => true,
+    '#tree' => TRUE,
   );  
   while (list(,$vocabulary) = each($vocabularies)) {
     $form['taxonomy'][$vocabulary->vid] = taxonomy_form($vocabulary->vid);

@@ -11,8 +11,8 @@ function views_bulk_operations_ruleset_action_info() {
         'type' => $ruleset['arguments'][$arg]['type'],
         'parameters' => array('ruleset' => $ruleset_key),
         'description' => $ruleset['label'],
-        'configurable' => false,
-        'rules_ignore' => true,
+        'configurable' => FALSE,
+        'rules_ignore' => TRUE,
       );
       eval(<<<EOS
 if (!function_exists('views_bulk_operations_ruleset_action_{$ruleset_key}')) {
