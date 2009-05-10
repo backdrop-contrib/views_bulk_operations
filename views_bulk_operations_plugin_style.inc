@@ -5,6 +5,10 @@ define('VBO_EXECUTION_DIRECT', 1);
 define('VBO_EXECUTION_BATCH', 2);
 define('VBO_EXECUTION_QUEUE', 3);
 
+define('VBO_AGGREGATE_FORCED', 1);
+define('VBO_AGGREGATE_FORBIDDEN', 0);
+define('VBO_AGGREGATE_OPTIONAL', 2);
+
 class views_bulk_operations_plugin_style extends views_plugin_style_table {
   function options(&$options) {
     parent::options($options);
@@ -143,6 +147,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
           'configurable'       => isset($operation['configurable']) ? $operation['configurable'] : FALSE,
           'type'               => 'operation',
           'object'             => $object_type,
+          'aggregate'          => isset($operation['aggregate']) ? (int)$operation['aggregate'] : VBO_AGGREGATE_OPTIONAL,
         );
         if ($object_type == 'node') {
           $operations[$key]['modifies object'] = TRUE; // assume all node_operations modify the nodes
@@ -161,6 +166,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
         'type'               => 'action',
         'object'             => $operation['type'],
         'modifies object'    => isset($operation['behavior']) && in_array('changes_node_property', $operation['behavior']),
+        'aggregate'          => isset($operation['aggregate']) ? (int)$operation['aggregate'] : VBO_AGGREGATE_FORBIDDEN,
       );
     }
 
@@ -179,7 +185,8 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
         'configurable' => FALSE,
         'parameters' => unserialize($action->parameters),
       );
-      $actions[$action->aid]['behavior'] = isset($static_actions[$action->callback]['behavior']) ? $static_actions[$action->callback]['behavior'] : null;
+      if (isset($static_actions[$action->callback]['behavior'])) $actions[$action->aid]['behavior'] = $static_actions[$action->callback]['behavior'];
+      if (isset($static_actions[$action->callback]['aggregate'])) $actions[$action->aid]['aggregate'] = $static_actions[$action->callback]['aggregate'];
     }
     return $actions;
   }
