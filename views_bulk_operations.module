@@ -696,7 +696,7 @@ function _views_bulk_operations_action_aggregate_do($operation, $objects, $param
  * Verify access permission to operation.
  */
 function _views_bulk_operations_action_permission($operation) {
-  if ($operation['type'] == 'action' && module_exists('actions_permissions')) {
+  if (module_exists('actions_permissions')) {
     $perm = 'execute ' . $operation['label'] . ' (' . $operation['callback'] . ')';
     if (!user_access($perm)) {
       global $user;
