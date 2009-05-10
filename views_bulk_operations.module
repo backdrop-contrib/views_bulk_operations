@@ -506,6 +506,7 @@ function views_bulk_operations_form_submit($form, &$form_state) {
     batch_set($batch);
   }
   else if ($operation['aggregate'] != VBO_AGGREGATE_FORCED && module_exists('job_queue') && $plugin->options['execution_type'] == VBO_EXECUTION_QUEUE) {
+    global $user;
     // Storing the view in params cause serialize() in job_queue_add() to fail.
     // So we just store its name and exposed input and we'll build it again every time!
     $params['view'] = array(
@@ -519,7 +520,7 @@ function views_bulk_operations_form_submit($form, &$form_state) {
           '@type' => t($operation['object']),
           '%oid' => $oid
         )), 
-        array($oid, $operation, $params, $plugin->options['display_result'])
+        array($oid, $operation, $params, $user->uid, $plugin->options['display_result'])
       );
     }
     if ($plugin->options['display_result']) {
@@ -548,7 +549,7 @@ function views_bulk_operations_form_submit($form, &$form_state) {
 /**
  * Job Queue operations.
  */
-function _views_bulk_operations_queue_process($oid, $operation, $params, $display_result) {
+function _views_bulk_operations_queue_process($oid, $operation, $params, $uid, $display_result) {
   static $views;
   if (isset($params['view'])) { 
     // We couldn't save the view in $params so we just saved its name and exposed input.
@@ -566,7 +567,7 @@ function _views_bulk_operations_queue_process($oid, $operation, $params, $displa
   $info = _views_bulk_operations_object_info_for_type($operation['object']);
   if (!$info) return;
   $object = call_user_func($info['load'], $oid);
-  _views_bulk_operations_action_do($operation, $oid, $object, $params);
+  _views_bulk_operations_action_do($operation, $oid, $object, $params, $uid);
 
   if ($display_result) {
     watchdog('views bulk operations', 'Performed %action on @type %title.', array(
@@ -662,8 +663,8 @@ function _views_bulk_operations_direct_finished($success, $results, $operations,
 /**
  * Execute one operation.
  */
-function _views_bulk_operations_action_do($operation, $oid, $object, $params) {
-  _views_bulk_operations_action_permission($operation);
+function _views_bulk_operations_action_do($operation, $oid, $object, $params, $uid = NULL) {
+  _views_bulk_operations_action_permission($operation, isset($uid) ? user_load(array('uid' => $uid)) : NULL);
   if ($operation['type'] == 'action') {
     $params[$operation['object']] = $object; // Add the object to the context for token support
     actions_do($operation['callback'], $object, $params);
@@ -695,13 +696,13 @@ function _views_bulk_operations_action_aggregate_do($operation, $objects, $param
 /**
  * Verify access permission to operation.
  */
-function _views_bulk_operations_action_permission($operation) {
+function _views_bulk_operations_action_permission($operation, $account = NULL) {
   if (module_exists('actions_permissions')) {
     $perm = 'execute ' . $operation['label'] . ' (' . $operation['callback'] . ')';
-    if (!user_access($perm)) {
+    if (!user_access($perm, $account)) {
       global $user;
       watchdog('actions permissions', 'An attempt by user %user to !perm was blocked due to insufficient permissions.', 
-        array('!perm' => $perm, '%user' => $user->name), WATCHDOG_ALERT);
+        array('!perm' => $perm, '%user' => isset($account) ? $account->name : $user->name), WATCHDOG_ALERT);
       drupal_access_denied(); 
     }
   }
