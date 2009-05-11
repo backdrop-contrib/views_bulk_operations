@@ -628,7 +628,12 @@ function _views_bulk_operations_batch_process($oid, &$context) {
 
 function _views_bulk_operations_batch_finished($success, $results, $operations, $display_result = NULL) {
   if ($success) {
-    $message = t('!results rows processed in about !time ms:', array('!results' => $results['rows'], '!time' => round((microtime(TRUE) - $results['time']) * 1000)));
+    if ($results['rows'] > 0) {
+      $message = t('!results rows processed in about !time ms:', array('!results' => $results['rows'], '!time' => round((microtime(TRUE) - $results['time']) * 1000)));
+    }
+    else {
+      $message = t('No rows were processed:');
+    }
     $message .= theme('item_list', $results['log']);
   }
   else {
@@ -670,14 +675,16 @@ function _views_bulk_operations_direct_process($operation, $objects, $params, &$
       }
     }
 
-    _views_bulk_operations_action_aggregate_do($operation, $objects, $params);
-    
-    $context['results']['log'][] = t('Performed aggregate %action on @types %oids.', array(
-      '%action' => $operation['label'], 
-      '@types' => format_plural(count($objects), t($operation['object']), t($operation['object']  .'s')),
-      '%oids' => implode(',', $objects),
-    ));
-    $context['results']['rows'] += count($objects);
+    if (!empty($objects)) {
+      _views_bulk_operations_action_aggregate_do($operation, $objects, $params);
+
+      $context['results']['log'][] = t('Performed aggregate %action on @types %oids.', array(
+        '%action' => $operation['label'], 
+        '@types' => format_plural(count($objects), t($operation['object']), t($operation['object']  .'s')),
+        '%oids' => implode(',', $objects),
+      ));
+      $context['results']['rows'] += count($objects);
+    }
   }
   else foreach ($objects as $oid) {
     $object = call_user_func($info['load'], $oid);
@@ -760,8 +767,20 @@ function _views_bulk_operations_action_permission($operation, $account = NULL) {
 function _views_bulk_operations_object_permission($operation, $object, $account = NULL) {
   $info = _views_bulk_operations_object_info_for_type($operation['object']);
   if (!isset($info['access'])) return TRUE;
-  $op = $operation['modifies object'] ? 'update' : 'view';
-  return call_user_func($info['access'], $op, $object, $account);
+  $access_ops = array(
+    VBO_ACCESS_OP_VIEW => 'view',
+    VBO_ACCESS_OP_UPDATE => 'update',
+    VBO_ACCESS_OP_CREATE => 'create',
+    VBO_ACCESS_OP_DELETE => 'delete',
+  );
+  foreach ($access_ops as $bit => $op) {
+    if ($operation['access op'] & $bit) {
+      if (!call_user_func($info['access'], $op, $object, $account)) {
+        return FALSE;
+      }
+    }
+  }
+  return TRUE;
 }
 
 /**

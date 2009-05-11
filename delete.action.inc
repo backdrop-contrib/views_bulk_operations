@@ -7,16 +7,19 @@ function views_bulk_operations_delete_action_info() {
       'type' => 'node',
       'description' => t('Delete node'),
       'configurable' => FALSE,
+      'behavior' => array('deletes_node_property'),
     ),
     'views_bulk_operations_delete_user_action' => array(
       'type' => 'user',
       'description' => t('Delete user'),
       'configurable' => FALSE,
+      'behavior' => array('deletes_node_property'),
     ),
     'views_bulk_operations_delete_comment_action' => array(
       'type' => 'comment',
       'description' => t('Delete comment'),
       'configurable' => FALSE,
+      'behavior' => array('deletes_node_property'),
     ),
   );
 }
