@@ -721,7 +721,7 @@ function _views_bulk_operations_action_do($operation, $oid, $object, $params, $a
   if ($operation['type'] == 'action') {
     $params[$operation['object']] = $object; // Add the object to the context for token support
     actions_do($operation['callback'], $object, $params);
-    if ($operation['object'] == 'node' && $operation['modifies object']) { // Save nodes explicitly if needed
+    if ($operation['object'] == 'node' && ($operation['access op'] & VBO_ACCESS_OP_UPDATE)) { // Save nodes explicitly if needed
       node_save($object);
     }
   }
