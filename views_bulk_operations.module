@@ -83,7 +83,6 @@ function theme_views_node_selector($element) {
   $vars = array(
     'view' => $view,
   );
-
   // Give each group its own headers row.
   foreach ($sets as $records) {
     // template_preprocess_views_view_table() expects the raw data in 'rows'.
@@ -93,11 +92,16 @@ function theme_views_node_selector($element) {
     template_preprocess_views_view_table($vars);
     
     // Add checkboxes to the header and the rows.
-    $headers[] = theme('table_select_header_cell');
+    $hide_select_all = $view->display['default']->display_options['style_options']['hide_select_all'];
+    if (!$hide_select_all) {
+      $headers[] = theme('table_select_header_cell');
+    }
+    else {
+      $headers[] = array('class' => 'no_select_all');
+    }
     foreach ($vars['header'] as $field => $label) {
       $headers[] = array('data' => $label, 'class' => "views-field views-field-{$vars['fields'][$field]}");
     }
-    
     $rows = array();
     foreach ($records as $num => $object) {
       $row = array('class' => 'rowclick', 'data' => array());
@@ -107,7 +111,6 @@ function theme_views_node_selector($element) {
       }
       $rows[] = $row;
     }
-  
     // Add the first row as option to select all records across all pages.
     if ($view->pager['use_pager'] && $view->total_rows > $view->pager['items_per_page']) {
       $row = array(
