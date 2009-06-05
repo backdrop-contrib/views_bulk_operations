@@ -53,7 +53,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
     );
     $form['hide_select_all'] = array(
       '#type' => 'checkbox',
-      '#title' => t('Hide the select all checkbox'),
+      '#title' => t('Hide select all checkbox'),
       '#description' => t('Check this box to hide the "select all" checkbox and associated "select across all pages" button.'),
       '#default_value' => $this->options['hide_select_all'],
     );
