@@ -109,7 +109,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
         $perm = 'execute ' . $this->options['all_operations'][$key]['label'] . ' ('. $this->options['all_operations'][$key]['callback'] .')';
         if (!user_access($perm)) continue;
       }
-      $selected[$key] = t($this->options['all_operations'][$key]['label']);
+      $selected[$key] = $this->options['all_operations'][$key]['label'];
     }
     return $selected;
   }

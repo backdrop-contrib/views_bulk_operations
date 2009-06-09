@@ -518,7 +518,7 @@ function _views_bulk_operations_execute($view, $view_exposed_input, $objects, $o
     // send a parameter to the finished callback.
     $_SESSION['vbo_options']['display_result'] = $display_result;
     $_SESSION['vbo_options']['operation'] = $operation;
-    $_SESSION['vbo_options']['params'] = $params;
+    $_SESSION['vbo_options']['params'] = serialize($params);
 
     $batch = array(
       'operations' => $operations,
@@ -611,8 +611,10 @@ function _views_bulk_operations_queue_process($oid, $operation, $params, $uid, $
  * Batch API operations.
  */
 function _views_bulk_operations_batch_process($oid, &$context) {
+  views_include('view'); // Force include of view.inc before we unserialize the parameters to make sure view object can be restored. 
+
   $operation = $_SESSION['vbo_options']['operation'];
-  $params = $_SESSION['vbo_options']['params'];
+  $params = unserialize($_SESSION['vbo_options']['params']);
 
   if (!isset($context['results']['time'])) {
     $context['results']['time'] = microtime(TRUE);
