@@ -106,7 +106,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
     $selected = array();
     foreach (array_filter($this->options['selected_operations']) as $key => $operation) {
       if (module_exists('actions_permissions')) {
-        $perm = 'execute ' . $this->options['all_operations'][$key]['label'] . ' ('. $this->options['all_operations'][$key]['callback'] .')';
+        $perm = actions_permissions_get_perm($this->options['all_operations'][$key]['label')), $this->options['all_operations'][$key]['callback']);
         if (!user_access($perm)) continue;
       }
       $selected[$key] = $this->options['all_operations'][$key]['label'];

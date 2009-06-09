@@ -772,7 +772,7 @@ function _views_bulk_operations_action_aggregate_do($operation, $objects, $param
  */
 function _views_bulk_operations_action_permission($operation, $account = NULL) {
   if (module_exists('actions_permissions')) {
-    $perm = 'execute ' . $operation['label'] . ' (' . $operation['callback'] . ')';
+    $perm = actions_permissions_get_perm($operation['label'], $operation['callback']);
     if (!user_access($perm, $account)) {
       global $user;
       watchdog('actions permissions', 'An attempt by user %user to !perm was blocked due to insufficient permissions.', 
