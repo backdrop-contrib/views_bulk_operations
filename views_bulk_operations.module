@@ -14,7 +14,23 @@ define('VIEWS_BULK_OPS_STEP_SINGLE', 4);
 
 // Maximum number of node titles that will be displayed in operation
 // confirmation page.
-define('VIEWS_BULK_OPS_MAX_CONFIRM_NODES', 10);
+define('VIEWS_BULK_OPS_MAX_CONFIRM_NODES', 20);
+
+// Types of bulk execution.
+define('VBO_EXECUTION_DIRECT',    1);
+define('VBO_EXECUTION_BATCH',     2);
+define('VBO_EXECUTION_QUEUE',     3);
+
+// Types of aggregate actions.
+define('VBO_AGGREGATE_FORCED',    1);
+define('VBO_AGGREGATE_FORBIDDEN', 0);
+define('VBO_AGGREGATE_OPTIONAL',  2);
+
+// Access operations.
+define('VBO_ACCESS_OP_VIEW',      0x01);
+define('VBO_ACCESS_OP_UPDATE',    0x02);
+define('VBO_ACCESS_OP_CREATE',    0x04);
+define('VBO_ACCESS_OP_DELETE',    0x08);
 
 /**
  * Implementation of hook_views_api().
@@ -469,6 +485,7 @@ function views_bulk_operations_form_submit($form, &$form_state) {
 
   // Execute the VBO.
   $operation = $plugin->get_operation_info($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['operation']);
+  $operation_arguments = array();
   if ($operation['configurable']) {
     $form_state['values'] += $form_state['storage'][VIEWS_BULK_OPS_STEP_CONFIG];
     $operation_arguments = _views_bulk_operations_action_submit($operation, $form, $form_state);
