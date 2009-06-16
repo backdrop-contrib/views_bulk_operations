@@ -108,7 +108,7 @@ function theme_views_node_selector($element) {
     template_preprocess_views_view_table($vars);
     
     // Add checkboxes to the header and the rows.
-    $hide_select_all = $view->display['default']->display_options['style_options']['hide_select_all'];
+    $hide_select_all = @$view->display['default']->display_options['style_options']['hide_select_all'];
     if (!$hide_select_all) {
       $headers[] = theme('table_select_header_cell');
     }
