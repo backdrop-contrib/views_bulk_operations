@@ -2,7 +2,7 @@
 // $Id$
 
 function views_bulk_operations_script_action_info() {
-  if (!user_access('administer site configuration')) return array();
+  if (!module_exists('actions_permissions') && !user_access('administer site configuration')) return array();
   return array('views_bulk_operations_script_action' => array(
     'type' => 'system',
     'description' => t('Execute arbitrary PHP script'),
@@ -11,7 +11,7 @@ function views_bulk_operations_script_action_info() {
 }
 
 function views_bulk_operations_script_action(&$object, $context) {
-  if (!user_access('administer site configuration')) {
+  if (!module_exists('actions_permissions') && !user_access('administer site configuration')) {
     global $user;
     $msg = 'An attempt to execute arbitrary PHP script action by user <a href="user/!uid">%user</a> was blocked because of lack of permission.';
     $arg = array('%user' => $user->name, '!uid' => $user->uid);
