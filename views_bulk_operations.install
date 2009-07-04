@@ -12,7 +12,10 @@
  * Replace MD5 hashes with meaningful strings in selected operations arrays.
  */
 function views_bulk_operations_update_6000() {
+  drupal_load('module', 'views');
+  drupal_load('module', 'views_bulk_operations');
   views_include('cache');
+
   $operations = array();
   foreach (array_keys(views_bulk_operations_get_object_info()) as $object_type) {
     $hook_name = $object_type .'_operations';
@@ -55,3 +58,4 @@ function views_bulk_operations_update_6000() {
   cache_clear_all('*', 'cache_views');
   return array();
 }
+
