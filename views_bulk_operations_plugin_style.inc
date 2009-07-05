@@ -153,6 +153,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
           'object'             => $object_type,
           'aggregate'          => isset($operation['aggregate']) ? (int)$operation['aggregate'] : VBO_AGGREGATE_OPTIONAL,
           'access op'          => $this->get_access_op($operation),
+          'permissions'        => isset($operation['permissions']) ? $operation['permissions'] : NULL,
         );
       }
     }
@@ -169,6 +170,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
         'object'             => $operation['type'],
         'aggregate'          => isset($operation['aggregate']) ? (int)$operation['aggregate'] : VBO_AGGREGATE_FORBIDDEN,
         'access op'          => $this->get_access_op($operation),
+        'permissions'        => isset($operation['permissions']) ? $operation['permissions'] : NULL,
       );
     }
 
@@ -210,6 +212,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
       );
       if (isset($static_actions[$action->callback]['behavior'])) $actions[$action->aid]['behavior'] = $static_actions[$action->callback]['behavior'];
       if (isset($static_actions[$action->callback]['aggregate'])) $actions[$action->aid]['aggregate'] = $static_actions[$action->callback]['aggregate'];
+      if (isset($static_actions[$action->callback]['permissions'])) $actions[$action->aid]['permissions'] = $static_actions[$action->callback]['permissions'];
     }
     return $actions;
   }

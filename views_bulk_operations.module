@@ -806,6 +806,7 @@ function _views_bulk_operations_action_permission($operation, $account = NULL) {
  * Verify access permission to operate on object.
  */
 function _views_bulk_operations_object_permission($operation, $object, $account = NULL) {
+  // Check against object access permissions.
   $info = _views_bulk_operations_object_info_for_type($operation['object']);
   if (!isset($info['access'])) return TRUE;
   $access_ops = array(
@@ -821,6 +822,14 @@ function _views_bulk_operations_object_permission($operation, $object, $account 
       }
     }
   }
+
+  // Check against additional permissions.
+  if (!empty($operation['permissions'])) foreach ($operation['permissions'] as $perm) {
+    if (!user_access($perm, $account)) {
+      return FALSE;
+    }
+  }
+
   return TRUE;
 }
 
