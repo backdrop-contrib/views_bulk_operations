@@ -590,6 +590,8 @@ function _views_bulk_operations_execute($view, $view_exposed_input, $objects, $o
  * Job Queue operations.
  */
 function _views_bulk_operations_queue_process($oid, $operation, $params, $uid, $display_result) {
+  module_load_include('inc', 'node', 'node.admin');
+
   static $views;
   if (isset($params['view'])) { 
     // We couldn't save the view in $params so we just saved its name and exposed input.
@@ -632,7 +634,8 @@ function _views_bulk_operations_queue_process($oid, $operation, $params, $uid, $
  * Batch API operations.
  */
 function _views_bulk_operations_batch_process($oid, &$context) {
-  views_include('view'); // Force include of view.inc before we unserialize the parameters to make sure view object can be restored. 
+  views_include('view'); // Force include of view.inc before we unserialize the parameters to make sure view object can be restored.
+  module_load_include('inc', 'node', 'node.admin');
 
   $operation = $_SESSION['vbo_options']['operation'];
   $params = unserialize($_SESSION['vbo_options']['params']);
