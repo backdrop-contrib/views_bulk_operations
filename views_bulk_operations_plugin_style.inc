@@ -136,7 +136,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
     $operations = array();
 
     module_load_include('inc', 'node', 'node.admin');
-    foreach (views_bulk_operations_get_object_info() as $object_type => $info) {
+    foreach (_views_bulk_operations_get_object_info() as $object_type => $info) {
       $hook_name = $object_type .'_operations';
       foreach (module_invoke_all($hook_name) as $operation) {
         if (empty($operation['callback'])) continue;

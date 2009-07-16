@@ -921,6 +921,12 @@ function views_bulk_operations_views_bulk_operations_object_info() {
       'load' => '_comment_load',
       'title' => 'subject',
     ),
+    'term' => array(
+      'type' => 'term',
+      'base_table' => 'term_data',
+      'load' => 'taxonomy_get_term',
+      'title' => 'name',
+    ),
   );
 }
 
@@ -928,8 +934,16 @@ function _views_bulk_operations_node_load($nid) {
   return node_load($nid, NULL, TRUE);
 }
 
+function _views_bulk_operations_get_object_info($reset = FALSE) {
+  static $objects = array();
+  if ($reset || empty($objects)) {
+    $objects = module_invoke_all('views_bulk_operations_object_info');
+  }
+  return $objects;
+}
+
 function _views_bulk_operations_object_info_for_view($view) {
-  foreach (views_bulk_operations_get_object_info() as $info) {
+  foreach (_views_bulk_operations_get_object_info() as $info) {
     if ($info['base_table'] == $view->base_table) {
       return $info;
     }
@@ -939,7 +953,7 @@ function _views_bulk_operations_object_info_for_view($view) {
 }
 
 function _views_bulk_operations_object_info_for_type($type) {
-  $objects = views_bulk_operations_get_object_info();
+  $objects = _views_bulk_operations_get_object_info();
   if (!isset($objects[$type])) {
     watchdog('views bulk operations', 'Could not find object info for type @type.', array('@type' => $type), WATCHDOG_ERROR);
     return NULL;
@@ -960,14 +974,6 @@ function views_bulk_operations_action_info() {
     if (is_array($action_info)) $actions += $action_info;
   }
   return $actions;
-}
-
-function views_bulk_operations_get_object_info($reset = FALSE) {
-  static $objects = array();
-  if ($reset || empty($objects)) {
-    $objects = module_invoke_all('views_bulk_operations_object_info');
-  }
-  return $objects;
 }
 
 function views_bulk_operation_execute($vid, $operation_callback) {
