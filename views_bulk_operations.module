@@ -550,12 +550,6 @@ function _views_bulk_operations_execute($view, $view_exposed_input, $objects, $o
   }
   else if ($operation['aggregate'] != VBO_AGGREGATE_FORCED && module_exists('job_queue') && $execution_type == VBO_EXECUTION_QUEUE) {
     global $user;
-    // Storing the view in params cause serialize() in job_queue_add() to fail.
-    // So we just store its name and exposed input and we'll build it again every time!
-    $params['view'] = array(
-      'name' => $view->vid ? $view->vid : $view->name,
-      'exposed_input' => $view_exposed_input,
-    );
     foreach ($objects as $oid) {
       job_queue_add('_views_bulk_operations_queue_process', 
         t('Perform %action on @type %oid.', array(
@@ -590,21 +584,8 @@ function _views_bulk_operations_execute($view, $view_exposed_input, $objects, $o
  * Job Queue operations.
  */
 function _views_bulk_operations_queue_process($oid, $operation, $params, $uid, $display_result) {
+  views_include('view'); // Force include of view.inc before we unserialize the parameters to make sure view object can be restored.
   module_load_include('inc', 'node', 'node.admin');
-
-  static $views;
-  if (isset($params['view'])) { 
-    // We couldn't save the view in $params so we just saved its name and exposed input.
-    // We rebuild it here and save it for the duration of the page request.
-    $md5 = md5($params['view']['name'].':'.serialize($params['view']['exposed_input']));
-    if (!isset($views[$md5])) {
-      $view = views_get_view($params['view']['name']);
-      $view->set_exposed_input($params['view']['exposed_input']);
-      $view->execute();
-      $views[$md5] = $view;
-    }
-    $params['view'] = $views[$md5];
-  }
 
   $info = _views_bulk_operations_object_info_for_type($operation['object']);
   if (!$info) return;
@@ -619,7 +600,7 @@ function _views_bulk_operations_queue_process($oid, $operation, $params, $uid, $
     return;
   }
 
-  _views_bulk_operations_action_do($operation, $oid, $object, $params, $uid);
+  _views_bulk_operations_action_do($operation, $oid, $object, $params, $account);
 
   if ($display_result) {
     watchdog('views bulk operations', 'Performed %action on @type %title.', array(
