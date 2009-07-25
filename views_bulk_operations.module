@@ -221,6 +221,12 @@ function views_bulk_operations_form($form_state, $plugin) {
       '#type' => 'value',
       '#value' => $plugin->view->get_exposed_input(),
     );
+
+    // If empty view, render the empty text.
+    if (!$plugin->view->result) {
+      $form['empty'] = array('#value' => $plugin->view->display_handler->render_empty());
+      return $form;
+    }
   } 
   else {
     switch ($form_state['storage']['step']) {
@@ -980,7 +986,7 @@ function views_bulk_operations_action_info() {
   return $actions;
 }
 
-function views_bulk_operation_execute($vid, $operation_callback) {
+function views_bulk_operations_execute($vid, $operation_callback) {
   $view = views_get_view($vid);
   $view->set_items_per_page(0);
   $view->ignore_fields = TRUE; // we don't need the fields here so we tell our style plugin to ignore them  
@@ -997,7 +1003,7 @@ function views_bulk_operation_execute($vid, $operation_callback) {
   if ($execution_type == VBO_EXECUTION_BATCH) {
     $execution_type = VBO_EXECUTION_DIRECT; // we don't yet support Batch API here
   }
-  $diplay_result = $plugin->options['display_result'];
+  $display_result = $plugin->options['display_result'];
   _views_bulk_operations_execute(
     $view, 
     array(), 
