@@ -795,6 +795,16 @@ function _views_bulk_operations_action_permission($operation, $account = NULL) {
       drupal_access_denied(); 
     }
   }
+
+  // Check against additional permissions.
+  if (!empty($operation['permissions'])) foreach ($operation['permissions'] as $perm) {
+    if (!user_access($perm, $account)) {
+      global $user;
+      watchdog('actions permissions', 'An attempt by user %user to !perm was blocked due to insufficient permissions.', 
+        array('!perm' => $perm, '%user' => isset($account) ? $account->name : $user->name), WATCHDOG_ALERT);
+      drupal_access_denied(); 
+    }
+  }
 }
 
 /**
@@ -815,13 +825,6 @@ function _views_bulk_operations_object_permission($operation, $object, $account 
       if (!call_user_func($info['access'], $op, $object, $account)) {
         return FALSE;
       }
-    }
-  }
-
-  // Check against additional permissions.
-  if (!empty($operation['permissions'])) foreach ($operation['permissions'] as $perm) {
-    if (!user_access($perm, $account)) {
-      return FALSE;
     }
   }
 
