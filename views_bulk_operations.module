@@ -207,7 +207,7 @@ function views_bulk_operations_form($form_state, $plugin) {
   }
   else {
     $default_objects = array();
-    $default_operation = null;
+    $default_operation = NULL;
   }
 
   if (!isset($form_state['storage']['step'])) {
@@ -436,7 +436,9 @@ function views_bulk_operations_form_validate($form, &$form_state) {
 
 function _views_bulk_operations_adjust_selection(&$objects, $exposed_input, $plugin) {
   $objects = array_filter($objects);
+
   if (isset($objects['select_all'])) {
+    // Adjust selection to select all nodes across pages.
     $objects = array();
     $view = views_get_view($plugin->view->vid ? $plugin->view->vid : $plugin->view->name);
     $view->set_items_per_page(0);
@@ -450,6 +452,21 @@ function _views_bulk_operations_adjust_selection(&$objects, $exposed_input, $plu
     foreach ($view->result as $result) {
       $objects[$result->{$view->base_field}] = $result->{$view->base_field};
     }
+
+    // Adjust sticky selection accordingly.
+    $_SESSION['vbo_values'][$_GET['q']]['objects'] = $objects;
+    $_SESSION['vbo_values'][$_GET['q']]['objects']['select_all'] = TRUE;
+  }
+  else {
+    // Adjust selection to filter out previous selections.
+    $results = array();
+    foreach ($plugin->view->result as $result) {
+      $results[$result->{$plugin->view->base_field}] = $result->{$plugin->view->base_field};
+    }
+    $objects = array_intersect($objects, $results);
+
+    // Adjust sticky selection accordingly.
+    $_SESSION['vbo_values'][$_GET['q']]['objects'] = $objects;
   }
 }
 

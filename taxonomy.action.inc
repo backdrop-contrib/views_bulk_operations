@@ -79,9 +79,10 @@ function views_bulk_operations_taxonomy_action(&$node, $context) {
     }
     else {
       $previous_tid = $taxonomy[$term->vid];
-      unset($taxonomy[$term->vid]);
-      $taxonomy[$term->vid][$previous_tid] = $previous_tid;
-      $taxonomy[$term->vid][$term->tid] = $term->tid;
+      $taxonomy[$term->vid] = array(
+        $previous_tid => $previous_tid,
+        $term->tid => $term->tid
+      );
     }
   }
   if (isset($tags) && $context['do'] != TAXONOMY_ACTION_DELETE) {
