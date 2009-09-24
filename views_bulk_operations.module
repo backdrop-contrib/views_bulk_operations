@@ -597,7 +597,7 @@ function _views_bulk_operations_execute($view, $view_exposed_input, $objects, $o
     }
   }
   else /*if ($execution_type == VBO_EXECUTION_DIRECT)*/ {
-    set_time_limit(0);
+    @set_time_limit(0);
     
     $context['results']['rows'] = 0;
     $context['results']['time'] = microtime(TRUE);
