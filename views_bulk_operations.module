@@ -717,7 +717,12 @@ function _views_bulk_operations_batch_finished($success, $results, $operations, 
     variable_set('actions_max_stack', 35);
   }
   if ($display_result || @$_SESSION['vbo_options']['display_result']) {
-    drupal_set_message($message);
+    if (function_exists('drush_log')) {
+      drush_log($message, 'ok');
+    }
+    else {
+      drupal_set_message($message);
+    }
   }
   unset($_SESSION['vbo_options']); // unset the options which were used for just one invocation
 }
