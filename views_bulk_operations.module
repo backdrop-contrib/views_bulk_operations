@@ -703,7 +703,7 @@ function _views_bulk_operations_batch_finished($success, $results, $operations, 
     else {
       $message = t('No rows were processed:');
     }
-    $message .= theme('item_list', $results['log']);
+    $message .= "\n". theme('item_list', $results['log']);
   }
   else {
     // An error occurred.
@@ -718,7 +718,7 @@ function _views_bulk_operations_batch_finished($success, $results, $operations, 
   }
   if ($display_result || @$_SESSION['vbo_options']['display_result']) {
     if (function_exists('drush_log')) {
-      drush_log($message, 'ok');
+      drush_log(strip_tags($message), 'ok');
     }
     else {
       drupal_set_message($message);
@@ -1174,7 +1174,7 @@ function views_bulk_operations_action(&$object, $context) {
 function views_bulk_operations_execute($vid, $operation_callback, $operation_arguments = array(), $view_exposed_input = array()) {
   $view = views_get_view($vid);
   if (!is_object($view)) {
-    watchdog('views bulk operations', 'Could not find view %vid.', array('%vid' => $vid), WATCHDOG_ERROR);
+    _views_bulk_operations_report_error('Could not find view %vid.', array('%vid' => $vid));
     return;
   }
 
@@ -1189,7 +1189,7 @@ function views_bulk_operations_execute($vid, $operation_callback, $operation_arg
     }
   }
   if (!$found) {
-    watchdog('views bulk operations', 'Could not find a VBO display in view %vid.', array('%vid' => $vid), WATCHDOG_ERROR);
+    _views_bulk_operations_report_error('Could not find a VBO display in view %vid.', array('%vid' => $vid));
     return;
   }
 
@@ -1203,7 +1203,7 @@ function views_bulk_operations_execute($vid, $operation_callback, $operation_arg
   $plugin = $view->style_plugin;
   $operations = $plugin->get_selected_operations();
   if (!isset($operations[$operation_callback])) {
-    watchdog('views bulk operations', 'Could not find operation %operation in view %vid.', array('%operation' => $operation_callback, '%vid' => $vid), WATCHDOG_ERROR);
+    _views_bulk_operations_report_error('Could not find operation %operation in view %vid.', array('%operation' => $operation_callback, '%vid' => $vid));
     return;
   }
   $operation = $plugin->get_operation_info($operation_callback);
@@ -1225,5 +1225,15 @@ function views_bulk_operations_execute($vid, $operation_callback, $operation_arg
     $execution_type, 
     $display_result
   );
+}
+
+/**
+ * Helper function to report an error.
+ */
+function _views_bulk_operations_report_error($msg, $arg) {
+  watchdog('views bulk operations', $msg, $arg, WATCHDOG_ERROR);
+  if (function_exists('drush_set_error')) {
+    drush_set_error('VIEWS_BULK_OPERATIONS_EXECUTION_ERROR', strip_tags(dt($msg, $arg)));
+  }
 }
 

@@ -48,7 +48,7 @@ function views_bulk_operations_drush_list() {
   session_save_session(FALSE);
 
   // Find all VBO views and their associated operations.
-  $rows = array(array(dt('VID'), dt('Name'), dt('Description'), dt('Operations')));
+  $rows = array(array(sprintf('%5s', dt('VID')), dt('NAME'), dt('DESCRIPTION'), dt('OPERATIONS')));
   foreach (views_get_all_views() as $name => $view) {
     foreach (array_keys($view->display) as $display) {
       $display_options = &$view->display[$display]->display_options;
@@ -62,7 +62,7 @@ function views_bulk_operations_drush_list() {
         }
         $operations[] = "---------------";
         $rows[] = array(
-          $view->vid,
+          sprintf('%5d', $view->vid),
           $view->name,
           $view->description,
           implode("\n", $operations),
@@ -102,6 +102,9 @@ function views_bulk_operations_drush_execute($vid = NULL, $operation = NULL) {
       case 'operation':
         $operation_arguments[$parts['name']] = $parts['value'];
         break;
+      default:
+        drush_set_error('VIEWS_BULK_OPERATIONS_UNKNOWN_ARGUMENT', dt('The argument type %type is unknown. Please specify either input or operation.', array('%type' => $parts['type'])));
+        return;
     }
   }
   
