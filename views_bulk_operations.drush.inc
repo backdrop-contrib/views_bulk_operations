@@ -42,6 +42,12 @@ function views_bulk_operations_drush_command() {
  * Implementation of 'vbo list' command.
  */
 function views_bulk_operations_drush_list() {
+  // Impersonate admin.
+  global $user;
+  $user = user_load(array('uid' => '1'));
+  session_save_session(FALSE);
+
+  // Find all VBO views and their associated operations.
   $rows = array(array(dt('VID'), dt('Name'), dt('Description'), dt('Operations')));
   foreach (views_get_all_views() as $name => $view) {
     foreach (array_keys($view->display) as $display) {
