@@ -30,11 +30,11 @@ function views_bulk_operations_drush_command() {
       'type:[name=]value ...' => 'Parameters to be passed as view input filters, view arguments or operation arguments, where type is respectively {input, argument, operation}.',
     ),
     'examples' => array(
-      'vbo execute admin_content node_publish_action' => 
+      '$ drush vbo execute admin_content node_publish_action' => 
         'Publish nodes returned by view admin_content.',
-      'vbo execute 44 node_assign_owner_action operation:owner_uid=3' => 
+      '$ drush vbo execute 44 node_assign_owner_action operation:owner_uid=3' => 
         'Change node ownership on nodes returned by view #44, passing argument owner_uid=3 to the action.',
-      'vbo execute admin_content node_unpublish_action input:type=expense argument:3' => 
+      '$ drush vbo execute admin_content node_unpublish_action input:type=expense argument:3' => 
         'Unpublish nodes returned by view admin_content, filtering results of type expense and passing value 3 as first view argument.',
     ),
   );
