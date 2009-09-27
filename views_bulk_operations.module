@@ -1091,6 +1091,7 @@ function views_bulk_operations_action_form($context) {
     '#title' => t('View'),
     '#description' => t('Select the VBO to be executed.'),
     '#options' => $views,
+    '#default_value' => @$context['view_vid'],
     '#attributes' => array('onchange' => 'Drupal.vbo.action.updateOperations(this.options[this.selectedIndex].value);'),
   );
   $form['operation_callback'] = array(
@@ -1098,6 +1099,7 @@ function views_bulk_operations_action_form($context) {
     '#title' => t('Operation'),
     '#description' => t('Select the operation to be executed.'),
     '#options' => $operations,
+    '#default_value' => @$context['operation_callback'],
   );
   $form['operation_arguments'] = array(
     '#type' => 'textarea',
@@ -1107,6 +1109,7 @@ function views_bulk_operations_action_form($context) {
                          and they should correspond to the values returned by the action\'s form submit function.
                          The variables <code>&$object</code> and <code>$context</code> are available to this script.
                         '),
+    '#default_value' => @$context['operation_arguments'],
   );
   $form['view_exposed_input'] = array(
     '#type' => 'textarea',
@@ -1116,6 +1119,7 @@ function views_bulk_operations_action_form($context) {
                          and they should correspond to the query values used on the view URL when exposed filters are applied.
                          The variables <code>&$object</code> and <code>$context</code> are available to this script.
                         '),
+    '#default_value' => @$context['view_exposed_input'],
   );
   return $form;
 }
@@ -1180,7 +1184,7 @@ function views_bulk_operations_execute($vid, $operation_callback, $operation_arg
     }
   }
   if (!$found) {
-    watchdog('views bulk operations', 'The view %vid does not seem to contain a VBO display.', array('%vid' => $vid), WATCHDOG_ERROR);
+    watchdog('views bulk operations', 'Could not find a VBO display in view %vid.', array('%vid' => $vid), WATCHDOG_ERROR);
     return;
   }
 
