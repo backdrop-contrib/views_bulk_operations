@@ -221,6 +221,10 @@ function views_bulk_operations_form($form_state, $plugin) {
       '#type' => 'value',
       '#value' => $plugin->view->get_exposed_input(),
     );
+    $form['arguments'] = array(
+      '#type' => 'value',
+      '#value' => $plugin->view->args,
+    );
 
     // If empty view, render the empty text.
     if (!$plugin->view->result) {
@@ -445,7 +449,7 @@ function views_bulk_operations_form_validate($form, &$form_state) {
 /**
  * Helper function to adjust the selected set of nodes based on different situations.
  */ 
-function _views_bulk_operations_adjust_selection(&$objects, $exposed_input, $plugin) {
+function _views_bulk_operations_adjust_selection(&$objects, $exposed_input, $arguments, $plugin) {
   $objects = array_filter($objects);
 
   if (isset($objects['select_all'])) {
@@ -454,6 +458,7 @@ function _views_bulk_operations_adjust_selection(&$objects, $exposed_input, $plu
     $view = views_get_view($plugin->view->vid ? $plugin->view->vid : $plugin->view->name);
     $view->set_items_per_page(0);
     $view->set_exposed_input($exposed_input);
+    $view->set_arguments($arguments);
 
     // HACK for date_api_filter_handler: set $_GET with the exposed_input.
     $_GET += $exposed_input;
@@ -493,7 +498,12 @@ function views_bulk_operations_form_submit($form, &$form_state) {
     case VIEWS_BULK_OPS_STEP_VIEW:
       $form_state['storage']['step'] = $form_state['values']['step'];
       $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW] = $form_state['values'];
-      _views_bulk_operations_adjust_selection($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['objects'], $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['exposed_input'], $plugin);
+      _views_bulk_operations_adjust_selection(
+        $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['objects'], 
+        $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['exposed_input'], 
+        $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['arguments'], 
+        $plugin
+      );
       $operation = $plugin->get_operation_info($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['operation']);
       if (!$operation['configurable'] && $plugin->options['skip_confirmation']) {
         break; // Go directly to execution
@@ -504,7 +514,12 @@ function views_bulk_operations_form_submit($form, &$form_state) {
       $form_state['storage']['step'] = $form_state['values']['step'];
       $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW] = $form_state['values'];
       $form_state['storage'][VIEWS_BULK_OPS_STEP_CONFIG] = $form_state['values']; // we're not taking any chances
-      _views_bulk_operations_adjust_selection($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['objects'], $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['exposed_input'], $plugin);
+      _views_bulk_operations_adjust_selection(
+        $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['objects'], 
+        $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['exposed_input'], 
+        $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['arguments'], 
+        $plugin
+      );
       if ($plugin->options['skip_confirmation']) {
         break; // Go directly to execution
       }
@@ -1120,11 +1135,21 @@ function views_bulk_operations_action_form($context) {
     '#type' => 'textarea',
     '#title' => t('View exposed input'),
     '#description' => t('Enter PHP script that will assemble the view exposed input (if the view accepts exposed input).
-                         These input should be of the form: <code>return array(\'input1\' => \'value1\');</code> 
+                         These input should be of the form: <code>return array(\'input1\' => \'value1\', ...);</code> 
                          and they should correspond to the query values used on the view URL when exposed filters are applied.
                          The variables <code>&$object</code> and <code>$context</code> are available to this script.
                         '),
     '#default_value' => @$context['view_exposed_input'],
+  );
+  $form['view_arguments'] = array(
+    '#type' => 'textarea',
+    '#title' => t('View arguments'),
+    '#description' => t('Enter PHP script that will assemble the view arguments (if the view accepts arguments).
+                         These input should be of the form: <code>return array(\'value1\', ...);</code> 
+                         and they should correspond to the arguments defined in the view.
+                         The variables <code>&$object</code> and <code>$context</code> are available to this script.
+                        '),
+    '#default_value' => @$context['view_arguments'],
   );
   return $form;
 }
@@ -1150,6 +1175,7 @@ function views_bulk_operations_action_submit($form, $form_state) {
     'operation_callback' => $form_state['values']['operation_callback'],
     'operation_arguments' => $form_state['values']['operation_arguments'],
     'view_exposed_input' => $form_state['values']['view_exposed_input'],
+    'view_arguments' => $form_state['values']['view_arguments'],
   );
 }
 
@@ -1165,13 +1191,17 @@ function views_bulk_operations_action(&$object, $context) {
   if (!empty($context['view_exposed_input'])) {
     $view_exposed_input = eval($context['view_exposed_input']);
   }
-  views_bulk_operations_execute($context['view_vid'], $context['operation_callback'], $operation_arguments, $view_exposed_input);
+  $view_arguments = array();
+  if (!empty($context['view_arguments'])) {
+    $view_arguments = eval($context['view_arguments']);
+  }
+  views_bulk_operations_execute($context['view_vid'], $context['operation_callback'], $operation_arguments, $view_exposed_input, $view_arguments);
 }
 
 /**
  * API function to programmatically invoke a VBO.
  */
-function views_bulk_operations_execute($vid, $operation_callback, $operation_arguments = array(), $view_exposed_input = array()) {
+function views_bulk_operations_execute($vid, $operation_callback, $operation_arguments = array(), $view_exposed_input = array(), $view_arguments = array()) {
   $view = views_get_view($vid);
   if (!is_object($view)) {
     _views_bulk_operations_report_error('Could not find view %vid.', array('%vid' => $vid));
@@ -1195,6 +1225,7 @@ function views_bulk_operations_execute($vid, $operation_callback, $operation_arg
 
   // Execute the view.
   $view->set_exposed_input($view_exposed_input);
+  $view->set_arguments($view_arguments);
   $view->set_items_per_page(0);
   $view->ignore_fields = TRUE; // we don't need the fields here so we tell our style plugin to ignore them
   $view->execute();

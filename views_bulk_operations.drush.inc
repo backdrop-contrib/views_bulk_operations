@@ -27,12 +27,15 @@ function views_bulk_operations_drush_command() {
     'arguments' => array(
       'vid' => 'ID or name of the view to be executed.',
       'operation' => 'Callback name of the operation to be applied on the view results.',
-      'type:name=value ...' => 'Arguments to be passed to the view input filter or to the operation, where type in {input, operation}.',
+      'type:[name=]value ...' => 'Parameters to be passed as view input filters, view arguments or operation arguments, where type is respectively {input, argument, operation}.',
     ),
     'examples' => array(
-      'vbo execute admin_content node_publish_action' => 'Publish nodes returned by view admin_content.',
-      'vbo execute 44 node_assign_owner_action operation:owner_uid=3' => 'Change node ownership on nodes returned by view #44, passing argument owner_uid=3 to the action.',
-      'vbo execute admin_content node_unpublish_action input:type=expense' => 'Unpublish nodes returned by view admin_content, filtering results of type expense.',
+      'vbo execute admin_content node_publish_action' => 
+        'Publish nodes returned by view admin_content.',
+      'vbo execute 44 node_assign_owner_action operation:owner_uid=3' => 
+        'Change node ownership on nodes returned by view #44, passing argument owner_uid=3 to the action.',
+      'vbo execute admin_content node_unpublish_action input:type=expense argument:3' => 
+        'Unpublish nodes returned by view admin_content, filtering results of type expense and passing value 3 as first view argument.',
     ),
   );
   return $items;
@@ -88,11 +91,12 @@ function views_bulk_operations_drush_execute($vid = NULL, $operation = NULL) {
   }
   $args = func_get_args();
   $view_exposed_input = array();
-  $operations_arguments = array();
+  $operation_arguments = array();
+  $view_arguments = array();
   if (count($args) > 2) for ($i=2; $i<count($args); $i++) {
     $parts = array();
-    if (FALSE === preg_match('/^(?<type>\w+):(?<name>\w+)=(?<value>(.*?))$/', $args[$i], $parts)) {
-      drush_set_error('VIEWS_BULK_OPERATIONS_INVALID_ARGUMENT', dt('The argument %arg should be of the form type:name=value where type in {input, operation}.', array('%arg' => $args[$i])));
+    if (FALSE === preg_match('/^(?<type>\w+):(?:(?<name>\w+)=)?(?<value>(.*?))$/', $args[$i], $parts)) {
+      drush_set_error('VIEWS_BULK_OPERATIONS_INVALID_PARAMETER', dt('The parameter %arg should be of the form type:[name=]value where type in {input, argument, operation}.', array('%arg' => $args[$i])));
       return;
     }
     switch ($parts['type']) {
@@ -102,18 +106,21 @@ function views_bulk_operations_drush_execute($vid = NULL, $operation = NULL) {
       case 'operation':
         $operation_arguments[$parts['name']] = $parts['value'];
         break;
+      case 'argument':
+        $view_arguments[] = $parts['value'];
+        break;
       default:
-        drush_set_error('VIEWS_BULK_OPERATIONS_UNKNOWN_ARGUMENT', dt('The argument type %type is unknown. Please specify either input or operation.', array('%type' => $parts['type'])));
+        drush_set_error('VIEWS_BULK_OPERATIONS_UNKNOWN_PARAMETER', dt('The parameter type %type is unknown. Please specify either input, argument or operation.', array('%type' => $parts['type'])));
         return;
     }
   }
-  
+
   // Impersonate admin.
   global $user;
   $user = user_load(array('uid' => '1'));
   session_save_session(FALSE);
 
   // Execute the VBO.
-  views_bulk_operations_execute($vid, $operation, $operation_arguments, $view_exposed_input);
+  views_bulk_operations_execute($vid, $operation, $operation_arguments, $view_exposed_input, $view_arguments);
 }
 
