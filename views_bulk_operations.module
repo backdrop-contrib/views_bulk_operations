@@ -415,7 +415,7 @@ function views_bulk_operations_form_validate($form, &$form_state) {
   switch ($form_state['values']['step']) {
     case VIEWS_BULK_OPS_STEP_VIEW:
       $_SESSION['vbo_values'][$_GET['q']] = $form_state['values'];
-      if (!array_sum($form_state['values']['objects'])) { // If all 0, no row selected
+      if (!array_filter($form_state['values']['objects'])) { // If all 0, no row selected
         form_set_error('objects', t('No row selected. Please select one or more rows.'));
       }
       if (!empty($form_state['clicked_button']['#hash'])) {
@@ -428,7 +428,7 @@ function views_bulk_operations_form_validate($form, &$form_state) {
 
     case VIEWS_BULK_OPS_STEP_SINGLE:
       $_SESSION['vbo_values'][$_GET['q']] = $form_state['values'];
-      if (!array_sum($form_state['values']['objects'])) { // If all 0, no row selected
+      if (!array_filter($form_state['values']['objects'])) { // If all 0, no row selected
         form_set_error('objects', t('No row selected. Please select one or more rows.'));
       }
       $plugin = $form_state['values']['plugin'];
