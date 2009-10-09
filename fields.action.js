@@ -5,9 +5,9 @@
 Drupal.vbo = Drupal.vbo || {};
 Drupal.vbo.fieldsAction = Drupal.vbo.fieldsAction || {};
 
-Drupal.vbo.fieldsAction.updateToggler = function(toggler) {
+Drupal.vbo.fieldsAction.updateToggler = function(toggler, direct) {
   var parent = $(toggler).parents('tr')[0];
-  if ($(toggler).is(':checked')) {
+  if ((toggler.checked && direct) || (!toggler.checked && !direct)) {
     $('.fields-action-togglable :input', parent).removeAttr('disabled');
   }
   else {
@@ -17,12 +17,12 @@ Drupal.vbo.fieldsAction.updateToggler = function(toggler) {
 
 Drupal.behaviors.vbo_fieldsAction = function(context) {
   $('.fields-action-toggler').click(function() {
-    Drupal.vbo.fieldsAction.updateToggler(this);
+    Drupal.vbo.fieldsAction.updateToggler(this, true);
   });
 
   $('th.select-all').click(function() {
     $('.fields-action-toggler').each(function() {
-      Drupal.vbo.fieldsAction.updateToggler(this);
+      Drupal.vbo.fieldsAction.updateToggler(this, false);
     });
   });
   
