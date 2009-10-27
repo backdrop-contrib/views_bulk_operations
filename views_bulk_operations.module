@@ -54,6 +54,32 @@ function views_bulk_operations_elements() {
 }
 
 /**
+ * Process the views_node_selector element defined earlier.
+ * 
+ * @see views_bulk_operations_elements()
+ */
+function views_node_selector_process($element, $edit) {
+  $element['#tree'] = TRUE;
+  if (!isset($element['#value'])) {
+    $element['#value'] = array('selection' => array(), 'select_all' => FALSE);
+  }
+
+  $view = $element['#view'];
+  $options = array();
+  foreach ($view->result as $object) {
+    $options[$object->{$view->base_field}] = '';
+  }
+  $element['selection']['#options'] = $options;
+  $element['selection']['#value'] = $element['#value']['selection'];
+  $element['selection']['#attributes'] = array();
+  $element['selection'] = expand_checkboxes($element['selection']);
+  
+  $element['select_all'] = array('#type' => 'hidden', '#default_value' => $element['#value']['select_all']);
+
+  return $element; 
+}
+
+/**
  * Implementation of hook_theme().
  */
 function views_bulk_operations_theme() {
@@ -123,7 +149,7 @@ function theme_views_node_selector($element) {
     $rows = array();
     foreach ($records as $num => $object) {
       $row = array('class' => 'rowclick', 'data' => array());
-      $row['data'][] =  theme('checkbox', $element[$object->{$view->base_field}]);
+      $row['data'][] =  theme('checkbox', $element['selection'][$object->{$view->base_field}]);
       foreach ($vars['rows'][$num] as $field => $content) {
         $row['data'][] = array('data' => $content, 'class' => "views-field views-field-{$vars['fields'][$field]}");
       }
@@ -149,27 +175,6 @@ function theme_views_node_selector($element) {
     $output .= theme('hidden', $element['select_all']);
   }
   return theme('form_element', $element, $output);
-}
-
-/**
- * Process the views_node_selector element defined earlier.
- * 
- * @see views_bulk_operations_elements()
- */
-function views_node_selector_process($element, $edit) {
-  $view = $element['#view'];
-  $options = array();
-  foreach ($view->result as $object) {
-    $options[$object->{$view->base_field}] = '';
-  }
-  $element['#options'] = $options;
-  $element = expand_checkboxes($element);
-
-  // Ummm unset the #options so that FAPI doesn't give me the "Illegal choice %choice in !name element" error.
-  unset($element['#options']);
-  $element['select_all'] = array('#type' => 'hidden', '#default_value' => @$element['#value']['select_all']);
-
-  return $element; 
 }
 
 /**
@@ -202,11 +207,11 @@ function views_bulk_operations_form($form_state, $plugin) {
   
   // If there's a session variable on this view, pre-load the old values.
   if (isset($_SESSION['vbo_values'][$_GET['q']])) {
-    $default_objects = $_SESSION['vbo_values'][$_GET['q']]['objects'];
+    $default_objects = array('selection' => array_filter($_SESSION['vbo_values'][$_GET['q']]['objects']['selection']), 'select_all' => $_SESSION['vbo_values'][$_GET['q']]['objects']['select_all']);
     $default_operation = $_SESSION['vbo_values'][$_GET['q']]['operation'];
   }
   else {
-    $default_objects = array();
+    $default_objects = array('selection' => NULL, 'select_all' => FALSE);
     $default_operation = NULL;
   }
 
@@ -270,7 +275,7 @@ function views_bulk_operations_form($form_state, $plugin) {
         '#type' => 'views_node_selector',
         '#view' => $plugin->view,
         '#sets' => $plugin->sets,
-        '#value' => array_filter($default_objects),
+        '#value' => $default_objects,
         '#prefix' => '<div class="views-node-selector">',
         '#suffix' => '</div>',
       );
@@ -307,14 +312,6 @@ function views_bulk_operations_form($form_state, $plugin) {
       $operation = $plugin->get_operation_info($ops[0]);
       $form['operation'] = array('#type' => 'value', '#value' => $ops[0]);
       if ($operation['configurable']) {
-        /*
-        $form['select'] = array(
-          '#type' => 'fieldset',
-          '#title' => $operation['label'],
-          '#prefix' => '<div id="views-bulk-operations-select">',
-          '#suffix' => '</div>',
-        );
-        */
         $selection = array();
         foreach ($plugin->view->result as $result) {
           $selection[$result->{$plugin->view->base_field}] = $result->{$plugin->view->base_field};
@@ -325,7 +322,7 @@ function views_bulk_operations_form($form_state, $plugin) {
         '#type' => 'views_node_selector',
         '#view' => $plugin->view,
         '#sets' => $plugin->sets,
-        '#value' => array_filter($default_objects),
+        '#value' => $default_objects,
         '#prefix' => '<div class="views-node-selector">',
         '#suffix' => '</div>',
       );
@@ -341,7 +338,7 @@ function views_bulk_operations_form($form_state, $plugin) {
     case VIEWS_BULK_OPS_STEP_CONFIG:
       $operation = $plugin->get_operation_info($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['operation']);
       $form['operation'] = array('#type' => 'value', '#value' => $operation);
-      $form += _views_bulk_operations_action_form($operation, $plugin->view, array_filter($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['objects']));
+      $form += _views_bulk_operations_action_form($operation, $plugin->view, array_filter($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['objects']['selection']));
       $form['execute'] = array(
         '#type' => 'submit',
         '#value' => t('Next'),
@@ -361,7 +358,7 @@ function views_bulk_operations_form($form_state, $plugin) {
     case VIEWS_BULK_OPS_STEP_CONFIRM:
       $operation = $plugin->get_operation_info($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['operation']);
       $query = drupal_query_string_encode($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['exposed_input']);
-      $objects = $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['objects'];
+      $objects = $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['objects']['selection'];
       $form = confirm_form($form,
         t('Are you sure you want to perform \'%action\' on selected rows?', array('%action' => $operation['label'])),
         array('path' => $_GET['q'], 'query' => $query),
@@ -415,7 +412,8 @@ function views_bulk_operations_form_validate($form, &$form_state) {
   switch ($form_state['values']['step']) {
     case VIEWS_BULK_OPS_STEP_VIEW:
       $_SESSION['vbo_values'][$_GET['q']] = $form_state['values'];
-      if (!array_filter($form_state['values']['objects'])) { // If all 0, no row selected
+
+      if (!array_filter($form_state['values']['objects']['selection'])) { // If all 0, no row selected
         form_set_error('objects', t('No row selected. Please select one or more rows.'));
       }
       if (!empty($form_state['clicked_button']['#hash'])) {
@@ -428,7 +426,8 @@ function views_bulk_operations_form_validate($form, &$form_state) {
 
     case VIEWS_BULK_OPS_STEP_SINGLE:
       $_SESSION['vbo_values'][$_GET['q']] = $form_state['values'];
-      if (!array_filter($form_state['values']['objects'])) { // If all 0, no row selected
+
+      if (!array_filter($form_state['values']['objects']['selection'])) { // If all 0, no row selected
         form_set_error('objects', t('No row selected. Please select one or more rows.'));
       }
       $plugin = $form_state['values']['plugin'];
@@ -449,10 +448,10 @@ function views_bulk_operations_form_validate($form, &$form_state) {
 /**
  * Helper function to adjust the selected set of nodes based on different situations.
  */ 
-function _views_bulk_operations_adjust_selection(&$objects, $exposed_input, $arguments, $plugin) {
+function _views_bulk_operations_adjust_selection(&$objects, $select_all, $exposed_input, $arguments, $plugin) {
   $objects = array_filter($objects);
 
-  if (isset($objects['select_all'])) {
+  if ($select_all) {
     // Adjust selection to select all nodes across pages.
     $objects = array();
     $view = views_get_view($plugin->view->vid ? $plugin->view->vid : $plugin->view->name);
@@ -470,8 +469,7 @@ function _views_bulk_operations_adjust_selection(&$objects, $exposed_input, $arg
     }
 
     // Adjust sticky selection accordingly.
-    $_SESSION['vbo_values'][$_GET['q']]['objects'] = $objects;
-    $_SESSION['vbo_values'][$_GET['q']]['objects']['select_all'] = TRUE;
+    $_SESSION['vbo_values'][$_GET['q']]['objects'] = array('selection' => $objects, 'select_all' => TRUE);
   }
   else {
     // Adjust selection to filter out previous selections.
@@ -482,7 +480,7 @@ function _views_bulk_operations_adjust_selection(&$objects, $exposed_input, $arg
     $objects = array_intersect($objects, $results);
 
     // Adjust sticky selection accordingly.
-    $_SESSION['vbo_values'][$_GET['q']]['objects'] = $objects;
+    $_SESSION['vbo_values'][$_GET['q']]['objects'] = array('selection' => $objects, 'select_all' => FALSE);
   }
 }
 
@@ -499,7 +497,8 @@ function views_bulk_operations_form_submit($form, &$form_state) {
       $form_state['storage']['step'] = $form_state['values']['step'];
       $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW] = $form_state['values'];
       _views_bulk_operations_adjust_selection(
-        $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['objects'], 
+        $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['objects']['selection'], 
+        $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['objects']['select_all'], 
         $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['exposed_input'], 
         $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['arguments'], 
         $plugin
@@ -515,7 +514,8 @@ function views_bulk_operations_form_submit($form, &$form_state) {
       $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW] = $form_state['values'];
       $form_state['storage'][VIEWS_BULK_OPS_STEP_CONFIG] = $form_state['values']; // we're not taking any chances
       _views_bulk_operations_adjust_selection(
-        $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['objects'], 
+        $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['objects']['selection'], 
+        $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['objects']['select_all'], 
         $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['exposed_input'], 
         $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['arguments'], 
         $plugin
@@ -549,7 +549,7 @@ function views_bulk_operations_form_submit($form, &$form_state) {
   }
   _views_bulk_operations_execute(
     $plugin->view, 
-    $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['objects'], 
+    $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['objects']['selection'], 
     $operation, 
     $operation_arguments, 
     $plugin->options['execution_type'], 
