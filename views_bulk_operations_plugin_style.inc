@@ -12,10 +12,18 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
     $options['merge_single_action'] = TRUE;
     $options['hide_select_all'] = FALSE;
     $this->populate_operations($options);
+
+    // Per-action settings.
+    foreach ($this->options['all_operations'] as $key => $operation) {
+      $form_function = $operation['callback'] . '_settings_form_options';
+      if (function_exists($form_function)) {
+        $options[$key] = call_user_func($form_function);
+      }
+    }
   }
 
-  function options_form(&$form, &$form_values) {
-    parent::options_form($form, $form_values);
+  function options_form(&$form, &$form_state) {
+    parent::options_form($form, $form_state);
     $execution = array(
       VBO_EXECUTION_DIRECT => t('Invoke them directly'),
       VBO_EXECUTION_BATCH => t('Use Batch API'),
@@ -68,9 +76,46 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
       '#options' => $this->get_operations_options(), 
       '#default_value' => $this->options['selected_operations'],
     );
+
+    // Per-action settings form.
+    $info = _views_bulk_operations_object_info_for_view($this->view);
+    foreach ($this->options['all_operations'] as $key => $operation) {
+      if ($operation['object'] != 'system' && $operation['object'] != $info['type']) continue;
+      $form_function = $operation['callback'] . '_settings_form';
+      if (function_exists($form_function)) {
+        $form[$key] = array(
+          '#tree' => TRUE,
+          '#type' => 'fieldset',
+          '#title' => $operation['label'],
+          '#collapsible' => TRUE,
+          '#collapsed' => TRUE,
+        );
+        $form[$key] += call_user_func($form_function, $this->options[$key]);
+      }
+    }
   }
 
-  function options_validate(&$form, &$form_values) {
+  function options_validate(&$form, &$form_state) {
+    foreach (array_filter($form_state['values']['style_options']['selected_operations']) as $selected_operation) {
+      if (!isset($form_state['values']['style_options'][$selected_operation])) continue;
+      $operation = $this->options['all_operations'][$selected_operation];
+      $form_function = $operation['callback'] . '_settings_form_validate';
+      if (function_exists($form_function)) {
+        $form_state['values']['style_options'][$selected_operation]['_error_element_base'] = 'style_options][' . $selected_operation . '][';
+        call_user_func($form_function, $form, array('values' => $form_state['values']['style_options'][$selected_operation]));
+      }
+    }
+  }
+
+  function options_submit(&$form, &$form_state) {
+    foreach (array_filter($form_state['values']['style_options']['selected_operations']) as $selected_operation) {
+      if (!isset($form_state['values']['style_options'][$selected_operation])) continue;
+      $operation = $this->options['all_operations'][$selected_operation];
+      $form_function = $operation['callback'] . '_settings_form_submit';
+      if (function_exists($form_function)) {
+        call_user_func($form_function, $form, array('values' => $form_state['values']['style_options'][$selected_operation]));
+      }
+    }
   }
 
   function render() {
@@ -148,6 +193,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
           $operation['behavior'] = array('changes_node_property');
         }
         $operations[$key] = array(
+          'key'                => $key,
           'label'              => $operation['label'],
           'callback'           => $operation['callback'],
           'callback arguments' => isset($operation['callback arguments']) ? $operation['callback arguments'] : array(),
@@ -165,6 +211,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
     foreach ($action_operations as $callback => $operation) {
       $key = isset($operation['key']) ? $operation['key'] : $callback;
       $operations[$key] = array(
+        'key'                => $key,
         'label'              => $operation['description'],
         'callback'           => $callback,
         'callback arguments' => isset($operation['parameters']) ? $operation['parameters'] : array(),
@@ -213,11 +260,15 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
         'parameters' => $parameters,
         'key' => $action->callback . (empty($parameters) ? '' : ':'. md5($action->parameters)),
       );
-      if (isset($static_actions[$action->callback]['behavior'])) $actions[$action->aid]['behavior'] = $static_actions[$action->callback]['behavior'];
-      if (isset($static_actions[$action->callback]['aggregate'])) $actions[$action->aid]['aggregate'] = $static_actions[$action->callback]['aggregate'];
-      if (isset($static_actions[$action->callback]['permissions'])) $actions[$action->aid]['permissions'] = $static_actions[$action->callback]['permissions'];
+      foreach (array('behavior', 'aggregate', 'permissions') as $attribute) {
+        if (isset($static_actions[$action->callback][$attribute])) $actions[$action->aid][$attribute] = $static_actions[$action->callback][$attribute];
+      }
     }
     return $actions;
+  }
+
+  function get_operation_settings($operation) {
+    return (isset($this->options[$operation['key']]) ? $this->options[$operation['key']] : NULL);
   }
 }
 

@@ -83,17 +83,16 @@ function views_node_selector_process($element, $edit) {
  * Implementation of hook_theme().
  */
 function views_bulk_operations_theme() {
-  return array(
-    'views_node_selector' => array(
-      'arguments' => array('element' => NULL),
-    ),
-    'views_bulk_operations_confirmation' => array(
-      'arguments' => array('objects' => NULL, 'view' => NULL),
-    ),
-    'views_bulk_operations_form' => array(
-      'arguments' => array('form_state' => NULL, 'plugin' => NULL),
-    ),
+  $themes['views_node_selector'] = array(
+    'arguments' => array('element' => NULL),
   );
+  $themes['views_bulk_operations_confirmation'] = array(
+    'arguments' => array('objects' => NULL, 'view' => NULL),
+  );
+  $themes['views_bulk_operations_form'] = array(
+    'arguments' => array('form' => NULL),
+  );
+  return $themes;
 }
 
 /**
@@ -316,7 +315,7 @@ function views_bulk_operations_form($form_state, $plugin) {
         foreach ($plugin->view->result as $result) {
           $selection[$result->{$plugin->view->base_field}] = $result->{$plugin->view->base_field};
         }
-        $form += _views_bulk_operations_action_form($operation, $plugin->view, $selection);
+        $form += _views_bulk_operations_action_form($operation, $plugin->view, $selection, $plugin->get_operation_settings($operation));
       }
       $form['objects'] = array(
         '#type' => 'views_node_selector',
@@ -338,7 +337,12 @@ function views_bulk_operations_form($form_state, $plugin) {
     case VIEWS_BULK_OPS_STEP_CONFIG:
       $operation = $plugin->get_operation_info($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['operation']);
       $form['operation'] = array('#type' => 'value', '#value' => $operation);
-      $form += _views_bulk_operations_action_form($operation, $plugin->view, array_filter($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['objects']['selection']));
+      $form += _views_bulk_operations_action_form(
+        $operation, 
+        $plugin->view, 
+        array_filter($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['objects']['selection']), 
+        $plugin->get_operation_settings($operation)
+      );
       $form['execute'] = array(
         '#type' => 'submit',
         '#value' => t('Next'),
@@ -389,15 +393,12 @@ function _views_bulk_operations_strip_view(&$view) {
 
 /**
  * Theme function for the action form.
- * 
- * It's currently hard-coded to find functions of the form 'theme_' . <action callback> . '_form' although this should change soon to use proper Drupal theming.
  */ 
 function theme_views_bulk_operations_form($form) {
   $operation = is_array($form['operation']['#value']) ? $form['operation']['#value'] : $form['plugin']['#value']->get_operation_info($form['operation']['#value']);
-  $function = 'theme_' . $operation['callback'] . '_form';
-  $output = '';
-  if (function_exists($function)) {
-    $output = $function($form);
+  $theme_function = 'theme_' . $operation['callback']  . '_form';
+  if (function_exists($theme_function)) {
+    $output = $theme_function($form);
   }
   $output .= drupal_render($form);
   return $output;
@@ -520,6 +521,10 @@ function views_bulk_operations_form_submit($form, &$form_state) {
         $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['arguments'], 
         $plugin
       );
+      $operation = $plugin->get_operation_info($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['operation']);
+      if ($operation['configurable']) {
+        $form_state['storage']['operation_arguments'] = _views_bulk_operations_action_submit($operation, $form, $form_state);
+      }
       if ($plugin->options['skip_confirmation']) {
         break; // Go directly to execution
       }
@@ -528,6 +533,8 @@ function views_bulk_operations_form_submit($form, &$form_state) {
     case VIEWS_BULK_OPS_STEP_CONFIG:
       $form_state['storage']['step'] = $form_state['values']['step'];
       $form_state['storage'][VIEWS_BULK_OPS_STEP_CONFIG] = $form_state['values'];
+      $operation = $plugin->get_operation_info($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['operation']);
+      $form_state['storage']['operation_arguments'] = _views_bulk_operations_action_submit($operation, $form, $form_state);
       if ($plugin->options['skip_confirmation']) {
         break; // Go directly to execution
       }
@@ -545,15 +552,14 @@ function views_bulk_operations_form_submit($form, &$form_state) {
   $operation_arguments = array();
   if ($operation['configurable']) {
     $form_state['values'] += $form_state['storage'][VIEWS_BULK_OPS_STEP_CONFIG];
-    $operation_arguments = _views_bulk_operations_action_submit($operation, $form, $form_state);
+    $operation_arguments = $form_state['storage']['operation_arguments'];
   }
   _views_bulk_operations_execute(
     $plugin->view, 
     $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['objects']['selection'], 
     $operation, 
-    $operation_arguments, 
-    $plugin->options['execution_type'], 
-    $plugin->options['display_result']
+    $operation_arguments,
+    array('execution_type' => $plugin->options['execution_type'], 'display_result' => $plugin->options['display_result'])
   );
 
   // Clean up the form.
@@ -564,7 +570,7 @@ function views_bulk_operations_form_submit($form, &$form_state) {
 /**
  * Helper function to execute the chosen action upon selected objects.
  */
-function _views_bulk_operations_execute($view, $objects, $operation, $operation_arguments, $execution_type, $display_result) {
+function _views_bulk_operations_execute($view, $objects, $operation, $operation_arguments, $options) {
   // Add action arguments.
   $params = array();
   if ($operation['configurable'] && is_array($operation_arguments)) {
@@ -584,7 +590,7 @@ function _views_bulk_operations_execute($view, $objects, $operation, $operation_
     // This was fixed as of D6.10: http://cvs.drupal.org/viewvc.py/drupal/drupal/includes/actions.inc?view=log&pathrev=DRUPAL-6-10
     variable_set('actions_max_stack', 10000000);
   }
-  if ($operation['aggregate'] != VBO_AGGREGATE_FORCED && $execution_type == VBO_EXECUTION_BATCH) {
+  if ($operation['aggregate'] != VBO_AGGREGATE_FORCED && $options['execution_type'] == VBO_EXECUTION_BATCH) {
     $operations = array();
     foreach ($objects as $oid) {
       $operations[] = array('_views_bulk_operations_batch_process', array($oid));
@@ -592,7 +598,7 @@ function _views_bulk_operations_execute($view, $objects, $operation, $operation_
 
     // Save the options in the session because Batch API doesn't give a way to 
     // send a parameter to the finished callback.
-    $_SESSION['vbo_options']['display_result'] = $display_result;
+    $_SESSION['vbo_options']['display_result'] = $options['display_result'];
     $_SESSION['vbo_options']['operation'] = $operation;
     $_SESSION['vbo_options']['params'] = serialize($params);
 
@@ -603,7 +609,7 @@ function _views_bulk_operations_execute($view, $objects, $operation, $operation_
     );  
     batch_set($batch);
   }
-  else if ($operation['aggregate'] != VBO_AGGREGATE_FORCED && module_exists('job_queue') && $execution_type == VBO_EXECUTION_QUEUE) {
+  else if ($operation['aggregate'] != VBO_AGGREGATE_FORCED && module_exists('job_queue') && $options['execution_type'] == VBO_EXECUTION_QUEUE) {
     global $user;
     foreach ($objects as $oid) {
       job_queue_add('_views_bulk_operations_queue_process', 
@@ -612,10 +618,10 @@ function _views_bulk_operations_execute($view, $objects, $operation, $operation_
           '@type' => t($operation['object']),
           '%oid' => $oid
         )), 
-        array($oid, $operation, $params, $user->uid, $display_result)
+        array($oid, $operation, $params, $user->uid, $options['display_result'])
       );
     }
-    if ($display_result) {
+    if ($options['display_result']) {
       drupal_set_message(t('Enqueued %action on @types %oid. Check the <a href="@queue">queued jobs page</a>.', array(
         '%action' => $operation['label'], 
         '@types' => format_plural(count($objects), t($operation['object']), t($operation['object'] .'s')),
@@ -624,14 +630,14 @@ function _views_bulk_operations_execute($view, $objects, $operation, $operation_
       )));
     }
   }
-  else /*if ($execution_type == VBO_EXECUTION_DIRECT)*/ {
+  else /*if ($options['execution_type'] == VBO_EXECUTION_DIRECT)*/ {
     @set_time_limit(0);
     
     $context['results']['rows'] = 0;
     $context['results']['time'] = microtime(TRUE);
 
     _views_bulk_operations_direct_process($operation, $objects, $params, $context);
-    _views_bulk_operations_direct_finished(TRUE, $context['results'], array(), $display_result);
+    _views_bulk_operations_direct_finished(TRUE, $context['results'], array(), $options['display_result']);
   }
 }
 
@@ -890,9 +896,9 @@ function _views_bulk_operations_object_permission($operation, $object, $account 
 /**
  * Helper function to let the configurable action provide its configuration form.
  */
-function _views_bulk_operations_action_form($action, $view, $selection = NULL) {
+function _views_bulk_operations_action_form($action, $view, $selection, $settings) {
   $action_form = $action['callback'].'_form';
-  return call_user_func($action_form, array('view' => $view, 'selection' => $selection));
+  return call_user_func($action_form, array('view' => $view, 'selection' => $selection, 'settings' => $settings));
 }
 
 /**
@@ -917,26 +923,18 @@ function _views_bulk_operations_action_submit($action, $form, $form_values) {
  * Theme function to show the confirmation page before executing the action.
  */
 function theme_views_bulk_operations_confirmation($objects, $view) {
-  $count = 0;
   $info = _views_bulk_operations_object_info_for_view($view);
-  if (!$info) {
-    $output = t('You selected !count rows of an unknown object type.', array('!count' => count($objects)));
-  }
-  else {
-    $output = t('You selected the following !count rows:', array('!count' => count($objects))).'<br /><ul>';
-    foreach ($objects as $oid) {
-      // Number of titles to display before we say "...and more"
-      if ((VIEWS_BULK_OPS_MAX_CONFIRM_NODES > 0) && ($count >=  VIEWS_BULK_OPS_MAX_CONFIRM_NODES)) {
-        $output .= '<li>'.t('...and !remaining more.', array('!remaining' => count($objects) - $count)).'</li>';
-        break;
-      }
-      if ($object = call_user_func($info['load'], $oid)) {
-        $output .= '<li>'. check_plain((string)$object->{$info['title']}) .'</li>';
-        $count++;
-      }
+  $items = array();
+  foreach ($objects as $oid) {
+    if ($view->pager['use_pager'] && count($items) >= $view->pager['items_per_page']) {
+      $items[] = t('...and <strong>!remaining</strong> more.', array('!remaining' => count($objects) - count($items)));
+      break;
     }
-    $output .= '</ul>';
+    if ($object = call_user_func($info['load'], $oid)) {
+      $items[] = check_plain((string)$object->{$info['title']});
+    }
   }
+  $output = theme('item_list', $items, t('You selected the following <strong>!count</strong> rows:', array('!count' => count($objects))));
   return $output;
 }
 
@@ -1252,9 +1250,8 @@ function views_bulk_operations_execute($vid, $operation_callback, $operation_arg
     $view, 
     $objects, 
     $operation, 
-    $operation_arguments, 
-    $execution_type, 
-    $display_result
+    $operation_arguments,
+    array('execution_type' => $execution_type, 'display_result' => $display_result)
   );
 }
 
