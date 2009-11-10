@@ -397,6 +397,7 @@ function _views_bulk_operations_strip_view(&$view) {
 function theme_views_bulk_operations_form($form) {
   $operation = is_array($form['operation']['#value']) ? $form['operation']['#value'] : $form['plugin']['#value']->get_operation_info($form['operation']['#value']);
   $theme_function = 'theme_' . $operation['callback']  . '_form';
+  $output = '';
   if (function_exists($theme_function)) {
     $output = $theme_function($form);
   }
@@ -463,7 +464,6 @@ function _views_bulk_operations_adjust_selection(&$objects, $select_all, $expose
     // HACK for date_api_filter_handler: set $_GET with the exposed_input.
     $_GET += $exposed_input;
 
-    $view->ignore_fields = TRUE; // we don't need the fields here so we tell our style plugin to ignore them
     $view->execute($plugin->view->current_display);
     foreach ($view->result as $result) {
       $objects[$result->{$view->base_field}] = $result->{$view->base_field};
@@ -1225,7 +1225,6 @@ function views_bulk_operations_execute($vid, $operation_callback, $operation_arg
   $view->set_exposed_input($view_exposed_input);
   $view->set_arguments($view_arguments);
   $view->set_items_per_page(0);
-  $view->ignore_fields = TRUE; // we don't need the fields here so we tell our style plugin to ignore them
   $view->execute();
 
   // Find the selected operation.

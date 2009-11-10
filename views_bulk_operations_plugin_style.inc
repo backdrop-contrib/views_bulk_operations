@@ -175,11 +175,6 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
     return $options;
   }
 
-  function uses_fields() {
-    if (isset($this->view->ignore_fields)) return FALSE;
-    return parent::uses_fields();
-  }
-
   private function populate_operations(&$options) {
     $operations = array();
 
