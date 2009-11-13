@@ -38,7 +38,8 @@ function views_bulk_operations_fields_action_form($context) {
     $fields += _views_bulk_operations_fields_action_non_cck($type);
   }
   foreach ($fields as $field) {
-    if (!in_array($field['field_name'], $context['settings']['display_fields']) && !empty($context['settings']['display_fields'])) continue;
+    if (module_exists('content_permissions') && in_array('edit ' . $field['field_name'], module_invoke('content_permissions', 'perm')) && !user_access('edit ' . $field['field_name'])) continue;
+    if (!empty($context['settings']['display_fields']) && !in_array($field['field_name'], $context['settings']['display_fields'])) continue;
 
     $field['required'] = FALSE;
     $node[$field['field_name']] = NULL;
@@ -62,7 +63,7 @@ function views_bulk_operations_fields_action_form($context) {
     $form[$field['field_name'] . '_check'] = array('#type' => 'checkbox', '#attributes' => array('class' => 'fields-action-toggler'));
 
     // PHP code to program the value.
-    if ($context['settings']['php_code']) {
+    if (user_access('Use PHP input for field settings (dangerous - grant with care)') && $context['settings']['php_code']) {
       if (isset($field['field_form'])) {
         $sample = t('return value;');
       }
@@ -73,12 +74,12 @@ function views_bulk_operations_fields_action_form($context) {
           $columns[$key] = t("'@column' => value for @column", array('@column' => $column));
         }
         $sample = t("return array(\n".
-                    "  0 => array(@columns),\n".
+                    "  0 => array(\n    @columns\n  ),\n".
                     "  // You'll usually want to stop here. Provide more values\n".
                     "  // if you want your 'default value' to be multi-valued:\n".
-                    "  1 => array(@columns),\n".
+                    "  1 => array(\n    @columns\n  ),\n".
                     "  2 => ...\n);", 
-                    array('@columns' => implode(', ', $columns))
+                    array('@columns' => implode(",\n    ", $columns))
         );
       }
       $form[$field['field_name'] . '_code'] = array(
@@ -106,8 +107,8 @@ function views_bulk_operations_fields_action_form($context) {
 
 function theme_views_bulk_operations_fields_action_form(&$form) {
   $output = '';
-  if ($form['#settings']['php_code']) {
-    $output  = t('<h4>Using the Code widget</h4>
+  if (user_access('Use PHP input for field settings (dangerous - grant with care)') && $form['#settings']['php_code']) {
+    $output  = t('<h3>Using the Code widget</h4>
                   <ul>
                   <li>Will override the value specified in the Field widget.</li>
                   <li>Should include &lt;?php ?&gt; delimiters.</li>
@@ -120,7 +121,7 @@ function theme_views_bulk_operations_fields_action_form(&$form) {
     $field_name = key($form['#field_info']);
     $header = NULL;
     $row[] = drupal_render($form[$field_name]);
-    if ($form['#settings']['php_code']) {
+    if (user_access('Use PHP input for field settings (dangerous - grant with care)') && $form['#settings']['php_code']) {
       $header = array(t('Field'), t('Code'));
       $row[] = drupal_render($form[$field_name . '_code']);
     }
@@ -129,7 +130,7 @@ function theme_views_bulk_operations_fields_action_form(&$form) {
   else {
     drupal_add_js(drupal_get_path('module', 'views_bulk_operations') . '/fields.action.js');
 
-    if ($form['#settings']['php_code']) {
+    if (user_access('Use PHP input for field settings (dangerous - grant with care)') && $form['#settings']['php_code']) {
       $header = array(theme('table_select_header_cell'), t('Field'), t('Code'));
       foreach ($form['#field_info'] as $field_name => $field) {
         $rows[] = array(
