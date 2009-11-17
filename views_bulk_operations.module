@@ -356,7 +356,6 @@ function views_bulk_operations_form($form_state, $plugin) {
       );
       $form['#theme'] = 'views_bulk_operations_form';
       drupal_set_title(t('Set parameters for \'%action\'', array('%action' => $operation['label'])));
-      _views_bulk_operations_strip_view($plugin->view);
       break;
     
     case VIEWS_BULK_OPS_STEP_CONFIRM:
@@ -366,8 +365,8 @@ function views_bulk_operations_form($form_state, $plugin) {
       $form = confirm_form($form,
         t('Are you sure you want to perform \'%action\' on selected rows?', array('%action' => $operation['label'])),
         array('path' => $_GET['q'], 'query' => $query),
-        theme('views_bulk_operations_confirmation', $objects, $plugin->view)); 
-      _views_bulk_operations_strip_view($plugin->view);
+        theme('views_bulk_operations_confirmation', $objects, $plugin->view)
+      ); 
       break;
   }
  
@@ -376,19 +375,6 @@ function views_bulk_operations_form($form_state, $plugin) {
   $form['#validate'][] = 'views_bulk_operations_form_validate';
   $form['#cache'] = TRUE;
   return $form;
-}
-
-/**
- * Helper function to sanitize the view before calling it programmatically.
- */
-function _views_bulk_operations_strip_view(&$view) {
-  $view->pager['use_pager'] = FALSE;
-  $view->exposed_widgets = NULL;
-  $view->display_handler->set_option('header', '');
-  $view->display_handler->set_option('footer', '');
-  $view->attachment_before = '';
-  $view->attachment_after = '';
-  $view->feed_icon = '';
 }
 
 /**
