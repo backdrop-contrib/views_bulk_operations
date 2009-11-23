@@ -1073,10 +1073,11 @@ function views_bulk_operations_action_form($context) {
     foreach (array_keys($view->display) as $display) {
       $display_options = &$view->display[$display]->display_options;
       if (isset($display_options['style_plugin']) && $display_options['style_plugin'] == 'bulk') {
+        $vid = empty($view->vid) ? $view->name : $view->vid;
         $view->build($display);
-        $views[$view->vid] = $view->name . (!empty($view->description) ? ': ' . $view->description : '');
+        $views[$vid] = $view->name . (!empty($view->description) ? ': ' . $view->description : '');
         foreach (array_filter($display_options['style_options']['selected_operations']) as $operation) {
-          $views_operations[$view->vid][$operation] = $view->style_plugin->options['all_operations'][$operation]['label'];
+          $views_operations[$vid][$operation] = $view->style_plugin->options['all_operations'][$operation]['label'];
           $operations[$operation] = $view->style_plugin->options['all_operations'][$operation]['label'];
         }
       }

@@ -16,15 +16,15 @@ Drupal.vbo.action.updateOperations = function(vid) {
       options += "<option value=\"" + value + "\">" + text + "</option>\n";
     });
   }
+  operation = $("#edit-operation-callback").val();
   $("#edit-operation-callback").html(options);
+  $("#edit-operation-callback").val(operation);
 }
 
 Drupal.behaviors.vbo_action = function(context) {
   vid = $("#edit-view-vid").val();
   if (vid !=0) {
-    operation = $("#edit-operation-callback").val();
     Drupal.vbo.action.updateOperations(vid);
-    $("#edit-operation-callback").val(operation);
   }
 }
 
