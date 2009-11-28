@@ -398,7 +398,7 @@ function theme_views_bulk_operations_form($form) {
  */
 function views_bulk_operations_form_alter(&$form, $form_state, $form_id) {
   if (strpos($form_id, 'views_bulk_operations_form') === 0) {
-    if (isset($form['operation']) && $form['operation']['#value']['callback'] == 'system_send_email_action') {
+    if (isset($form['operation']) && ($form['operation']['#value']['callback'] == 'system_send_email_action' || $form['operation']['#value'] == 'system_send_email_action')) {
       // Hide recipient field, as we have already chosen it from user list.
       $form['recipient']['#default_value'] = '%author';
       $form['recipient']['#type'] = 'hidden';
