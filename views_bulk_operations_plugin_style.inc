@@ -118,12 +118,14 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
     }
   }
 
-  function render() {
+  function pre_render($result) {
     // Hide unwanted elements from the view.
     if (isset($_POST['form_id']) && (strpos($_POST['form_id'], 'views_bulk_operations_form__') !== FALSE) && !empty($_POST['form_build_id'])) {
       $this->strip_view();
     }
+  }
 
+  function render() {
     // We build the groups here to pass them to the node_selector function through the form.
     $sets = $this->render_grouping($this->view->result, $this->options['grouping']);
     $this->sets = $sets;
@@ -272,10 +274,11 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
   }
 
   private function strip_view() {
-    $this->view->pager['use_pager'] = FALSE;
+    $this->view->set_use_pager(FALSE);
     $this->view->exposed_widgets = NULL;
     $this->view->display_handler->set_option('header', '');
     $this->view->display_handler->set_option('footer', '');
+    $this->view->display_handler->set_option('use_pager', FALSE);
     $this->view->attachment_before = '';
     $this->view->attachment_after = '';
     $this->view->feed_icon = NULL;
