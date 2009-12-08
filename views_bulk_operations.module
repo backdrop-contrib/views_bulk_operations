@@ -83,15 +83,21 @@ function views_node_selector_process($element, $edit) {
  * Implementation of hook_theme().
  */
 function views_bulk_operations_theme() {
-  $themes['views_node_selector'] = array(
-    'arguments' => array('element' => NULL),
+  $themes = array(
+    'views_node_selector' => array(
+      'arguments' => array('element' => NULL),
+    ),
+    'views_bulk_operations_confirmation' => array(
+      'arguments' => array('objects' => NULL, 'view' => NULL),
+    ),
   );
-  $themes['views_bulk_operations_confirmation'] = array(
-    'arguments' => array('objects' => NULL, 'view' => NULL),
-  );
-  $themes['views_bulk_operations_form'] = array(
-    'arguments' => array('form' => NULL),
-  );
+  $files = file_scan_directory(drupal_get_path('module', 'views_bulk_operations'), '(.*).action.inc$');
+  if ($files) foreach ($files as $file) {
+    $action_theme_fn = 'views_bulk_operations_'. str_replace('.', '_', basename($file->filename, '.inc')).'_theme';
+    if (function_exists($action_theme_fn)) {
+      $themes += call_user_func($action_theme_fn);
+    }
+  }
   return $themes;
 }
 
@@ -315,7 +321,7 @@ function views_bulk_operations_form($form_state, $plugin) {
         foreach ($plugin->view->result as $result) {
           $selection[$result->{$plugin->view->base_field}] = $result->{$plugin->view->base_field};
         }
-        $form += _views_bulk_operations_action_form($operation, $plugin->view, $selection, $plugin->get_operation_settings($operation));
+        $form['operation_form'] = _views_bulk_operations_action_form($operation, $plugin->view, $selection, $plugin->get_operation_settings($operation));
       }
       $form['objects'] = array(
         '#type' => 'views_node_selector',
@@ -331,13 +337,12 @@ function views_bulk_operations_form($form_state, $plugin) {
         '#prefix' => '<div id="views-bulk-operations-submit">',
         '#suffix' => '</div>',             
       );
-      $form['#theme'] = 'views_bulk_operations_form';
       break;
     
     case VIEWS_BULK_OPS_STEP_CONFIG:
       $operation = $plugin->get_operation_info($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['operation']);
       $form['operation'] = array('#type' => 'value', '#value' => $operation);
-      $form += _views_bulk_operations_action_form(
+      $form['operation_form'] = _views_bulk_operations_action_form(
         $operation, 
         $plugin->view, 
         array_filter($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['objects']['selection']), 
@@ -354,7 +359,6 @@ function views_bulk_operations_form($form_state, $plugin) {
         '#value' => t('<a href="@view">Cancel</a>', array('@view' => url($_GET['q'], array('query' => $query)))),
         '#weight' => 99,
       );
-      $form['#theme'] = 'views_bulk_operations_form';
       drupal_set_title(t('Set parameters for \'%action\'', array('%action' => $operation['label'])));
       break;
     
@@ -378,20 +382,6 @@ function views_bulk_operations_form($form_state, $plugin) {
 }
 
 /**
- * Theme function for the action form.
- */ 
-function theme_views_bulk_operations_form($form) {
-  $operation = is_array($form['operation']['#value']) ? $form['operation']['#value'] : $form['plugin']['#value']->get_operation_info($form['operation']['#value']);
-  $theme_function = 'theme_' . $operation['callback']  . '_form';
-  $output = '';
-  if (function_exists($theme_function)) {
-    $output = $theme_function($form);
-  }
-  $output .= drupal_render($form);
-  return $output;
-}
-
-/**
  * Implementation of hook_form_alter().
  *
  * Usability improvements to standard "Send e-mail" action.
@@ -400,8 +390,8 @@ function views_bulk_operations_form_alter(&$form, $form_state, $form_id) {
   if (strpos($form_id, 'views_bulk_operations_form') === 0) {
     if (isset($form['operation']) && ($form['operation']['#value']['callback'] == 'system_send_email_action' || $form['operation']['#value'] == 'system_send_email_action')) {
       // Hide recipient field, as we have already chosen it from user list.
-      $form['recipient']['#default_value'] = '%author';
-      $form['recipient']['#type'] = 'hidden';
+      $form['operation_form']['recipient']['#default_value'] = '%author';
+      $form['operation_form']['recipient']['#type'] = 'hidden';
     }
   }
 }
@@ -436,14 +426,14 @@ function views_bulk_operations_form_validate($form, &$form_state) {
       $plugin = $form_state['values']['plugin'];
       $operation = $plugin->get_operation_info($form_state['values']['operation']);
       if ($operation['configurable']) {
-        _views_bulk_operations_action_validate($operation, $form, $form_state);
+        _views_bulk_operations_action_validate($operation, $form['operation_form'], $form_state);
       }
       break;
 
     case VIEWS_BULK_OPS_STEP_CONFIG:
       $plugin = $form_state['values']['plugin'];
       $operation = $plugin->get_operation_info($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['operation']);
-      _views_bulk_operations_action_validate($operation, $form, $form_state);
+      _views_bulk_operations_action_validate($operation, $form['operation_form'], $form_state);
       break;
   }
 }
@@ -524,7 +514,7 @@ function views_bulk_operations_form_submit($form, &$form_state) {
       );
       $operation = $plugin->get_operation_info($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['operation']);
       if ($operation['configurable']) {
-        $form_state['storage']['operation_arguments'] = _views_bulk_operations_action_submit($operation, $form, $form_state);
+        $form_state['storage']['operation_arguments'] = _views_bulk_operations_action_submit($operation, $form['operation_form'], $form_state);
       }
       if ($plugin->options['skip_confirmation']) {
         break; // Go directly to execution
@@ -535,7 +525,7 @@ function views_bulk_operations_form_submit($form, &$form_state) {
       $form_state['storage']['step'] = $form_state['values']['step'];
       $form_state['storage'][VIEWS_BULK_OPS_STEP_CONFIG] = $form_state['values'];
       $operation = $plugin->get_operation_info($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['operation']);
-      $form_state['storage']['operation_arguments'] = _views_bulk_operations_action_submit($operation, $form, $form_state);
+      $form_state['storage']['operation_arguments'] = _views_bulk_operations_action_submit($operation, $form['operation_form'], $form_state);
       if ($plugin->options['skip_confirmation']) {
         break; // Go directly to execution
       }

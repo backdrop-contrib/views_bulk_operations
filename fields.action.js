@@ -16,18 +16,25 @@ Drupal.vbo.fieldsAction.updateToggler = function(toggler, direct) {
 }
 
 Drupal.behaviors.vbo_fieldsAction = function(context) {
-  $('.fields-action-toggler').click(function() {
+  $('.fields-action-toggler', context).click(function() {
     Drupal.vbo.fieldsAction.updateToggler(this, true);
   });
 
-  $('th.select-all').click(function() {
-    $('.fields-action-toggler').each(function() {
+  $('th.select-all', context).click(function() {
+    $('.fields-action-toggler', context).each(function() {
       Drupal.vbo.fieldsAction.updateToggler(this, false);
     });
   });
   
-  // Disable all by default.
-  $('.fields-action-togglable :input').attr('disabled', true);
+  // Disable all those whose checkboxes are off.
+  $('.fields-action-togglable', context).each(function() {
+    if ($('.fields-action-toggler', $(this).parents('tr:first')).attr('checked')) {
+      $(this).parents('tr:first').addClass('selected');
+    }
+    else {
+      $(':input', this).attr('disabled', true);
+    }
+  });
 }
 
 // END jQuery

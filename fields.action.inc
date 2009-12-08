@@ -16,10 +16,19 @@ function views_bulk_operations_fields_action_info() {
   ));
 }
 
+function views_bulk_operations_fields_action_theme() {
+  return array(
+    'views_bulk_operations_fields_action_form' => array(
+      'arguments' => array('form' => NULL),
+    ),
+  );
+}
+
 function views_bulk_operations_fields_action_form($context) {
   // This action form uses static-time settings. If they were not set, pull the defaults now.
   if (!isset($context['settings'])) $context['settings'] = views_bulk_operations_fields_action_settings_form_options();
   $form['#settings'] = $context['settings'];
+  $form['#theme'] = 'views_bulk_operations_fields_action_form';
 
   module_load_include('inc', 'content', 'includes/content.node_form');
   $form_state = array();
@@ -61,6 +70,12 @@ function views_bulk_operations_fields_action_form($context) {
 
     // Checkbox to enable/disable this field.
     $form[$field['field_name'] . '_check'] = array('#type' => 'checkbox', '#attributes' => array('class' => 'fields-action-toggler'));
+
+    // Default value.
+    if (@$context[$field['field_name'] . '_check']) {
+      $form[$field['field_name']]['#default_value'] = $context[$field['field_name']];
+      $form[$field['field_name'] . '_check']['#default_value'] = TRUE;
+    }
 
     // PHP code to program the value.
     if (user_access('Use PHP input for field settings (dangerous - grant with care)') && $context['settings']['php_code']) {
@@ -151,6 +166,7 @@ function theme_views_bulk_operations_fields_action_form(&$form) {
     }
     $output .= theme('table', $header, $rows); 
   }
+  $output .= drupal_render($form);
   return $output;
 }
 
