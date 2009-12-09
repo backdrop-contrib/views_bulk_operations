@@ -140,7 +140,7 @@ function theme_views_bulk_operations_fields_action_form(&$form) {
       $header = array(t('Field'), t('Code'));
       $row[] = drupal_render($form[$field_name . '_code']);
     }
-    $output .= theme('table', $header, array($row));
+    $output .= theme('table', $header, array(array('class' => 'fields-action-row', 'id' => 'fields-action-row' . str_replace('_', '-', $field_name), 'data' => $row)));
   }
   else {
     drupal_add_js(drupal_get_path('module', 'views_bulk_operations') . '/fields.action.js');
@@ -149,9 +149,13 @@ function theme_views_bulk_operations_fields_action_form(&$form) {
       $header = array(theme('table_select_header_cell'), t('Field'), t('Code'));
       foreach ($form['#field_info'] as $field_name => $field) {
         $rows[] = array(
-          drupal_render($form[$field_name . '_check']),
-          drupal_render($form[$field_name]),
-          drupal_render($form[$field_name . '_code']),
+          'class' => 'fields-action-row',
+          'id' => 'fields-action-row-' . str_replace('_', '-', $field_name), 
+          'data' => array(
+            drupal_render($form[$field_name . '_check']),
+            drupal_render($form[$field_name]),
+            drupal_render($form[$field_name . '_code']),
+          ),
         );
       }
     }
@@ -159,8 +163,12 @@ function theme_views_bulk_operations_fields_action_form(&$form) {
       $header = array(theme('table_select_header_cell'), t('Field'));
       foreach ($form['#field_info'] as $field_name => $field) {
         $rows[] = array(
-          drupal_render($form[$field_name . '_check']),
-          drupal_render($form[$field_name]),
+          'class' => 'fields-action-row',
+          'id' => 'fields-action-row-' . str_replace('_', '-', $field_name), 
+          'data' => array(
+            drupal_render($form[$field_name . '_check']),
+            drupal_render($form[$field_name]),
+          ),
         );
       }
     }
