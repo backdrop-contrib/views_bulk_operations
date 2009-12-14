@@ -729,12 +729,7 @@ function _views_bulk_operations_batch_finished($success, $results, $operations, 
     variable_set('actions_max_stack', 35);
   }
   if ($display_result || @$_SESSION['vbo_options']['display_result']) {
-    if (function_exists('drush_log')) {
-      drush_log(strip_tags($message), 'ok');
-    }
-    else {
-      drupal_set_message($message);
-    }
+    _views_bulk_operations_log($message);
   }
   unset($_SESSION['vbo_options']); // unset the options which were used for just one invocation
 }
@@ -1254,5 +1249,95 @@ function _views_bulk_operations_report_error($msg, $arg) {
   if (function_exists('drush_set_error')) {
     drush_set_error('VIEWS_BULK_OPERATIONS_EXECUTION_ERROR', strip_tags(dt($msg, $arg)));
   }
+}
+
+/**
+ * Helper function to log an information.
+ */
+function _views_bulk_operations_log($msg) {
+  if (function_exists('drush_log')) {
+    drush_log(strip_tags($msg), 'ok');
+  }
+  else {
+    drupal_set_message($msg);
+  }
+}
+
+/**
+ * API function to add actions to a VBO.
+ */
+function views_bulk_operations_add_actions($vid, $actions) {
+  $view = views_get_view($vid);
+  if (!is_object($view)) {
+    _views_bulk_operations_report_error('Could not find view %vid.', array('%vid' => $vid));
+    return;
+  }
+
+  // Find the view display that has the VBO style.
+  $found = FALSE;
+  foreach (array_keys($view->display) as $display) {
+    $display_options = &$view->display[$display]->display_options;
+    if (isset($display_options['style_plugin']) && $display_options['style_plugin'] == 'bulk') {
+      $found = TRUE;
+      break;
+    }
+  }
+  if (!$found) {
+    _views_bulk_operations_report_error('Could not find a VBO display in view %vid.', array('%vid' => $vid));
+    return;
+  }
+
+  // Iterate on the desired actions.
+  $selected_operations = $display_options['style_options']['selected_operations'];
+  $ignored = array();
+  if (!empty($actions)) foreach ($actions as $action) {
+    $modified = FALSE;
+    if (is_numeric($action)) { // aid
+      $action_object = db_fetch_object(db_query("SELECT * FROM {actions} WHERE aid = %d", $action));
+      if (is_object($action_object)) {
+        $parameters = unserialize($action_object->parameters);
+        $key = $action_object->callback . (empty($parameters) ? '' : ':'. md5($action_object->parameters));
+        if (isset($selected_operations[$key])) { // available for this view
+          $display_options['style_options']['selected_operations'][$key] = $key;
+          $modified = TRUE;
+        }
+      }
+    }
+    else { // callback or title
+      if (isset($selected_operations[$action])) { // callback and available for this view
+        $display_options['style_options']['selected_operations'][$action] = $action;
+        $modified = TRUE;
+      }
+      else { // try the title
+        $action_object = db_fetch_object(db_query("SELECT * FROM {actions} WHERE UPPER(description) = '%s'", strtoupper(db_escape_string($action))));
+        if (is_object($action_object)) {
+          $parameters = unserialize($action_object->parameters);
+          $key = $action_object->callback . (empty($parameters) ? '' : ':'. md5($action_object->parameters));
+          if (isset($selected_operations[$key])) { // available for this view
+            $display_options['style_options']['selected_operations'][$key] = $key;
+            $modified = TRUE;
+          }
+        }
+      }
+    }
+    if (!$modified) {
+      $ignored[] = $action;
+    }
+  }
+
+  // Save the view if anything was changed.
+  if (count($actions) > count($ignored)) {
+    $view->save();
+    views_object_cache_clear('view', $vid);
+
+    $msg = t('View %vid was successfully modified.', array('%vid' => $vid));
+    if (!empty($ignored)) {
+      $msg .= ' ' . t('The following actions were ignored: %ignored.', array('%ignored' => implode(', ', $ignored)));
+    }
+  }
+  else {
+    $msg = t('View %vid was not modified, because all actions were ignored.', array('%vid' => $vid));
+  }
+  _views_bulk_operations_log($msg);
 }
 
