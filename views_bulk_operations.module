@@ -555,7 +555,7 @@ function views_bulk_operations_form_submit($form, &$form_state) {
 
   // Clean up the form.
   unset($form_state['storage']);
-  $form_state['redirect'] = $_GET['q'];
+  $form_state['redirect'] = isset($form_state['values']['exposed_input']['destination']) ? $form_state['values']['exposed_input']['destination'] : $_GET['q'];
 }
 
 /**

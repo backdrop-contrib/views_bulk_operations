@@ -279,6 +279,7 @@ function views_bulk_operations_fields_action_settings_form($options) {
     '#description' => t('Check this ON if you want to show a textarea for each field to allow the user to write a PHP script that will populate the value of this field.'),
     '#default_value' => $options['php_code'],
   );
+  $fields = array();
   foreach (content_fields() as $field) {
     $fields[$field['field_name']] = $field['widget']['label'] .' ('. $field['field_name'] .')';
   }
