@@ -283,6 +283,7 @@ function views_bulk_operations_fields_action_settings_form($options) {
   foreach (content_fields() as $field) {
     $fields[$field['field_name']] = $field['widget']['label'] .' ('. $field['field_name'] .')';
   }
+  /*
   foreach (node_get_types() as $type => $info) {
     foreach (_views_bulk_operations_fields_action_non_cck($type) as $field) {
       if (!isset($fields[$field['field_name']])) {
@@ -290,6 +291,7 @@ function views_bulk_operations_fields_action_settings_form($options) {
       }
     }
   }
+  */
   $form['display_fields'] = array(
     '#type' => 'select',
     '#title' => t('Display fields'),
