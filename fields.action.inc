@@ -44,7 +44,7 @@ function views_bulk_operations_fields_action_form($context) {
   while ($type = db_result($result)) {
     $type_info = content_types($type);
     $fields += $type_info['fields'];
-    $fields += _views_bulk_operations_fields_action_non_cck($type);
+//    $fields += _views_bulk_operations_fields_action_non_cck($type);
   }
   foreach ($fields as $field) {
     if (module_exists('content_permissions') && in_array('edit ' . $field['field_name'], module_invoke('content_permissions', 'perm')) && !user_access('edit ' . $field['field_name'])) continue;
