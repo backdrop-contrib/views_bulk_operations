@@ -46,6 +46,12 @@ function views_bulk_operations_fields_action_form($context) {
     $fields += $type_info['fields'];
 //    $fields += _views_bulk_operations_fields_action_non_cck($type);
   }
+
+  if (empty($fields)) {
+    form_set_error('', t('This content type does not have any editable fields. Please choose another type.'));
+    return NULL;
+  }
+
   foreach ($fields as $field) {
     if (module_exists('content_permissions') && in_array('edit ' . $field['field_name'], module_invoke('content_permissions', 'perm')) && !user_access('edit ' . $field['field_name'])) continue;
     if (!empty($context['settings']['display_fields']) && !in_array($field['field_name'], $context['settings']['display_fields'])) continue;
