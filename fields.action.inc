@@ -200,7 +200,7 @@ function views_bulk_operations_fields_action_validate($form, $form_state) {
     }
   }
   if (!$chosen) {
-    form_set_error(NULL, t('You must select at least one field to modify.'));
+    form_set_error('', t('You must select at least one field to modify.'));
   }
 }
 
