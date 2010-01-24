@@ -243,6 +243,7 @@ function views_bulk_operations_form($form_state, $plugin) {
     }
   } 
   else {
+    $plugin->strip_view();
     switch ($form_state['storage']['step']) {
       case VIEWS_BULK_OPS_STEP_VIEW:
         $operation = $plugin->get_operation_info($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['operation']);
@@ -914,10 +915,6 @@ function theme_views_bulk_operations_confirmation($objects, $view) {
   $info = _views_bulk_operations_object_info_for_view($view);
   $items = array();
   foreach ($objects as $oid) {
-    if ($view->pager['use_pager'] && count($items) >= $view->pager['items_per_page']) {
-      $items[] = t('...and <strong>!remaining</strong> more.', array('!remaining' => count($objects) - count($items)));
-      break;
-    }
     if ($object = call_user_func($info['load'], $oid)) {
       $items[] = check_plain((string)$object->{$info['title']});
     }
