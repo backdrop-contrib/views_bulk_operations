@@ -35,7 +35,7 @@ function views_bulk_operations_fields_action_form($context) {
   $node = array();
   $weight = -100;
   if (isset($context['selection'])) {
-    $result = db_query("SELECT DISTINCT type FROM {node} WHERE nid IN (%s)", implode(',', $context['selection']));
+    $result = db_query("SELECT DISTINCT type FROM {node} WHERE nid IN (%s)", implode(',', array_keys($context['selection'])));
   }
   else {
     $result = db_query("SELECT type from {node_type}");
@@ -48,8 +48,8 @@ function views_bulk_operations_fields_action_form($context) {
   }
 
   if (empty($fields)) {
-    form_set_error('', t('This content type does not have any editable fields. Please choose another type.'));
-    return NULL;
+    form_set_error('', t('The selected nodes do not have any editable fields. Please select other nodes and try again.'));
+    return array();
   }
 
   foreach ($fields as $field) {

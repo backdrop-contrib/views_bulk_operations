@@ -78,9 +78,9 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
     );
 
     // Per-action settings form.
-    $info = _views_bulk_operations_object_info_for_view($this->view);
+    $object_info = _views_bulk_operations_object_info_for_view($this->view);
     foreach ($this->options['all_operations'] as $key => $operation) {
-      if ($operation['object'] != 'system' && $operation['object'] != $info['type']) continue;
+      if ($operation['type'] != 'system' && $operation['type'] != $object_info['type']) continue;
       $form_function = $operation['callback'] . '_settings_form';
       if (function_exists($form_function)) {
         $form[$key] = array(
@@ -153,22 +153,22 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
 
   function get_operation_info($key) {
     $operation = $this->options['all_operations'][$key];
-    if ($operation['object'] == 'system') { // System actions: morph them into current view type
-      $info = _views_bulk_operations_object_info_for_view($this->view);
-      $operation['object'] = $info['type'];
+    if ($operation['type'] == 'system') { // System actions: morph them into current view type
+      $object_info = _views_bulk_operations_object_info_for_view($this->view);
+      $operation['type'] = $object_info['type'];
     }
     return $operation;
   }
 
   private function get_operations_options() {
     $options = array();
-    $info = _views_bulk_operations_object_info_for_view($this->view);
-    if (!$info) return NULL;
+    $object_info = _views_bulk_operations_object_info_for_view($this->view);
+    if (!$object_info) return NULL;
     foreach ($this->options['all_operations'] as $key => $operation) {
-      if ($operation['object'] == 'system') { // System actions: morph them into current view type
-        $operation['object'] = $info['type'];
+      if ($operation['type'] == 'system') { // System actions: morph them into current view type
+        $operation['type'] = $object_info['type'];
       }
-      if ($operation['object'] == $info['type']) {
+      if ($operation['type'] == $object_info['type']) {
         $options[$key] = $operation['label'] .' ('. $key .')'; 
       }
     }
@@ -179,7 +179,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
     $operations = array();
 
     module_load_include('inc', 'node', 'node.admin');
-    foreach (_views_bulk_operations_get_object_info() as $object_type => $info) {
+    foreach (_views_bulk_operations_get_object_info() as $object_type => $object_info) {
       $hook_name = $object_type .'_operations';
       foreach (module_invoke_all($hook_name) as $operation) {
         if (empty($operation['callback'])) continue;
@@ -188,16 +188,16 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
           $operation['behavior'] = array('changes_node_property');
         }
         $operations[$key] = array(
-          'key'                => $key,
-          'label'              => $operation['label'],
-          'callback'           => $operation['callback'],
-          'callback arguments' => isset($operation['callback arguments']) ? $operation['callback arguments'] : array(),
-          'configurable'       => isset($operation['configurable']) ? $operation['configurable'] : FALSE,
-          'type'               => 'operation',
-          'object'             => $object_type,
-          'aggregate'          => isset($operation['aggregate']) ? (int)$operation['aggregate'] : VBO_AGGREGATE_OPTIONAL,
-          'access op'          => $this->get_access_op($operation),
-          'permissions'        => isset($operation['permissions']) ? $operation['permissions'] : NULL,
+          'key'                 => $key,
+          'label'               => $operation['label'],
+          'callback'            => $operation['callback'],
+          'callback arguments'  => isset($operation['callback arguments']) ? $operation['callback arguments'] : array(),
+          'configurable'        => isset($operation['configurable']) ? $operation['configurable'] : FALSE,
+          'source'              => 'operation',
+          'type'                => $object_type,
+          'aggregate'           => isset($operation['aggregate']) ? (int)$operation['aggregate'] : VBO_AGGREGATE_OPTIONAL,
+          'access op'           => $this->get_access_op($operation),
+          'permissions'         => isset($operation['permissions']) ? $operation['permissions'] : NULL,
         );
       }
     }
@@ -206,16 +206,16 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
     foreach ($action_operations as $callback => $operation) {
       $key = isset($operation['key']) ? $operation['key'] : $callback;
       $operations[$key] = array(
-        'key'                => $key,
-        'label'              => $operation['description'],
-        'callback'           => $callback,
-        'callback arguments' => isset($operation['parameters']) ? $operation['parameters'] : array(),
-        'configurable'       => isset($operation['configurable']) ? $operation['configurable'] : FALSE,
-        'type'               => 'action',
-        'object'             => $operation['type'],
-        'aggregate'          => isset($operation['aggregate']) ? (int)$operation['aggregate'] : VBO_AGGREGATE_FORBIDDEN,
-        'access op'          => $this->get_access_op($operation),
-        'permissions'        => isset($operation['permissions']) ? $operation['permissions'] : NULL,
+        'key'                   => $key,
+        'label'                 => $operation['description'],
+        'callback'              => $callback,
+        'callback arguments'    => isset($operation['parameters']) ? $operation['parameters'] : array(),
+        'configurable'          => isset($operation['configurable']) ? $operation['configurable'] : FALSE,
+        'source'                => 'action',
+        'type'                  => $operation['type'],
+        'aggregate'             => VBO_AGGREGATE_FORBIDDEN,
+        'access op'             => $this->get_access_op($operation),
+        'permissions'           => isset($operation['permissions']) ? $operation['permissions'] : NULL,
       );
     }
 
@@ -255,7 +255,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
         'parameters' => $parameters,
         'key' => $action->callback . (empty($parameters) ? '' : ':'. md5($action->parameters)),
       );
-      foreach (array('behavior', 'aggregate', 'permissions') as $attribute) {
+      foreach (array('behavior', 'permissions') as $attribute) {
         if (isset($static_actions[$action->callback][$attribute])) $actions[$action->aid][$attribute] = $static_actions[$action->callback][$attribute];
       }
     }
