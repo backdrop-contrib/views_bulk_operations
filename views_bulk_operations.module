@@ -596,6 +596,7 @@ function _views_bulk_operations_execute($view, $objects, $operation, $operation_
   }
   else if ($operation['aggregate'] != VBO_AGGREGATE_FORCED && module_exists('job_queue') && $options['execution_type'] == VBO_EXECUTION_QUEUE) {
     global $user;
+    unset($params['view']);
     foreach ($objects as $oid => $row) {
       job_queue_add('_views_bulk_operations_queue_process', 
         t('Perform %action on @type %oid.', array(
