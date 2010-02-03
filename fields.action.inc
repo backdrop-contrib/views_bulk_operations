@@ -274,7 +274,7 @@ function _views_bulk_operations_fields_action_non_cck_traverse($element, $fields
 
 function views_bulk_operations_fields_action_settings_form_options() {
   $options['php_code'] = FALSE;
-  $options['display_fields'] = array();
+  $options['display_fields'] = NULL;
   return $options;
 }
 
@@ -298,6 +298,9 @@ function views_bulk_operations_fields_action_settings_form($options) {
     }
   }
   */
+  if (is_null($options['display_fields'])) {
+    $options['display_fields'] = array_keys($fields);
+  }
   $form['display_fields'] = array(
     '#type' => 'select',
     '#title' => t('Display fields'),
