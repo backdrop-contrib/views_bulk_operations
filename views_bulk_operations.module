@@ -12,10 +12,6 @@ define('VIEWS_BULK_OPS_STEP_CONFIG', 2);
 define('VIEWS_BULK_OPS_STEP_CONFIRM', 3);
 define('VIEWS_BULK_OPS_STEP_SINGLE', 4);
 
-// Maximum number of node titles that will be displayed in operation
-// confirmation page.
-define('VIEWS_BULK_OPS_MAX_CONFIRM_NODES', 20);
-
 // Types of bulk execution.
 define('VBO_EXECUTION_DIRECT',    1);
 define('VBO_EXECUTION_BATCH',     2);
