@@ -908,6 +908,10 @@ function theme_views_bulk_operations_confirmation($objects, $view) {
   $object_info = _views_bulk_operations_object_info_for_view($view);
   $items = array();
   foreach ($objects as $oid => $row) {
+    if ($view->pager_original['use_pager'] && count($items) >= $view->pager_original['items_per_page']) {
+      $items[] = t('...and <strong>!count</strong> more.', array('!count' => count($objects) - count($items)));
+      break;
+    }
     if ($object = call_user_func($object_info['load'], $oid)) {
       $items[] = check_plain((string)$object->{$object_info['title']});
     }
