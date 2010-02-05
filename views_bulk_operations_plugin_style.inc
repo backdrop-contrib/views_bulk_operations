@@ -267,8 +267,10 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
   }
 
   function strip_view() {
-    $this->view->pager_original = $this->view->pager;
-    $this->view->set_use_pager(FALSE);
+    if (isset($this->view->query->pager)) {
+      $this->view->pager_original = $this->view->query->pager;
+      $this->view->query->pager = NULL;
+    }
     $this->view->exposed_widgets = NULL;
     $this->view->display_handler->set_option('header', '');
     $this->view->display_handler->set_option('footer', '');

@@ -156,7 +156,7 @@ function theme_views_node_selector($element) {
       $rows[] = $row;
     }
     // Add the first row as option to select all records across all pages.
-    if ($view->pager['use_pager'] && $view->total_rows > $view->pager['items_per_page']) {
+    if (isset($view->query->pager) && $view->total_rows > $view->get_items_per_page()) {
       $group = count($sets) > 1 ? t('set') : t('page');
       $row = array(
         array(
@@ -908,7 +908,7 @@ function theme_views_bulk_operations_confirmation($objects, $view) {
   $object_info = _views_bulk_operations_object_info_for_view($view);
   $items = array();
   foreach ($objects as $oid => $row) {
-    if ($view->pager_original['use_pager'] && count($items) >= $view->pager_original['items_per_page']) {
+    if (isset($view->pager_original) && count($items) >= $view->pager_original->get_items_per_page()) {
       $items[] = t('...and <strong>!count</strong> more.', array('!count' => count($objects) - count($items)));
       break;
     }
