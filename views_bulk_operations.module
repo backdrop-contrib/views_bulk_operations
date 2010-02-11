@@ -441,9 +441,11 @@ function _views_bulk_operations_adjust_selection(&$selection, $select_all, $expo
   if ($select_all) {
     // Adjust selection to select all nodes across pages.
     $view = views_get_view($plugin->view->vid ? $plugin->view->vid : $plugin->view->name);
-    $view->set_items_per_page(0);
     $view->set_exposed_input($exposed_input);
     $view->set_arguments($arguments);
+    $view->build($plugin->view->current_display);
+    $view->query->set_limit(NULL); // reset the work done by the pager
+    $view->query->set_offset(NULL);
 
     // HACK for date_api_filter_handler: set $_GET with the exposed_input.
     $_GET += $exposed_input;
@@ -1207,7 +1209,9 @@ function views_bulk_operations_execute($vid, $operation_callback, $operation_arg
   // Execute the view.
   $view->set_exposed_input($view_exposed_input);
   $view->set_arguments($view_arguments);
-  $view->set_items_per_page(0);
+  $view->build($plugin->view->current_display);
+  $view->query->set_limit(NULL); // reset the work done by the pager
+  $view->query->set_offset(NULL);
   $view->execute();
 
   // Find the selected operation.
