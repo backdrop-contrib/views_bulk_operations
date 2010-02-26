@@ -10,6 +10,14 @@ function views_bulk_operations_profile_action_info() {
   ));
 }
 
+function views_bulk_operations_profile_action_theme() {
+  return array(
+    'views_bulk_operations_profile_action_form' => array(
+      'arguments' => array('form' => NULL),
+    ),
+  );
+}
+
 function views_bulk_operations_profile_action_form($context) {
   drupal_add_js(drupal_get_path('module', 'views_bulk_operations') . '/profile.action.js');
 
@@ -28,6 +36,7 @@ function views_bulk_operations_profile_action_form($context) {
       );
     }
   }
+  $form['#theme'] = 'views_bulk_operations_profile_action_form';
   return $form;
 }
 
@@ -47,6 +56,7 @@ function theme_views_bulk_operations_profile_action_form(&$form) {
   }
 
   $output = theme('table', $header, $rows);
+  $output .= drupal_render($form);
   return $output;
 }
 

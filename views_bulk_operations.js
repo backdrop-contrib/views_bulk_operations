@@ -18,6 +18,9 @@ Drupal.vbo.selectAll = function() {
     setSelectAll(false);
   });
   var checkboxes = $('td input:checkbox', table).click(function() {
+    if (checkboxes.length > $(checkboxes).filter(':checked').length) {
+      $('input#edit-objects-select-all', form).val(0);
+    }
     setSelectAll($('input#edit-objects-select-all', form).val() == 1);
   }).each(function() {
     $(this).parents('tr:first')[ this.checked ? 'addClass' : 'removeClass' ]('selected');

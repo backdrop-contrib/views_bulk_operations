@@ -822,9 +822,14 @@ function _views_bulk_operations_action_do($operation, $oid, $object, $row, $para
 function _views_bulk_operations_action_aggregate_do($operation, $objects, $params) {
   _views_bulk_operations_action_permission($operation);
 
-  $params['rows'] = $objects;
-  $args = array_merge(array(array_keys($objects)), $params);
-  call_user_func_array($operation['callback'], $args);
+  $params[$operation['type']] = $objects;
+  if ($operation['source'] == 'action') {
+    actions_do($operation['callback'], array_keys($objects), $params);
+  }
+  else {
+    $args = array_merge(array(array_keys($objects)), $params);
+    call_user_func_array($operation['callback'], $args);
+  }
 }
 
 /**

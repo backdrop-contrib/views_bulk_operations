@@ -2,28 +2,35 @@
 // $Id$
 
 class views_bulk_operations_plugin_style extends views_plugin_style_table {
-  function options(&$options) {
-    parent::options($options);
-    $options['selected_operations'] = array();
-    $options['execution_type'] = VBO_EXECUTION_DIRECT;
-    $options['display_type'] = 0;
-    $options['skip_confirmation'] = FALSE;
-    $options['display_result'] = TRUE;
-    $options['merge_single_action'] = TRUE;
-    $options['hide_select_all'] = FALSE;
-    $this->populate_operations($options);
+
+  var $all_operations = array();
+
+  function option_definition() {
+    $options = parent::option_definition();
+
+    $options['selected_operations'] = array('default' => array());
+    $options['execution_type'] = array('default' => VBO_EXECUTION_DIRECT);
+    $options['display_type'] = array('default' => 0);
+    $options['skip_confirmation'] = array('default' => FALSE);
+    $options['display_result'] = array('default' => TRUE);
+    $options['merge_single_action'] = array('default' => TRUE);
+    $options['hide_select_all'] = array('default' => FALSE);
+    $this->populate_operations();
 
     // Per-action settings.
-    foreach ($this->options['all_operations'] as $key => $operation) {
+    foreach ($this->all_operations as $key => $operation) {
       $form_function = $operation['callback'] . '_settings_form_options';
       if (function_exists($form_function)) {
-        $options[$key] = call_user_func($form_function);
+        $options[$key] = array('default' => call_user_func($form_function));
       }
     }
+
+    return $options;
   }
 
   function options_form(&$form, &$form_state) {
     parent::options_form($form, $form_state);
+
     $execution = array(
       VBO_EXECUTION_DIRECT => t('Invoke them directly'),
       VBO_EXECUTION_BATCH => t('Use Batch API'),
@@ -79,7 +86,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
 
     // Per-action settings form.
     $object_info = _views_bulk_operations_object_info_for_view($this->view);
-    foreach ($this->options['all_operations'] as $key => $operation) {
+    foreach ($this->all_operations as $key => $operation) {
       if ($operation['type'] != 'system' && $operation['type'] != $object_info['type']) continue;
       $form_function = $operation['callback'] . '_settings_form';
       if (function_exists($form_function)) {
@@ -98,7 +105,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
   function options_validate(&$form, &$form_state) {
     foreach (array_filter($form_state['values']['style_options']['selected_operations']) as $selected_operation) {
       if (!isset($form_state['values']['style_options'][$selected_operation])) continue;
-      $operation = $this->options['all_operations'][$selected_operation];
+      $operation = $this->all_operations[$selected_operation];
       $form_function = $operation['callback'] . '_settings_form_validate';
       if (function_exists($form_function)) {
         $form_state['values']['style_options'][$selected_operation]['_error_element_base'] = 'style_options][' . $selected_operation . '][';
@@ -110,7 +117,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
   function options_submit(&$form, &$form_state) {
     foreach (array_filter($form_state['values']['style_options']['selected_operations']) as $selected_operation) {
       if (!isset($form_state['values']['style_options'][$selected_operation])) continue;
-      $operation = $this->options['all_operations'][$selected_operation];
+      $operation = $this->all_operations[$selected_operation];
       $form_function = $operation['callback'] . '_settings_form_submit';
       if (function_exists($form_function)) {
         call_user_func($form_function, $form, array('values' => $form_state['values']['style_options'][$selected_operation]));
@@ -138,21 +145,21 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
     $selected = array();
     foreach (array_filter($this->options['selected_operations']) as $key) {
       if (module_exists('actions_permissions')) {
-        $perm = actions_permissions_get_perm($this->options['all_operations'][$key]['label'], $this->options['all_operations'][$key]['callback']);
+        $perm = actions_permissions_get_perm($this->all_operations[$key]['label'], $this->all_operations[$key]['callback']);
         if (!user_access($perm)) continue;
       }
-      if (!empty($this->options['all_operations'][$key]['permissions'])) foreach ($this->options['all_operations'][$key]['permissions'] as $perm) {
+      if (!empty($this->all_operations[$key]['permissions'])) foreach ($this->all_operations[$key]['permissions'] as $perm) {
         if (!user_access($perm)) continue 2;
       }
-      if (isset($this->options['all_operations'][$key])) {
-        $selected[$key] = $this->options['all_operations'][$key]['label'];
+      if (isset($this->all_operations[$key])) {
+        $selected[$key] = $this->all_operations[$key]['label'];
       }
     }
     return $selected;
   }
 
   function get_operation_info($key) {
-    $operation = $this->options['all_operations'][$key];
+    $operation = $this->all_operations[$key];
     if ($operation['type'] == 'system') { // System actions: morph them into current view type
       $object_info = _views_bulk_operations_object_info_for_view($this->view);
       $operation['type'] = $object_info['type'];
@@ -164,7 +171,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
     $options = array();
     $object_info = _views_bulk_operations_object_info_for_view($this->view);
     if (!$object_info) return NULL;
-    foreach ($this->options['all_operations'] as $key => $operation) {
+    foreach ($this->all_operations as $key => $operation) {
       if ($operation['type'] == 'system') { // System actions: morph them into current view type
         $operation['type'] = $object_info['type'];
       }
@@ -175,7 +182,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
     return $options;
   }
 
-  private function populate_operations(&$options) {
+  private function populate_operations() {
     $operations = array();
 
     module_load_include('inc', 'node', 'node.admin');
@@ -213,14 +220,14 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
         'configurable'          => isset($operation['configurable']) ? $operation['configurable'] : FALSE,
         'source'                => 'action',
         'type'                  => $operation['type'],
-        'aggregate'             => VBO_AGGREGATE_FORBIDDEN,
+        'aggregate'             => isset($operation['aggregate']) ? (int)$operation['aggregate'] : VBO_AGGREGATE_FORBIDDEN,
         'access op'             => $this->get_access_op($operation),
         'permissions'           => isset($operation['permissions']) ? $operation['permissions'] : NULL,
       );
     }
 
     uasort($operations, create_function('$a, $b', 'return strcasecmp($a["label"], $b["label"]);'));
-    $options['all_operations'] = $operations;
+    $this->all_operations = $operations;
   }
 
   private function get_access_op($operation) {
@@ -255,7 +262,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
         'parameters' => $parameters,
         'key' => $action->callback . (empty($parameters) ? '' : ':'. md5($action->parameters)),
       );
-      foreach (array('behavior', 'permissions') as $attribute) {
+      foreach (array('behavior', 'aggregate', 'permissions') as $attribute) {
         if (isset($static_actions[$action->callback][$attribute])) $actions[$action->aid][$attribute] = $static_actions[$action->callback][$attribute];
       }
     }
