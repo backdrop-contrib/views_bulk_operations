@@ -9,7 +9,7 @@ function views_bulk_operations_taxonomy_action_info() {
   if (!module_exists('taxonomy')) return array();
   return array('views_bulk_operations_taxonomy_action' => array(
     'type' => 'node',
-    'description' => t('Modify node taxonomy terms'),
+    'label' => t('Modify node taxonomy terms'),
     'configurable' => TRUE,
     'behavior' => array('changes_node_property'),
   ));
@@ -94,6 +94,7 @@ function views_bulk_operations_taxonomy_action(&$node, $context) {
 function views_bulk_operations_taxonomy_action_form($context) {
   if (isset($context['selection'])) {
     $vocabularies = array();
+    // @todo taxonomy_update_7004()
     $result = db_query("SELECT DISTINCT v.vid FROM {vocabulary_node_types} v LEFT JOIN {node} n ON v.type = n.type WHERE n.nid IN (%s)", implode(',', array_keys($context['selection'])));
     while ($v = db_fetch_object($result)) {
       $vocabularies[$v->vid] = taxonomy_vocabulary_load($v->vid);

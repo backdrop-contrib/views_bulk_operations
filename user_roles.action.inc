@@ -4,7 +4,7 @@
 function views_bulk_operations_user_roles_action_info() {
   return array('views_bulk_operations_user_roles_action' => array(
     'type' => 'user',
-    'description' => t('Modify user roles'),
+    'label' => t('Modify user roles'),
     'configurable' => TRUE,
   ));
 }
@@ -49,8 +49,8 @@ function views_bulk_operations_user_roles_action(&$user, $context) {
   $roles = $user->roles;
   $selected = (is_array($context['add_roles']) ? $context['add_roles'] : array()) +
               (is_array($context['remove_roles']) ? $context['remove_roles'] : array());
-  $result = db_query("SELECT rid, name FROM {role} WHERE rid IN (%s)", implode(',', array_keys($selected)));
-  while ($role = db_fetch_object($result)) {
+  $result = db_query("SELECT rid, name FROM {role} WHERE rid IN (:selected)", array(':selected' => array_keys($selected)));
+  foreach ($result as $role) {
     if (isset($context['add_roles'][$role->rid])) {
       $add_roles[$role->rid] = $role->name;
     }

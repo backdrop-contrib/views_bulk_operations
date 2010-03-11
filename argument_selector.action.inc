@@ -12,7 +12,7 @@
 function views_bulk_operations_argument_selector_action_info() {
   return array(
     'views_bulk_operations_argument_selector_action' => array(
-      'description' => t('Pass objects as arguments to a page'),
+      'label' => t('Pass objects as arguments to a page'),
       'type' => 'system',
       'aggregate' => TRUE,
       'configurable' => TRUE,

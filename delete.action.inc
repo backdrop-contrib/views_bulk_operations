@@ -5,25 +5,25 @@ function views_bulk_operations_delete_action_info() {
   return array(
     'views_bulk_operations_delete_node_action' => array(
       'type' => 'node',
-      'description' => t('Delete node'),
+      'label' => t('Delete node'),
       'configurable' => FALSE,
       'behavior' => array('deletes_node_property'),
     ),
     'views_bulk_operations_delete_user_action' => array(
       'type' => 'user',
-      'description' => t('Delete user'),
+      'label' => t('Delete user'),
       'configurable' => FALSE,
       'behavior' => array('deletes_node_property'),
     ),
     'views_bulk_operations_delete_comment_action' => array(
       'type' => 'comment',
-      'description' => t('Delete comment'),
+      'label' => t('Delete comment'),
       'configurable' => FALSE,
       'behavior' => array('deletes_node_property'),
     ),
     'views_bulk_operations_delete_term_action' => array(
       'type' => 'term',
-      'description' => t('Delete term'),
+      'label' => t('Delete term'),
       'configurable' => FALSE,
       'behavior' => array('deletes_node_property'),
     ),

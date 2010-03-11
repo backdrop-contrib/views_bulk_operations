@@ -138,7 +138,8 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
     else {
       $form_suffix = 1;
     }
-    return drupal_get_form('views_bulk_operations_form__' . $form_suffix, $this);
+    $form = drupal_get_form('views_bulk_operations_form__' . $form_suffix, $this);
+    return drupal_render($form);
   }
 
   function get_selected_operations() {
@@ -214,7 +215,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
       $key = isset($operation['key']) ? $operation['key'] : $callback;
       $operations[$key] = array(
         'key'                   => $key,
-        'label'                 => $operation['description'],
+        'label'                 => $operation['label'],
         'callback'              => $callback,
         'callback arguments'    => isset($operation['parameters']) ? $operation['parameters'] : array(),
         'configurable'          => isset($operation['configurable']) ? $operation['configurable'] : FALSE,
@@ -236,7 +237,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
       if (in_array('views_node_property', $operation['behavior'])) {
         $access_op |= VBO_ACCESS_OP_VIEW;
       }
-      if (in_array('changes_node_property', $operation['behavior'])) {
+      if (in_array('changes_property', $operation['behavior'])) {
         $access_op |= VBO_ACCESS_OP_UPDATE;
       }
       if (in_array('creates_node_property', $operation['behavior'])) {
@@ -253,7 +254,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
     $actions = array();
     $static_actions = actions_list();
     $result = db_query("SELECT * FROM {actions} WHERE parameters > ''");
-    while ($action = db_fetch_object($result)) {
+    foreach ($result as $action) {
       $parameters = unserialize($action->parameters);
       $actions[$action->aid] = array(
         'description' => $action->description,

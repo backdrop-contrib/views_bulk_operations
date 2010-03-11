@@ -10,7 +10,7 @@ function views_bulk_operations_ruleset_action_info() {
       $actions["views_bulk_operations_ruleset_action_{$ruleset_key}"] = array(
         'type' => $ruleset['arguments'][$arg]['type'],
         'parameters' => array('ruleset' => $ruleset_key),
-        'description' => $ruleset['label'],
+        'label' => $ruleset['label'],
         'configurable' => FALSE,
         'rules_ignore' => TRUE,
       );

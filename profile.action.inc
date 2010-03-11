@@ -5,7 +5,7 @@ function views_bulk_operations_profile_action_info() {
   if (!module_exists('profile')) return array();
   return array('views_bulk_operations_profile_action' => array(
     'type' => 'user',
-    'description' => t('Modify profile fields'),
+    'label' => t('Modify profile fields'),
     'configurable' => TRUE,
   ));
 }
@@ -25,7 +25,7 @@ function views_bulk_operations_profile_action_form($context) {
   foreach (profile_categories() as $category) {
     $form += profile_form_profile($context, NULL, $category['name']);
     $fields = _profile_get_fields($category['name']);
-    while ($field = db_fetch_object($fields)) {
+    foreach ($fields as $field) {
       $form[$category['name']][$field->name]['#required'] = FALSE;
       $form[$field->name . '_check'] = array(
         '#type' => 'checkbox', 
@@ -45,7 +45,7 @@ function theme_views_bulk_operations_profile_action_form(&$form) {
   $rows = array();
   foreach (profile_categories() as $category) {
     $fields = _profile_get_fields($category['name']);
-    while ($field = db_fetch_object($fields)) {
+    foreach ($fields as $field) {
       $row = array();
       $row[] = drupal_render($form[$field->name . '_check']);
       $row[] = array('data' => $category['name'], 'rowspan' => 1, 'valign' => 'center');
@@ -64,7 +64,7 @@ function views_bulk_operations_profile_action_validate($form, $form_state) {
   $at_least_one = FALSE;
   foreach (profile_categories() as $category) {
     $result = _profile_get_fields($category['name']);
-    while ($field = db_fetch_object($result)) {
+    foreach ($fields as $field) {
       if (!$form_state['values'][$field->name . '_check']) continue;
       $at_least_one = TRUE;
       if ($form_state['values'][$field->name]) {
@@ -88,7 +88,7 @@ function views_bulk_operations_profile_action_submit($form, $form_state) {
   $return = array();
   foreach (profile_categories() as $category) {
     $fields = _profile_get_fields($category['name']);
-    while ($field = db_fetch_object($fields)) {
+    foreach ($fields as $field) {
       $return[$field->name .'_check'] = $form_state['values'][$field->name .'_check'];
       $return[$field->name] = $form_state['values'][$field->name];
     }
@@ -104,14 +104,24 @@ function views_bulk_operations_profile_action(&$user, $context) {
 
 function _views_bulk_operations_profile_action_save(&$edit, &$user, $category, $register = FALSE) {
   $result = _profile_get_fields($category, $register);
-  while ($field = db_fetch_object($result)) {
+  foreach ($result as $field) {
     if (!$edit[$field->name .'_check']) continue; // skip if the user didn't check that field
 
     if (_profile_field_serialize($field->type)) {
       $edit[$field->name] = serialize($edit[$field->name]);
     }
-    db_query("DELETE FROM {profile_values} WHERE fid = %d AND uid = %d", $field->fid, $user->uid);
-    db_query("INSERT INTO {profile_values} (fid, uid, value) VALUES (%d, %d, '%s')", $field->fid, $user->uid, $edit[$field->name]);
+    // @todo Use db_merge() here?
+    db_delete('profile_values')
+      ->condition('fid', $field->fid)
+      ->condition('uid', $user->uid)
+      ->execute();
+    db_insert('profile_values')
+      ->fields(array(
+        'fid' => $field->fid,
+        'uid' => $user->uid,
+        'value' => $edit[$field->name],
+      ))
+      ->execute();
     // Mark field as handled (prevents saving to user->data).
     $edit[$field->name] = NULL;
   }

@@ -10,7 +10,7 @@ function views_bulk_operations_fields_action_info() {
   if (!module_exists('content')) return array();
   return array('views_bulk_operations_fields_action' => array(
     'type' => 'node',
-    'description' => t('Modify node fields'),
+    'label' => t('Modify node fields'),
     'configurable' => TRUE,
     'behavior' => array('changes_node_property'),
   ));
@@ -35,13 +35,13 @@ function views_bulk_operations_fields_action_form($context) {
   $node = array();
   $weight = -100;
   if (isset($context['selection'])) {
-    $result = db_query("SELECT DISTINCT type FROM {node} WHERE nid IN (%s)", implode(',', array_keys($context['selection'])));
+    $result = db_query("SELECT DISTINCT type FROM {node} WHERE nid IN (:selection)", array_keys($context['selection']))->fetchCol();
   }
   else {
-    $result = db_query("SELECT type from {node_type}");
+    $result = db_query("SELECT type from {node_type}")->fetchCol();
   }
   $fields = array();
-  while ($type = db_result($result)) {
+  foreach ($result as $type) {
     $type_info = content_types($type);
     $fields += $type_info['fields'];
 //    $fields += _views_bulk_operations_fields_action_non_cck($type);

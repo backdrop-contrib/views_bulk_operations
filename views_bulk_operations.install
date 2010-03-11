@@ -27,7 +27,7 @@ function views_bulk_operations_update_6000() {
     }
   }
   $result = db_query("SELECT * FROM {actions} WHERE parameters > ''");
-  while ($action = db_fetch_object($result)) {
+  foreach ($result as $action) {
     $key = md5($action->aid);
     $parameters = unserialize($action->parameters);
     $operations[$key] = $action->callback . (empty($parameters) ? '' : ':'. md5($action->parameters));

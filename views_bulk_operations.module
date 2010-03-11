@@ -38,13 +38,14 @@ function views_bulk_operations_views_api() {
 }
 
 /**
- * Implementation of hook_elements().
+ * Implementation of hook_element_info().
  */
-function views_bulk_operations_elements() {
+function views_bulk_operations_element_info() {
   $type['views_node_selector'] = array(
     '#input' => TRUE,
     '#view' => NULL,
     '#process' => array('views_node_selector_process'),
+    '#theme' => 'views_node_selector',
   );
   return $type;
 }
@@ -54,7 +55,7 @@ function views_bulk_operations_elements() {
  * 
  * @see views_bulk_operations_elements()
  */
-function views_node_selector_process($element, $edit) {
+function views_node_selector_process($element, $form_state, $complete_form) {
   $element['#tree'] = TRUE;
   if (!isset($element['#value'])) {
     $element['#value'] = array('selection' => array(), 'select_all' => FALSE);
@@ -68,7 +69,7 @@ function views_node_selector_process($element, $edit) {
   $element['selection']['#options'] = $options;
   $element['selection']['#value'] = $element['#value']['selection'];
   $element['selection']['#attributes'] = array();
-  $element['selection'] = expand_checkboxes($element['selection']);
+  $element['selection'] = form_process_checkboxes($element['selection']);
   
   $element['select_all'] = array('#type' => 'hidden', '#default_value' => $element['#value']['select_all']);
   return $element; 
@@ -80,13 +81,13 @@ function views_node_selector_process($element, $edit) {
 function views_bulk_operations_theme() {
   $themes = array(
     'views_node_selector' => array(
-      'arguments' => array('element' => NULL),
+      'render element' => 'element',
     ),
     'views_bulk_operations_confirmation' => array(
-      'arguments' => array('objects' => NULL, 'view' => NULL),
+      'variables' => array('objects' => NULL, 'view' => NULL),
     ),
   );
-  $files = file_scan_directory(drupal_get_path('module', 'views_bulk_operations'), '(.*).action.inc$');
+  $files = file_scan_directory(drupal_get_path('module', 'views_bulk_operations'), '/\.action\.inc$/');
   if ($files) foreach ($files as $file) {
     $action_theme_fn = 'views_bulk_operations_'. str_replace('.', '_', basename($file->filename, '.inc')).'_theme';
     if (function_exists($action_theme_fn)) {
@@ -99,7 +100,8 @@ function views_bulk_operations_theme() {
 /**
  * Provide the ability to select items in a view using checkboxes.
  */
-function theme_views_node_selector($element) {
+function theme_views_node_selector($variables) {
+  $element = $variables['element'];
   require_once(drupal_get_path('module', 'views').'/theme/theme.inc');
   
   drupal_add_js('misc/tableselect.js');
@@ -148,7 +150,7 @@ function theme_views_node_selector($element) {
     }
     $rows = array();
     foreach ($records as $num => $object) {
-      $row = array('class' => 'rowclick', 'data' => array());
+      $row = array('class' => array('rowclick'), 'data' => array());
       $row['data'][] =  theme('checkbox', $element['selection'][$object->{$view->base_field}]);
       foreach ($vars['rows'][$num] as $field => $content) {
         $row['data'][] = array('data' => $content, 'class' => "views-field views-field-{$vars['fields'][$field]}");
@@ -171,10 +173,11 @@ function theme_views_node_selector($element) {
       array_unshift($rows, $row);
     }
 
-    $output .= theme('table', $headers, $rows, array('class' => $vars['class']), $title);
+    $output .= theme('table', array('header' => $headers, 'rows' => $rows, 'attributes' => array('class' => $vars['class'])));
     $output .= theme('hidden', $element['select_all']);
   }
-  return theme('form_element', $element, $output);
+  $output .= drupal_render_children($element);
+  return $output;
 }
 
 /**
@@ -187,7 +190,7 @@ function views_bulk_operations_init() {
   }
 
   // Automatically include the action files.
-  $files = file_scan_directory(drupal_get_path('module', 'views_bulk_operations'), '(.*).action.inc$');
+  $files = file_scan_directory(drupal_get_path('module', 'views_bulk_operations'), '/\.action\.inc$/');
   if ($files) foreach ($files as $file) {
     require_once($file->filename);
   }
@@ -196,13 +199,13 @@ function views_bulk_operations_init() {
 /**
  * Define multistep form for selecting and executing an operation.
  */
-function views_bulk_operations_form($form_state, $plugin) {
+function views_bulk_operations_form($form, &$form_state, $plugin) {
   // Force browser to reload the page if Back is hit.
   if (preg_match('/msie/i', $_SERVER['HTTP_USER_AGENT'])) {
-    drupal_set_header("Cache-Control: no-cache"); // works for IE6+
+    drupal_add_http_header('Cache-Control', 'no-cache'); // works for IE6+
   }
   else {
-    drupal_set_header("Cache-Control: no-store"); // works for Firefox and other browsers
+    drupal_add_http_header('Cache-Control', 'no-store'); // works for Firefox and other browsers
   }
   
   // If there's a session variable on this view, pre-load the old values.
@@ -843,6 +846,7 @@ function _views_bulk_operations_action_permission($operation, $account = NULL) {
       watchdog('actions permissions', 'An attempt by user %user to !perm was blocked due to insufficient permissions.', 
         array('!perm' => $perm, '%user' => isset($account) ? $account->name : $user->name), WATCHDOG_ALERT);
       drupal_access_denied(); 
+      drupal_exit();
     }
   }
 
@@ -853,6 +857,7 @@ function _views_bulk_operations_action_permission($operation, $account = NULL) {
       watchdog('actions permissions', 'An attempt by user %user to !perm was blocked due to insufficient permissions.', 
         array('!perm' => $perm, '%user' => isset($account) ? $account->name : $user->name), WATCHDOG_ALERT);
       drupal_access_denied(); 
+      drupal_exit();
     }
   }
 }
@@ -911,7 +916,9 @@ function _views_bulk_operations_action_submit($action, $form, $form_values) {
 /**
  * Theme function to show the confirmation page before executing the action.
  */
-function theme_views_bulk_operations_confirmation($objects, $view) {
+function theme_views_bulk_operations_confirmation($variables) {
+  $objects = $variables['objects'];
+  $view = $variables['view'];
   $object_info = _views_bulk_operations_object_info_for_view($view);
   $items = array();
   foreach ($objects as $oid => $row) {
@@ -1037,7 +1044,7 @@ function _views_bulk_operations_object_info_for_type($type) {
  */
 function views_bulk_operations_action_info() {
   $actions = array();
-  $files = file_scan_directory(drupal_get_path('module', 'views_bulk_operations'), '(.*).action.inc$');
+  $files = file_scan_directory(drupal_get_path('module', 'views_bulk_operations'), '/\.action\.inc$/');
   if ($files) foreach ($files as $file) {
     require_once($file->filename);
     $action_info_fn = 'views_bulk_operations_'. str_replace('.', '_', basename($file->filename, '.inc')).'_info';
@@ -1047,7 +1054,7 @@ function views_bulk_operations_action_info() {
 
   // Add VBO's own programmatic action.
   $actions['views_bulk_operations_action'] = array(
-    'description' => t('Execute a VBO programmatically'),
+    'label' => t('Execute a VBO programmatically'),
     'type' => 'system',
     'configurable' => TRUE,
     'behavior' => array('changes node property'),
@@ -1298,7 +1305,7 @@ function views_bulk_operations_add_actions($vid, $actions) {
   if (!empty($actions)) foreach ($actions as $action) {
     $modified = FALSE;
     if (is_numeric($action)) { // aid
-      $action_object = db_fetch_object(db_query("SELECT * FROM {actions} WHERE aid = %d", $action));
+      $action_object = db_query("SELECT * FROM {actions} WHERE aid = :aid", array(':aid' => $action))->fetchObject();
       if (is_object($action_object)) {
         $parameters = unserialize($action_object->parameters);
         $key = $action_object->callback . (empty($parameters) ? '' : ':'. md5($action_object->parameters));
@@ -1314,7 +1321,7 @@ function views_bulk_operations_add_actions($vid, $actions) {
         $modified = TRUE;
       }
       else { // try the title
-        $action_object = db_fetch_object(db_query("SELECT * FROM {actions} WHERE UPPER(description) = '%s'", strtoupper(db_escape_string($action))));
+        $action_object = db_query("SELECT * FROM {actions} WHERE UPPER(label) = :label", array(':label' => drupal_strtoupper($action)))->fetchObject();
         if (is_object($action_object)) {
           $parameters = unserialize($action_object->parameters);
           $key = $action_object->callback . (empty($parameters) ? '' : ':'. md5($action_object->parameters));
