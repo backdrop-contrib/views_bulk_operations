@@ -53,7 +53,7 @@ function views_bulk_operations_element_info() {
 /**
  * Process the views_node_selector element defined earlier.
  * 
- * @see views_bulk_operations_elements()
+ * @see views_bulk_operations_element_info()
  */
 function views_node_selector_process($element, $form_state, $complete_form) {
   $element['#tree'] = TRUE;
@@ -176,7 +176,6 @@ function theme_views_node_selector($variables) {
     $output .= theme('table', array('header' => $headers, 'rows' => $rows, 'attributes' => array('class' => $vars['class'])));
     $output .= theme('hidden', $element['select_all']);
   }
-  $output .= drupal_render_children($element);
   return $output;
 }
 
@@ -272,16 +271,12 @@ function views_bulk_operations_form($form, &$form_state, $plugin) {
       $form['select'] = array(
         '#type' => 'fieldset',
         '#title' => t('Bulk operations'),
-        '#prefix' => '<div id="views-bulk-operations-select">',
-        '#suffix' => '</div>',             
       );
       $form['objects'] = array(
         '#type' => 'views_node_selector',
         '#view' => $plugin->view,
         '#sets' => $plugin->sets,
         '#value' => $default_objects,
-        '#prefix' => '<div class="views-node-selector">',
-        '#suffix' => '</div>',
       );
       if ($plugin->options['display_type'] == 0) {
         // Create dropdown and submit button.
@@ -289,14 +284,10 @@ function views_bulk_operations_form($form, &$form_state, $plugin) {
           '#type' => 'select',
           '#options' => array(0 => t('- Choose an operation -')) + $plugin->get_selected_operations(),
           '#default_value' => $default_operation,
-          '#prefix' => '<div id="views-bulk-operations-dropdown">',
-          '#suffix' => '</div>',             
         );
         $form['select']['submit'] = array(
           '#type' => 'submit',
           '#value' => t('Execute'),
-          '#prefix' => '<div id="views-bulk-operations-submit">',
-          '#suffix' => '</div>',             
         );
       }
       else {
@@ -327,14 +318,10 @@ function views_bulk_operations_form($form, &$form_state, $plugin) {
         '#view' => $plugin->view,
         '#sets' => $plugin->sets,
         '#value' => $default_objects,
-        '#prefix' => '<div class="views-node-selector">',
-        '#suffix' => '</div>',
       );
       $form['submit'] = array(
         '#type' => 'submit',
         '#value' => $operation['label'],
-        '#prefix' => '<div id="views-bulk-operations-submit">',
-        '#suffix' => '</div>',             
       );
       break;
     
@@ -352,24 +339,24 @@ function views_bulk_operations_form($form, &$form_state, $plugin) {
         '#value' => t('Next'),
         '#weight' => 98,
       );
-      $query = drupal_query_string_encode($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['exposed_input']);
+      $query = $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['exposed_input'];
       $form['cancel'] = array(
         '#type' => 'markup',
         '#value' => t('<a href="@view">Cancel</a>', array('@view' => url($_GET['q'], array('query' => $query)))),
         '#weight' => 99,
       );
-      drupal_set_title(t('Set parameters for \'%action\'', array('%action' => $operation['label'])));
+      drupal_set_title(t('Set parameters for %action', array('%action' => $operation['label'])), PASS_THROUGH);
       break;
     
     case VIEWS_BULK_OPS_STEP_CONFIRM:
       $operation = $plugin->get_operation_info($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['operation']);
-      $query = drupal_query_string_encode($form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['exposed_input']);
+      $query = $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['exposed_input'];
       $objects = $form_state['storage'][VIEWS_BULK_OPS_STEP_VIEW]['objects']['selection'];
       $form = confirm_form($form,
-        t('Are you sure you want to perform \'%action\' on selected rows?', array('%action' => $operation['label'])),
+        t('Are you sure you want to perform %action on selected rows?', array('%action' => $operation['label'])),
         array('path' => $_GET['q'], 'query' => $query),
-        theme('views_bulk_operations_confirmation', $objects, $plugin->view)
-      ); 
+        theme('views_bulk_operations_confirmation', array('objects' => $objects, 'view' => $plugin->view))
+      );
       break;
   }
  
@@ -498,6 +485,7 @@ function views_bulk_operations_form_submit($form, &$form_state) {
       if (!$operation['configurable'] && $plugin->options['skip_confirmation']) {
         break; // Go directly to execution
       }
+      $form_state['rebuild'] = TRUE;
       return;
 
     case VIEWS_BULK_OPS_STEP_SINGLE:
@@ -518,6 +506,7 @@ function views_bulk_operations_form_submit($form, &$form_state) {
       if ($plugin->options['skip_confirmation']) {
         break; // Go directly to execution
       }
+      $form_state['rebuild'] = TRUE;
       return;
 
     case VIEWS_BULK_OPS_STEP_CONFIG:
@@ -528,6 +517,7 @@ function views_bulk_operations_form_submit($form, &$form_state) {
       if ($plugin->options['skip_confirmation']) {
         break; // Go directly to execution
       }
+      $form_state['rebuild'] = TRUE;
       return; 
 
     case VIEWS_BULK_OPS_STEP_CONFIRM:
@@ -930,7 +920,7 @@ function theme_views_bulk_operations_confirmation($variables) {
       $items[] = check_plain((string)$object->{$object_info['title']});
     }
   }
-  $output = theme('item_list', $items, t('You selected the following <strong>!count</strong> rows:', array('!count' => count($objects))));
+  $output = theme('item_list', array('items' => $items, 'title' => t('You selected the following <strong>!count</strong> rows:', array('!count' => count($objects)))));
   return $output;
 }
 
