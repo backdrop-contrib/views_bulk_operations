@@ -80,13 +80,15 @@ Drupal.vbo.startUp = function(context) {
   });
 }
 
-Drupal.behaviors.vbo = function(context) {
-  // Force Firefox to reload the page if Back is hit.
-  // https://developer.mozilla.org/en/Using_Firefox_1.5_caching
-  window.onunload = function(){}
+Drupal.behaviors.vbo = {
+  attach: function(context) {
+    // Force Firefox to reload the page if Back is hit.
+    // https://developer.mozilla.org/en/Using_Firefox_1.5_caching
+    window.onunload = function(){}
 
-  // Set up VBO UI.
-  Drupal.vbo.startUp(context);
+    // Set up VBO UI.
+    Drupal.vbo.startUp(context);
+  }
 }
 
 // END jQuery

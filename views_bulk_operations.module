@@ -102,11 +102,10 @@ function views_bulk_operations_theme() {
  */
 function theme_views_node_selector($variables) {
   $element = $variables['element'];
-  require_once(drupal_get_path('module', 'views').'/theme/theme.inc');
+  require_once(drupal_get_path('module', 'views') . '/theme/theme.inc');
   
-  drupal_add_js('misc/tableselect.js');
-  drupal_add_js(drupal_get_path('module', 'views_bulk_operations').'/views_bulk_operations.js');
-  drupal_add_css(drupal_get_path('module', 'views_bulk_operations') . '/views_bulk_operations.css', 'module');
+  drupal_add_js(drupal_get_path('module', 'views_bulk_operations') . '/views_bulk_operations.js');
+  drupal_add_css(drupal_get_path('module', 'views_bulk_operations') . '/views_bulk_operations.css');
 
   // Don't add the vbo setting twice.
   $javascript = drupal_add_js();
@@ -140,10 +139,11 @@ function theme_views_node_selector($variables) {
     // Add checkboxes to the header and the rows.
     $hide_select_all = @$view->display['default']->display_options['style_options']['hide_select_all'];
     if (!$hide_select_all) {
-      $headers[] = theme('table_select_header_cell');
+      drupal_add_js('misc/tableselect.js');
+      $headers[] = array('class' => array('select-all'));
     }
     else {
-      $headers[] = array('class' => 'no_select_all');
+      $headers[] = array('class' => array('no-select-all'));
     }
     foreach ($vars['header'] as $field => $label) {
       $headers[] = array('data' => $label, 'class' => "views-field views-field-{$vars['fields'][$field]}");
