@@ -705,7 +705,7 @@ function _views_bulk_operations_batch_finished($success, $results, $operations, 
     else {
       $message = t('No rows were processed:');
     }
-    $message .= "\n". theme('item_list', $results['log']);
+    $message .= "\n". theme('item_list', array('items' => $results['log']));
   }
   else {
     // An error occurred.
