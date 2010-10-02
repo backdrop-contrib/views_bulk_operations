@@ -184,7 +184,7 @@ function theme_views_node_selector($variables) {
  */
 function views_bulk_operations_init() {
   // Reset selection if we're not in the view anymore.
-  if (!isset($_SESSION['vbo_values'][$_GET['q']])) {
+  if (isset($_SESSION) && !isset($_SESSION['vbo_values'][$_GET['q']])) {
     unset($_SESSION['vbo_values']);
   }
 
