@@ -1,6 +1,6 @@
 <?php
 // $Id$
-
+/*
 function views_bulk_operations_rules_action_info_alter(&$actions) {
   $actions['rules_core_views_bulk_operations_action'] = array(
     'label' => t('Execute a VBO programmatically'),
@@ -14,4 +14,4 @@ function views_bulk_operations_rules_action_info_alter(&$actions) {
     'configurable' => TRUE,
   );
 }
-
+*/
