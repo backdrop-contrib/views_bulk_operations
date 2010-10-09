@@ -3,6 +3,7 @@
 
 function views_bulk_operations_ruleset_action_info() {
   if (!module_exists('rules')) return array();
+  /*
   $actions = array();
   foreach (rules_get_configured_items('rule_sets') as $ruleset_key => $ruleset) {
     if (count($ruleset['arguments']) == 1) { // For now, we only accept rulesets with one parameter (taken to be the 'type')
@@ -24,6 +25,7 @@ EOS
       );
     }
   }
+  */
   return $actions;
 }
 
