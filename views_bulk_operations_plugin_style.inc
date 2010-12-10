@@ -216,7 +216,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
       $key = isset($operation['key']) ? $operation['key'] : $callback;
       $operations[$key] = array(
         'key'                   => $key,
-        'label'                 => $operation['label'],
+        'label'                 => isset($operation['label']) ? $operation['label'] : '',
         'callback'              => $callback,
         'callback arguments'    => isset($operation['parameters']) ? $operation['parameters'] : array(),
         'configurable'          => isset($operation['configurable']) ? $operation['configurable'] : FALSE,
@@ -258,7 +258,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
     foreach ($result as $action) {
       $parameters = unserialize($action->parameters);
       $actions[$action->aid] = array(
-        'description' => $action->description,
+        'description' => isset($action->description) ? $action->description : '',
         'type' => $action->type,
         'configurable' => FALSE,
         'parameters' => $parameters,
