@@ -258,7 +258,7 @@ class views_bulk_operations_plugin_style extends views_plugin_style_table {
     foreach ($result as $action) {
       $parameters = unserialize($action->parameters);
       $actions[$action->aid] = array(
-        'description' => isset($action->description) ? $action->description : '',
+        'label' => isset($action->label) ? $action->label : '',
         'type' => $action->type,
         'configurable' => FALSE,
         'parameters' => $parameters,
