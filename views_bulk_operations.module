@@ -172,8 +172,7 @@ function theme_views_node_selector($variables) {
       );
       array_unshift($rows, $row);
     }
-
-    $output .= theme('table', array('header' => $headers, 'rows' => $rows, 'attributes' => array('class' => $vars['class'])));
+    $output .= theme('table', array('header' => $headers, 'rows' => $rows, 'attributes' => array('class' => $vars['classes_array'])));
     $output .= theme('hidden', $element['select_all']);
   }
   return $output;
