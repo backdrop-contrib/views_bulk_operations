@@ -15,6 +15,7 @@ function views_bulk_operations_views_plugins() {
         'type' => 'normal',
         'theme' => 'views_view_bulk',
         'even empty' => TRUE,
+        'uses row class' => TRUE,
       ),
     ),
   );
