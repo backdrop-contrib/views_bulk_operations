@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 function views_bulk_operations_delete_action_info() {
   return array(

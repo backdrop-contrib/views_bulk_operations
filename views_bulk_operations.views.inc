@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 function views_bulk_operations_views_plugins() {
   return array(

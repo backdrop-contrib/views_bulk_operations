@@ -1,5 +1,4 @@
 <?php
-// $Id$
 /**
  * @file Drupal action to set individual field values. 
  * 

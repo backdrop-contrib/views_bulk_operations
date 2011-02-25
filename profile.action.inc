@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 function views_bulk_operations_profile_action_info() {
   if (!module_exists('profile')) return array();

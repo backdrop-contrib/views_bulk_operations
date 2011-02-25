@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 function views_bulk_operations_user_roles_action_info() {
   return array('views_bulk_operations_user_roles_action' => array(

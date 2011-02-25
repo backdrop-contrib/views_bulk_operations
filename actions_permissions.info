@@ -1,4 +1,3 @@
-; $Id$
 name = Actions permissions
 description = Integrates actions with the permission system.
 package = Administration

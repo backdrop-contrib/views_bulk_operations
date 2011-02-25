@@ -1,5 +1,4 @@
 <?php
-// $Id$
 
 class views_bulk_operations_plugin_style extends views_plugin_style_table {
 
