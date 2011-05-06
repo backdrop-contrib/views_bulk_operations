@@ -73,7 +73,7 @@ function views_bulk_operations_profile_action_validate($form, $form_state) {
           }
         }
       }
-//      else if ($field->required && !user_access('administer users')) {
+//      elseif ($field->required && !user_access('administer users')) {
 //        form_set_error($field->name, t('The field %field is required.', array('%field' => $field->title)));
 //      }
     }

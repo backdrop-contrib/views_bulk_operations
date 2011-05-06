@@ -74,7 +74,7 @@ function views_bulk_operations_taxonomy_action(&$node, $context) {
     if (!isset($taxonomy[$term->vid])) {
       $taxonomy[$term->vid] = $term->tid;
     }
-    else if (is_array($taxonomy[$term->vid])) {
+    elseif (is_array($taxonomy[$term->vid])) {
       $taxonomy[$term->vid][$term->tid] = $term->tid;
     }
     else {
@@ -159,7 +159,7 @@ function _taxonomy_action_parse_terms($taxonomy) {
     if ($key == 'tags') {
       $ret['tags'] = $vocab;
     }
-    else if (!is_array($vocab)) {
+    elseif (!is_array($vocab)) {
       if (!empty($vocab)) $ret[] = $vocab;
     } 
     else {

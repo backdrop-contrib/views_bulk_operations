@@ -259,7 +259,7 @@ function _views_bulk_operations_fields_action_non_cck_traverse($element, $fields
     ) {
       $return += _views_bulk_operations_fields_action_non_cck_traverse($element[$field_name], $fields);
     }
-    else if (in_array($field_name, $fields, TRUE)) {
+    elseif (in_array($field_name, $fields, TRUE)) {
       $element[$field_name]['#required'] = FALSE;
       $return[$field_name] = array(
         'field_name' => $field_name,
