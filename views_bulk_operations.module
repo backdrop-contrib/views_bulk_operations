@@ -22,7 +22,7 @@ define('VBO_ACCESS_OP_CREATE',    0x04);
 define('VBO_ACCESS_OP_DELETE',    0x08);
 
 /**
- * Implementation of hook_views_api().
+ * Implements hook_views_api().
  */
 function views_bulk_operations_views_api() {
   return array(
@@ -31,7 +31,7 @@ function views_bulk_operations_views_api() {
 }
 
 /**
- * Implementation of hook_theme().
+ * Implements hook_theme().
  */
 function views_bulk_operations_theme() {
   $themes = array(
@@ -50,7 +50,7 @@ function views_bulk_operations_theme() {
 }
 
 /**
- * Implementation of hook_init().
+ * Implements hook_init().
  */
 function views_bulk_operations_init() {
   // Reset selection if we're not in the view anymore.
@@ -798,7 +798,7 @@ function theme_views_bulk_operations_confirmation($variables) {
 }
 
 /**
- * Implementation of hook_views_bulk_operations_object_info()
+ * Implements hook_views_bulk_operations_object_info()
  *
  * Hook used by VBO to be able to handle different objects as does Views 2.
  *
@@ -884,7 +884,7 @@ function _views_bulk_operations_object_info_for_type($type) {
 }
 
 /**
- * Implementation of hook_action_info().
+ * Implements hook_action_info().
  */
 function views_bulk_operations_action_info() {
   $actions = array();
