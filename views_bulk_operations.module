@@ -229,11 +229,6 @@ function views_bulk_operations_form($form, &$form_state, $vbo) {
     $select_all = FALSE;
   }
 
-  // Markup that will be shown inside the table on select all.
-  $form['select_all_markup'] = array(
-    '#type' => 'markup',
-    '#markup' => theme('views_bulk_operations_select_all', array('view' => $vbo->view)),
-  );
   // Set by JS to indicate that all objects
   // on all pages are selected.
   $form['select_all'] = array(
@@ -299,10 +294,12 @@ function views_bulk_operations_form($form, &$form_state, $vbo) {
     }
   }
 
-  // Receives the "select all" markup in case the style plugin is not a table.
-  $form['select_all_container'] = array(
+  // Receives the "select all" markup.
+  // If the view is using a table style plugin, the markup gets moved to
+  // a table row below the header.
+  $form['select_all_markup'] = array(
     '#type' => 'markup',
-    '#markup' => '<div class="vbo-select-all-container"></div>',
+    '#markup' => theme('views_bulk_operations_select_all', array('view' => $vbo->view)),
   );
 
   return $form;

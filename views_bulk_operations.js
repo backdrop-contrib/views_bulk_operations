@@ -61,10 +61,8 @@
   }
 
   Drupal.vbo.initGenericBehaviors = function(form) {
-    // Move the select all markup from the hidden div to above the view results.
-    if ($('.vbo-select-all-markup', form).length) {
-      $('.vbo-select-all-container', form).before($('.vbo-select-all-markup', form).html());
-    }
+    // Show the "select all" fieldset.
+    $('.vbo-select-all-markup', form).show();
 
     $('.vbo-select-this-page', form).click(function() {
       $('input[id^="edit-views-bulk-operations"]', form).attr('checked', this.checked);
