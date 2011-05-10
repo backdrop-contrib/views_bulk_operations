@@ -1,5 +1,11 @@
 <?php
 
+/**
+* @file
+* Views field handler. Contains all relevant VBO options and related logic.
+* Implements the Views Form API.
+*/
+
 class views_bulk_operations_handler_field_operations extends views_handler_field {
   var $all_operations = array();
 
@@ -151,7 +157,7 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
    */
   function label() {
     if (is_a($this->view->style_plugin, 'views_plugin_style_table')) {
-      //return '<!--views-form-select-all-->';
+      return '<!--views-bulk-operations-select-all-->';
     }
     else {
       return parent::label();

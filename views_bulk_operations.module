@@ -35,6 +35,9 @@ function views_bulk_operations_views_api() {
  */
 function views_bulk_operations_theme() {
   $themes = array(
+    'views_bulk_operations_select_all' => array(
+      'variables' => array('view' => NULL),
+    ),
     'views_bulk_operations_confirmation' => array(
       'variables' => array('objects' => NULL, 'view' => NULL),
     ),
@@ -85,6 +88,23 @@ function _views_bulk_operations_get_field($view) {
 }
 
 /**
+ * Implements hook_views_form_substitutions().
+ */
+function views_bulk_operations_views_form_substitutions() {
+  // Views check_plains the column label, so VBO needs to do the same
+  // in order for the replace operation to succeed.
+  $select_all_placeholder = check_plain('<!--views-bulk-operations-select-all-->');
+  $select_all = array(
+    '#type' => 'checkbox',
+    '#default_value' => FALSE,
+    '#attributes' => array('class' => array('vbo-select-all')),
+  );
+  return array(
+    $select_all_placeholder => drupal_render($select_all),
+  );
+}
+
+/**
  * Implements hook_form_alter().
  */
 function views_bulk_operations_form_alter(&$form, &$form_state, $form_id) {
@@ -110,11 +130,86 @@ function views_bulk_operations_form_alter(&$form, &$form_state, $form_id) {
 }
 
 /**
+ * Returns the 'select all' div that gets inserted below the table header row
+ * or above the view results (depending on the style plugin), providing a choice
+ * between selecting items on the current page, and on all pages.
+ *
+ * The actual insertion is done by JS, matching the degradation behavior
+ * of Drupal core (no JS - no select all).
+ */
+function theme_views_bulk_operations_select_all($variables) {
+  $view = $variables['view'];
+  $form = array();
+
+  if (is_a($view->style_plugin, 'views_plugin_style_table')) {
+    // Table displays only get the "select all" markup if they are paginated.
+    if (count($view->result) == $view->total_rows) {
+      return '';
+    }
+
+    $this_page_count = format_plural(count($view->result), '1 row', '@count rows');
+    $this_page = t('Selected <strong>!row_count</strong> in this page.', array('!row_count' => $this_page_count));
+    $all_pages_count = format_plural($view->total_rows, '1 row', '@count rows');
+    $all_pages = t('Selected <strong>!row_count</strong> in this view.', array('!row_count' => $all_pages_count));
+
+    $form['select_all_pages'] = array(
+      '#type' => 'button',
+      '#attributes' => array('class' => array('vbo-select-all-pages')),
+      '#value' => t('Select all !row_count in this view.', array('!row_count' => $all_pages_count)),
+      '#prefix' => '<span class="vbo-this-page">' . $this_page . ' &nbsp;',
+      '#suffix' => '</span>',
+    );
+    $form['select_this_page'] = array(
+      '#type' => 'button',
+      '#attributes' => array('class' => array('vbo-select-this-page')),
+      '#value' => t('Select only !row_count in this page.', array('!row_count' => $this_page_count)),
+      '#prefix' => '<span class="vbo-all-pages" style="display: none">' . $all_pages . ' &nbsp;',
+      '#suffix' => '</span>',
+    );
+  }
+  else {
+    $form['select_all'] = array(
+      '#type' => 'fieldset',
+      '#attributes' => array('class' => array('vbo-fieldset-select-all')),
+    );
+    $form['select_all']['this_page'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Select all items on this page'),
+      '#default_value' => '',
+      '#attributes' => array('class' => array('vbo-select-this-page')),
+    );
+    // If the view is paginated, offer an option to select rows on all pages.
+    if (count($view->result) != $view->total_rows) {
+      $form['select_all']['or'] = array(
+        '#type' => 'markup',
+        '#markup' => '<em>OR</em>',
+      );
+      $form['select_all']['all_pages'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Select all items on all pages'),
+        '#default_value' => '',
+        '#attributes' => array('class' => array('vbo-select-all-pages')),
+      );
+    }
+  }
+
+  if ($form) {
+    $output = '<div class="vbo-select-all-markup">';
+    $output .= drupal_render($form);
+    $output .= '</div>';
+  }
+
+  return $output;
+}
+
+/**
  * Extend the views_form multistep form with elements for executing an operation.
  */
 function views_bulk_operations_form($form, &$form_state, $vbo) {
-  //$form['#attached']['js'][] = drupal_get_path('module', 'views_bulk_operations') . '/views_bulk_operations.js';
-  //$form['#attached']['css'][] = drupal_get_path('module', 'views_bulk_operations') . '/views_bulk_operations.css';
+  $form['#prefix'] = '<div class="vbo-views-form">';
+  $form['#suffix'] = '</div>';
+  $form['#attached']['js'][] = drupal_get_path('module', 'views_bulk_operations') . '/views_bulk_operations.js';
+  $form['#attached']['css'][] = drupal_get_path('module', 'views_bulk_operations') . '/views_bulk_operations.css';
 
   // Force browser to reload the page if Back is hit.
   if (preg_match('/msie/i', $_SERVER['HTTP_USER_AGENT'])) {
@@ -134,11 +229,17 @@ function views_bulk_operations_form($form, &$form_state, $vbo) {
     $select_all = FALSE;
   }
 
+  // Markup that will be shown inside the table on select all.
+  $form['select_all_markup'] = array(
+    '#type' => 'markup',
+    '#markup' => theme('views_bulk_operations_select_all', array('view' => $vbo->view)),
+  );
   // Set by JS to indicate that all objects
   // on all pages are selected.
   $form['select_all'] = array(
     '#type' => 'hidden',
-    '#value' => $select_all,
+    '#attributes' => array('class' => 'select-all-objects'),
+    '#default_value' => $select_all,
   );
 
   if (count($vbo->get_selected_operations()) == 1 && $vbo->options['merge_single_action']) {
@@ -197,6 +298,12 @@ function views_bulk_operations_form($form, &$form_state, $vbo) {
       }
     }
   }
+
+  // Receives the "select all" markup in case the style plugin is not a table.
+  $form['select_all_container'] = array(
+    '#type' => 'markup',
+    '#markup' => '<div class="vbo-select-all-container"></div>',
+  );
 
   return $form;
 }
