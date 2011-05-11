@@ -1020,7 +1020,7 @@ function views_bulk_operations_action_info() {
 
 /**
  * Form function for views_bulk_operations_action action.
- * @todo Convert this code to the new way of doing things.
+ * @todo Convert this function, or kill it? Don't see it used anywhere.
  */
 function views_bulk_operations_action_form($context) {
   // Some views choke on being rebuilt at this moment because of validation errors in the action form.
@@ -1151,7 +1151,6 @@ function views_bulk_operations_action(&$object, $context) {
 
 /**
  * API function to programmatically invoke a VBO.
- * @todo Convert this code to the new way of doing things.
  */
 function views_bulk_operations_execute($vid, $operation_callback, $operation_arguments = array(), $view_exposed_input = array(), $view_arguments = array()) {
   $view = views_get_view($vid);
@@ -1160,37 +1159,30 @@ function views_bulk_operations_execute($vid, $operation_callback, $operation_arg
     return;
   }
 
+  // Build the view, so that the VBO field can be found.
+  $view->set_exposed_input($view_exposed_input);
+  $view->set_arguments($view_arguments);
+  $view->build();
+  $view->query->set_limit(NULL); // reset the work done by the pager
+  $view->query->set_offset(NULL);
+
   // Find the view display that has the VBO style.
-  $found = FALSE;
-  foreach (array_keys($view->display) as $display) {
-    $display_options = &$view->display[$display]->display_options;
-    if (isset($display_options['style_plugin']) && $display_options['style_plugin'] == 'bulk') {
-      $view->set_display($display);
-      $found = TRUE;
-      break;
-    }
-  }
-  if (!$found) {
-    _views_bulk_operations_report_error('Could not find a VBO display in view %vid.', array('%vid' => $vid));
+  $vbo = _views_bulk_operations_get_field($view);
+  if (!$vbo) {
+    _views_bulk_operations_report_error('Could not find a VBO field in view %vid.', array('%vid' => $vid));
     return;
   }
 
-  // Execute the view.
-  $view->set_exposed_input($view_exposed_input);
-  $view->set_arguments($view_arguments);
-  $view->build($plugin->view->current_display);
-  $view->query->set_limit(NULL); // reset the work done by the pager
-  $view->query->set_offset(NULL);
   $view->execute();
 
   // Find the selected operation.
-  $plugin = $view->style_plugin;
-  $operations = $plugin->get_selected_operations();
+  $operations = $vbo->get_selected_operations();
   if (!isset($operations[$operation_callback])) {
     _views_bulk_operations_report_error('Could not find operation %operation in view %vid.', array('%operation' => $operation_callback, '%vid' => $vid));
     return;
   }
-  $operation = $plugin->get_operation_info($operation_callback);
+  $operation = $vbo->get_operation_info($operation_callback);
+  $objects = array();
   foreach ($view->result as $result) {
     $objects[$result->{$view->base_field}] = $result->{$view->base_field};
   }
