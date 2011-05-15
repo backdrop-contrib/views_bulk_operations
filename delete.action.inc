@@ -21,7 +21,7 @@ function views_bulk_operations_delete_action_info() {
       'access operation' => VBO_ACCESS_OP_DELETE,
     ),
     'views_bulk_operations_delete_term_action' => array(
-      'type' => 'term',
+      'type' => 'taxonomy_term',
       'label' => t('Delete term'),
       'configurable' => FALSE,
       'access operation' => VBO_ACCESS_OP_DELETE,
@@ -34,15 +34,13 @@ function views_bulk_operations_delete_node_action($node) {
 }
 
 function views_bulk_operations_delete_user_action($user) {
-  user_delete(null, $user->uid);
+  user_delete($user->uid);
 }
 
 function views_bulk_operations_delete_comment_action($comment) {
-  require_once(drupal_get_path('module', 'comment') .'/comment.admin.inc');
-  _comment_delete_thread($comment);
-  _comment_update_node_statistics($comment->nid);
+  comment_delete($comment->cid);
 }
 
 function views_bulk_operations_delete_term_action($term) {
-  taxonomy_del_term($term->tid);
+  taxonomy_term_delete($term->tid);
 }
