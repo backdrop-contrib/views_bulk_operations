@@ -193,11 +193,9 @@ function theme_views_bulk_operations_select_all($variables) {
     }
   }
 
-  if ($form) {
-    $output = '<div class="vbo-select-all-markup">';
-    $output .= drupal_render($form);
-    $output .= '</div>';
-  }
+  $output = '<div class="vbo-select-all-markup">';
+  $output .= drupal_render($form);
+  $output .= '</div>';
 
   return $output;
 }
@@ -378,20 +376,6 @@ function views_bulk_operations_views_form_validate($form, &$form_state) {
 
   switch ($form_state['step']) {
     case 'views_form_views_form':
-      $field_name = $vbo->options['id'];
-      $selection = _views_bulk_operations_get_selection($vbo, $form_state);
-      if (!$selection) {
-        form_set_error($field_name, t('No row selected. Please select one or more rows.'));
-      }
-
-      $_SESSION['vbo_values'][$_GET['q']] = array(
-        'operation' => $form_state['values']['operation'],
-        'rows' => array(
-          'selection' => $selection,
-          'select_all' => $form_state['values']['select_all'],
-        ),
-      );
-
       if ($form_state['values']['single_operation']) {
         $operation = $vbo->get_operation_info($form_state['values']['operation']);
         if ($operation['configurable']) {
@@ -406,6 +390,20 @@ function views_bulk_operations_views_form_validate($form, &$form_state) {
           form_set_error('operation', t('No operation selected. Please select an operation to perform.'));
         }
       }
+
+      $field_name = $vbo->options['id'];
+      $selection = _views_bulk_operations_get_selection($vbo, $form_state);
+      if (!$selection) {
+        form_set_error($field_name, t('No row selected. Please select one or more rows.'));
+      }
+
+      $_SESSION['vbo_values'][$_GET['q']] = array(
+        'operation' => $form_state['values']['operation'],
+        'rows' => array(
+          'selection' => $selection,
+          'select_all' => $form_state['values']['select_all'],
+        ),
+      );
       break;
 
     case 'views_bulk_operations_config_form':

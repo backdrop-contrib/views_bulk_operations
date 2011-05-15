@@ -135,7 +135,6 @@ function views_bulk_operations_views_default_views() {
   $handler->display->display_options['fields']['views_bulk_operations']['vbo']['skip_confirmation'] = 0;
   $handler->display->display_options['fields']['views_bulk_operations']['vbo']['display_result'] = 1;
   $handler->display->display_options['fields']['views_bulk_operations']['vbo']['merge_single_action'] = 1;
-  $handler->display->display_options['fields']['views_bulk_operations']['vbo']['hide_select_all'] = 0;
   /* Field: Content: Title */
   $handler->display->display_options['fields']['title']['id'] = 'title';
   $handler->display->display_options['fields']['title']['table'] = 'node';
@@ -458,7 +457,6 @@ function views_bulk_operations_views_default_views() {
   $handler->display->display_options['fields']['views_bulk_operations']['vbo']['skip_confirmation'] = 0;
   $handler->display->display_options['fields']['views_bulk_operations']['vbo']['display_result'] = 1;
   $handler->display->display_options['fields']['views_bulk_operations']['vbo']['merge_single_action'] = 1;
-  $handler->display->display_options['fields']['views_bulk_operations']['vbo']['hide_select_all'] = 0;
   /* Field: User: Name */
   $handler->display->display_options['fields']['name']['id'] = 'name';
   $handler->display->display_options['fields']['name']['table'] = 'users';

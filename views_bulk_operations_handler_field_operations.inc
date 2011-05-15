@@ -20,7 +20,6 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
         'skip_confirmation' => array('default' => FALSE),
         'display_result' => array('default' => TRUE),
         'merge_single_action' => array('default' => TRUE),
-        'hide_select_all' => array('default' => FALSE),
       ),
     );
 
@@ -67,12 +66,6 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
         t('Dropdown selectbox with Submit button'),
         t('Each action as a separate button'),
       ),
-    );
-    $form['vbo']['hide_select_all'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Hide select all checkbox'),
-      '#description' => t('Check this box to hide the "select all" checkbox and associated "select across all pages" button.'),
-      '#default_value' => $this->options['vbo']['hide_select_all'],
     );
     $form['vbo']['skip_confirmation'] = array(
       '#type' => 'checkbox',
