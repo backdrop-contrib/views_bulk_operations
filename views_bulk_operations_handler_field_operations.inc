@@ -100,9 +100,9 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
     );
 
     // Per-action settings form.
-    $object_info = _views_bulk_operations_object_info_for_view($this->view);
+    $entity_type = $this->get_entity_type();
     foreach ($this->all_operations as $key => $operation) {
-      if ($operation['type'] != 'system' && $operation['type'] != $object_info['type']) {
+      if ($operation['type'] != 'system' && $operation['type'] != $entity_type) {
         continue;
       }
 
@@ -149,8 +149,6 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
     }
   }
 
-  function query() {}
-
   /**
    * If the view is using a table style, provide a
    * placeholder for a "select all" checkbox.
@@ -180,13 +178,13 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
 
     // If there's a session variable on this view, pre-load the old values.
     if (isset($_SESSION['vbo_values'][$_GET['q']])) {
-      $session_objects = $_SESSION['vbo_values'][$_GET['q']]['objects'];
-      $default_objects = array(
-        'selection' => $session_objects['selection'], 'select_all' => $session_objects['select_all']
+      $session_rows = $_SESSION['vbo_values'][$_GET['q']]['rows'];
+      $default_rows = array(
+        'selection' => $session_rows['selection'], 'select_all' => $session_rows['select_all']
       );
     }
     else {
-      $default_objects = array('selection' => array(), 'select_all' => FALSE);
+      $default_rows = array('selection' => array(), 'select_all' => FALSE);
     }
 
     $form[$this->options['id']] = array(
@@ -195,9 +193,9 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
     // At this point, the query has already been run, so we can access the results
     // in order to get the base key value (for example, nid for nodes).
     foreach ($this->view->result as $row_id => $row) {
-      $base_key_value = $row->{$this->view->base_field};
+      $entity_id = $this->get_value($row);
 
-      if ($default_objects['select_all'] || !empty($default_objects['selection'][$base_key_value])) {
+      if ($default_rows['select_all'] || !empty($default_rows['selection'][$entity_id])) {
         $default_value = TRUE;
       }
       else {
@@ -206,7 +204,7 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
 
       $form[$this->options['id']][$row_id] = array(
         '#type' => 'checkbox',
-        '#return_value' => $base_key_value,
+        '#return_value' => $entity_id,
         '#default_value' => $default_value,
       );
     }
@@ -219,13 +217,18 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
       if (!isset($this->all_operations[$key])) {
         continue;
       }
+
       if (module_exists('actions_permissions')) {
         $perm = actions_permissions_get_perm($this->all_operations[$key]['label'], $this->all_operations[$key]['callback']);
-        if (!user_access($perm)) continue;
-      }
-      if (!empty($this->all_operations[$key]['permissions'])) foreach ($this->all_operations[$key]['permissions'] as $perm) {
         if (!user_access($perm)) {
-          continue 2;
+          continue;
+        }
+      }
+      if (!empty($this->all_operations[$key]['permissions'])) {
+        foreach ($this->all_operations[$key]['permissions'] as $perm) {
+          if (!user_access($perm)) {
+            continue 2;
+          }
         }
       }
       $selected[$key] = $this->all_operations[$key]['label'];
@@ -235,22 +238,21 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
 
   function get_operation_info($key) {
     $operation = $this->all_operations[$key];
-    if ($operation['type'] == 'system') { // System actions: morph them into current view type
-      $object_info = _views_bulk_operations_object_info_for_view($this->view);
-      $operation['type'] = $object_info['type'];
+    if ($operation['type'] == 'system') { // System actions: morph them into current entity type
+      $entity_type = $this->get_entity_type();
+      $operation['type'] = $entity_type;
     }
     return $operation;
   }
 
   private function get_operations_options() {
     $options = array();
-    $object_info = _views_bulk_operations_object_info_for_view($this->view);
-    if (!$object_info) return NULL;
+    $entity_type = $this->get_entity_type();
     foreach ($this->all_operations as $key => $operation) {
-      if ($operation['type'] == 'system') { // System actions: morph them into current view type
-        $operation['type'] = $object_info['type'];
+      if ($operation['type'] == 'system') { // System actions: morph them into current entity type
+        $operation['type'] = $entity_type;
       }
-      if ($operation['type'] == $object_info['type']) {
+      if ($operation['type'] == $entity_type) {
         $options[$key] = $operation['label'] .' ('. $key .')';
       }
     }
@@ -259,19 +261,16 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
 
   private function populate_operations() {
     $operations = array();
-    module_load_include('inc', 'node', 'node.admin');
 
-    foreach (_views_bulk_operations_get_object_info() as $object_type => $object_info) {
-      $hook_name = $object_type .'_operations';
+    // Merge in operations declared by hook_node_operations() and hook_user_operations().
+    foreach (array('node', 'user') as $entity_type) {
+      $hook_name = $entity_type .'_operations';
       foreach (module_invoke_all($hook_name) as $operation) {
         if (empty($operation['callback'])) {
           continue;
         }
 
         $key = $operation['callback'] . (empty($operation['callback arguments']) ? '' : ':'. md5(serialize($operation['callback arguments'])));
-        if (!isset($operation['behavior'])) { // assume operations modify nodes by default
-          $operation['behavior'] = array('changes_node_property');
-        }
         $operations[$key] = array(
           'key' => $key,
           'label' => $operation['label'],
@@ -279,9 +278,9 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
           'callback arguments' => isset($operation['callback arguments']) ? $operation['callback arguments'] : array(),
           'configurable' => isset($operation['configurable']) ? $operation['configurable'] : FALSE,
           'source' => 'operation',
-          'type' => $object_type,
+          'type' => $entity_type,
           'aggregate' => isset($operation['aggregate']) ? (int)$operation['aggregate'] : VBO_AGGREGATE_OPTIONAL,
-          'access op' => $this->get_access_op($operation),
+          'access operation' => VBO_ACCESS_OP_UPDATE, // assume edit by default.
           'permissions' => isset($operation['permissions']) ? $operation['permissions'] : NULL,
         );
       }
@@ -299,32 +298,13 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
         'source' => 'action',
         'type' => $operation['type'],
         'aggregate' => isset($operation['aggregate']) ? (int)$operation['aggregate'] : VBO_AGGREGATE_FORBIDDEN,
-        'access op' => $this->get_access_op($operation),
+        'access operation' => isset($operation['access operation']) ? $operation['access operation'] : 0,
         'permissions' => isset($operation['permissions']) ? $operation['permissions'] : NULL,
       );
     }
 
     uasort($operations, create_function('$a, $b', 'return strcasecmp($a["label"], $b["label"]);'));
     $this->all_operations = $operations;
-  }
-
-  private function get_access_op($operation) {
-    $access_op = 0;
-    if (isset($operation['behavior'])) {
-      if (in_array('views_node_property', $operation['behavior'])) {
-        $access_op |= VBO_ACCESS_OP_VIEW;
-      }
-      if (in_array('changes_property', $operation['behavior'])) {
-        $access_op |= VBO_ACCESS_OP_UPDATE;
-      }
-      if (in_array('creates_node_property', $operation['behavior'])) {
-        $access_op |= VBO_ACCESS_OP_CREATE;
-      }
-      if (in_array('deletes_node_property', $operation['behavior'])) {
-        $access_op |= VBO_ACCESS_OP_DELETE;
-      }
-    }
-    return $access_op;
   }
 
   private function get_custom_actions() {
@@ -340,8 +320,10 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
         'parameters' => $parameters,
         'key' => $action->callback . (empty($parameters) ? '' : ':'. md5($action->parameters)),
       );
-      foreach (array('behavior', 'aggregate', 'permissions') as $attribute) {
-        if (isset($static_actions[$action->callback][$attribute])) $actions[$action->aid][$attribute] = $static_actions[$action->callback][$attribute];
+      foreach (array('access operation', 'aggregate', 'permissions') as $attribute) {
+        if (isset($static_actions[$action->callback][$attribute])) {
+          $actions[$action->aid][$attribute] = $static_actions[$action->callback][$attribute];
+        }
       }
     }
     return $actions;
@@ -349,5 +331,32 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
 
   function get_operation_settings($operation) {
     return (isset($this->options[$operation['key']]) ? $this->options[$operation['key']] : NULL);
+  }
+
+  /**
+   * Determine the base table of the VBO field, and then use it to determine
+   * the entity type that VBO is operating on.
+   */
+  function get_entity_type() {
+    $base_table = $this->view->base_table;
+
+    // If the current field is under a relationship you can't be sure that the
+    // base table of the view is the base table of the current field.
+    // For example a field from a node author on a node view does have users as base table.
+    if (!empty($this->options['relationship']) && $this->options['relationship'] != 'none') {
+      $relationships = $this->view->display_handler->get_option('relationships');
+      $options = $relationships[$this->options['relationship']];
+      $data = views_fetch_data($options['table']);
+      $base_table = $data[$options['field']]['relationship']['base'];
+    }
+    // The base table is now known, use it to determine the entity type.
+    foreach (entity_get_info() as $entity_type => $info) {
+      if ($info['base table'] == $base_table) {
+        return $entity_type;
+      }
+    }
+    // This should never happen.
+    _views_bulk_operations_report_error("Could not determine the entity type for VBO field on views base table %table", array('%table' => $base_table));
+    return FALSE;
   }
 }

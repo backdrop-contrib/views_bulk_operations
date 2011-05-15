@@ -6,13 +6,17 @@ define('TAXONOMY_ACTION_DELETE', 2);
 define('TAXONOMY_ACTION_REPLACE_VOCABULARY', 3);
 
 function views_bulk_operations_taxonomy_action_info() {
-  if (!module_exists('taxonomy')) return array();
-  return array('views_bulk_operations_taxonomy_action' => array(
-    'type' => 'node',
-    'label' => t('Modify node taxonomy terms'),
-    'configurable' => TRUE,
-    'behavior' => array('changes_node_property'),
-  ));
+  if (!module_exists('taxonomy')) {
+    return array();
+  }
+  return array(
+    'views_bulk_operations_taxonomy_action' => array(
+      'type' => 'node',
+      'label' => t('Modify taxonomy terms'),
+      'configurable' => TRUE,
+      'access operation' => VBO_ACCESS_OP_UPDATE,
+    ),
+  );
 }
 
 function views_bulk_operations_taxonomy_action(&$node, $context) {
@@ -111,7 +115,7 @@ function views_bulk_operations_taxonomy_action_form($context) {
     '#type' => 'fieldset',
     '#title' => t('Vocabularies'),
     '#tree' => TRUE,
-  );  
+  );
   while (list(,$vocabulary) = each($vocabularies)) {
     $form['taxonomy'][$vocabulary->vid] = taxonomy_form($vocabulary->vid, isset($context['terms']) ? $context['terms'] : NULL);
     $form['taxonomy'][$vocabulary->vid]['#weight'] = $vocabulary->weight;
@@ -161,7 +165,7 @@ function _taxonomy_action_parse_terms($taxonomy) {
     }
     elseif (!is_array($vocab)) {
       if (!empty($vocab)) $ret[] = $vocab;
-    } 
+    }
     else {
       while (list(,$tid) = each($vocab)) {
         if (!empty($tid)) $ret[] = $tid;
@@ -173,7 +177,7 @@ function _taxonomy_action_parse_terms($taxonomy) {
 
 function views_bulk_operations_taxonomy_action_submit($form, $form_state) {
   return array(
-    'do' => $form_state['values']['do'], 
+    'do' => $form_state['values']['do'],
     'terms' => _taxonomy_action_parse_terms($form_state['values']['taxonomy']),
   );
 }
@@ -186,4 +190,3 @@ function views_bulk_operations_taxonomy_action_validate($form, $form_state) {
     }
   }
 }
-

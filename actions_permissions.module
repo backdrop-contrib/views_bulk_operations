@@ -36,7 +36,7 @@ function _actions_permissions_get_custom_actions() {
       'configurable' => FALSE,
       'parameters' => unserialize($action->parameters),
     );
-    $actions[$action->aid]['behavior'] = isset($static_actions[$action->callback]['behavior']) ? $static_actions[$action->callback]['behavior'] : null;
+    $actions[$action->aid]['access operation'] = isset($static_actions[$action->callback]['access operation']) ? $static_actions[$action->callback]['access operation'] : null;
   }
   return $actions;
 }
@@ -51,4 +51,3 @@ function actions_permissions_get_perm($label, $callback, $type = FALSE) {
     ),
   );
 }
-

@@ -32,13 +32,13 @@
     $('.vbo-select-all-pages', form).click(function() {
       $('.vbo-this-page', form).hide();
       $('.vbo-all-pages', form).show();
-      $('.select-all-objects', form).val('1');
+      $('.select-all-rows', form).val('1');
       return false;
     });
     $('.vbo-select-this-page', form).click(function() {
       $('.vbo-all-pages', form).hide();
       $('.vbo-this-page', form).show();
-      $('.select-all-objects', form).val('0');
+      $('.select-all-rows', form).val('0');
       return false;
     });
 
@@ -72,10 +72,10 @@
       $('input[id^="edit-views-bulk-operations"]', form).attr('checked', this.checked);
       if (this.checked) {
         $('.vbo-select-this-page', form).attr('checked', false);
-        $('.select-all-objects', form).val('1');
+        $('.select-all-rows', form).val('1');
       }
       else {
-        $('.select-all-objects', form).val('0');
+        $('.select-all-rows', form).val('0');
       }
     });
   }

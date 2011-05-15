@@ -6,25 +6,25 @@ function views_bulk_operations_delete_action_info() {
       'type' => 'node',
       'label' => t('Delete node'),
       'configurable' => FALSE,
-      'behavior' => array('deletes_node_property'),
+      'access operation' => VBO_ACCESS_OP_DELETE,
     ),
     'views_bulk_operations_delete_user_action' => array(
       'type' => 'user',
       'label' => t('Delete user'),
       'configurable' => FALSE,
-      'behavior' => array('deletes_node_property'),
+      'access operation' => VBO_ACCESS_OP_DELETE,
     ),
     'views_bulk_operations_delete_comment_action' => array(
       'type' => 'comment',
       'label' => t('Delete comment'),
       'configurable' => FALSE,
-      'behavior' => array('deletes_node_property'),
+      'access operation' => VBO_ACCESS_OP_DELETE,
     ),
     'views_bulk_operations_delete_term_action' => array(
       'type' => 'term',
       'label' => t('Delete term'),
       'configurable' => FALSE,
-      'behavior' => array('deletes_node_property'),
+      'access operation' => VBO_ACCESS_OP_DELETE,
     ),
   );
 }
@@ -46,4 +46,3 @@ function views_bulk_operations_delete_comment_action($comment) {
 function views_bulk_operations_delete_term_action($term) {
   taxonomy_del_term($term->tid);
 }
-
