@@ -318,7 +318,7 @@ function views_bulk_operations_views_default_views() {
 
   /* Display: Page */
   $handler = $view->new_display('page', 'Page', 'page');
-  $handler->display->display_options['path'] = 'admin/content/content2';
+  $handler->display->display_options['path'] = 'admin/content2';
   $translatables['admin_content'] = array(
     t('Master'),
     t('Content'),
@@ -619,7 +619,7 @@ function views_bulk_operations_views_default_views() {
 
   /* Display: Page */
   $handler = $view->new_display('page', 'Page', 'page');
-  $handler->display->display_options['path'] = 'admin/people/people2';
+  $handler->display->display_options['path'] = 'admin/people2';
   $translatables['admin_people'] = array(
     t('Master'),
     t('People'),
