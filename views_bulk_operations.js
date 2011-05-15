@@ -26,19 +26,22 @@
     $('.vbo-select-all', form).show();
     // Set up the "select all" functionality.
     $('.vbo-select-all', form).click(function() {
-      $('input[id^="edit-views-bulk-operations"]', form).attr('checked', this.checked);
-      $('.views-row-select-all', form).toggle();
+      var table = $(this).closest('table')[0];
+      $('input[id^="edit-views-bulk-operations"]', table).attr('checked', this.checked);
+      $('.views-row-select-all', table).toggle();
     });
     $('.vbo-select-all-pages', form).click(function() {
-      $('.vbo-this-page', form).hide();
-      $('.vbo-all-pages', form).show();
-      $('.select-all-rows', form).val('1');
+      var table = $(this).closest('table')[0];
+      $('.vbo-this-page', table).hide();
+      $('.vbo-all-pages', table).show();
+      $('.select-all-rows', table).val('1');
       return false;
     });
     $('.vbo-select-this-page', form).click(function() {
-      $('.vbo-all-pages', form).hide();
-      $('.vbo-this-page', form).show();
-      $('.select-all-rows', form).val('0');
+      var table = $(this).closest('table')[0];
+      $('.vbo-all-pages', table).hide();
+      $('.vbo-this-page', table).show();
+      $('.select-all-rows', table).val('0');
       return false;
     });
 
