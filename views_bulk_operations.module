@@ -248,7 +248,7 @@ function views_bulk_operations_form($form, &$form_state, $vbo) {
       foreach ($vbo->view->result as $result) {
         $dummy_selection[$result->{$vbo->view->base_field}] = $result;
       }
-      $form = _views_bulk_operations_action_form($form, $form_state, $operation, $vbo->view, $dummy_selection, $vbo->get_operation_settings($operation));
+      $form += _views_bulk_operations_action_form($form, $form_state, $operation, $vbo->view, $dummy_selection, $vbo->get_operation_settings($operation));
     }
     $form['actions']['submit'] = array(
       '#type' => 'submit',
@@ -322,7 +322,7 @@ function views_bulk_operations_config_form($form, &$form_state, $view, $output) 
   );
   drupal_set_title(t('Set parameters for %action', array('%action' => $operation['label'])), PASS_THROUGH);
 
-  $form = _views_bulk_operations_action_form(
+  $form += _views_bulk_operations_action_form(
     $form,
     $form_state,
     $operation,
