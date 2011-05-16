@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @file 
+ * @file
  * Passes selected objects as arguments to a page or view.
  */
 
@@ -31,7 +31,7 @@ function views_bulk_operations_argument_selector_action($objects, $context = arr
   drupal_goto($base_url . "/" . $arguments);
 }
 
-function views_bulk_operations_argument_selector_action_form($context) {
+function views_bulk_operations_argument_selector_action_form($form, &$form_state, $context) {
   $form['url'] = array(
     '#title' => t('URL'),
     '#type' => 'textfield',
@@ -45,4 +45,3 @@ function views_bulk_operations_argument_selector_action_form($context) {
 function views_bulk_operations_argument_selector_action_submit($form, $form_state) {
   return array('url' => $form_state['values']['url']);
 }
-

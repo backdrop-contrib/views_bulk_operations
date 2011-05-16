@@ -21,7 +21,7 @@ function views_bulk_operations_script_action(&$entity, $context) {
   @eval($context['script']);
 }
 
-function views_bulk_operations_script_action_form($context) {
+function views_bulk_operations_script_action_form($form, &$form_state, $context) {
   $form['script'] = array(
     '#type' => 'textarea',
     '#title' => t('PHP script'),

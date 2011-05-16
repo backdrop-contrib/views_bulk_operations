@@ -248,7 +248,7 @@ function views_bulk_operations_form($form, &$form_state, $vbo) {
       foreach ($vbo->view->result as $result) {
         $dummy_selection[$result->{$vbo->view->base_field}] = $result;
       }
-      $form += _views_bulk_operations_action_form($operation, $vbo->view, $dummy_selection, $vbo->get_operation_settings($operation));
+      $form = _views_bulk_operations_action_form($form, $form_state, $operation, $vbo->view, $dummy_selection, $vbo->get_operation_settings($operation));
     }
     $form['actions']['submit'] = array(
       '#type' => 'submit',
@@ -305,16 +305,10 @@ function views_bulk_operations_form($form, &$form_state, $vbo) {
 /**
  * Multistep form callback for the "configure" step.
  */
-function views_bulk_operations_config_form($form, $form_state, $view, $output) {
+function views_bulk_operations_config_form($form, &$form_state, $view, $output) {
   $vbo = _views_bulk_operations_get_field($view);
   $operation = $vbo->get_operation_info($form_state['views_bulk_operations']['views_form_views_form']['operation']);
   $form['operation'] = array('#type' => 'value', '#value' => $operation);
-  $form += _views_bulk_operations_action_form(
-    $operation,
-    $vbo->view,
-    $form_state['views_bulk_operations']['views_form_views_form']['selection'],
-    $vbo->get_operation_settings($operation)
-  );
   $form['execute'] = array(
     '#type' => 'submit',
     '#value' => t('Next'),
@@ -328,13 +322,21 @@ function views_bulk_operations_config_form($form, $form_state, $view, $output) {
   );
   drupal_set_title(t('Set parameters for %action', array('%action' => $operation['label'])), PASS_THROUGH);
 
+  $form = _views_bulk_operations_action_form(
+    $form,
+    $form_state,
+    $operation,
+    $vbo->view,
+    $form_state['views_bulk_operations']['views_form_views_form']['selection'],
+    $vbo->get_operation_settings($operation)
+  );
   return $form;
 }
 
 /**
  * Multistep form callback for the "confirm" step.
  */
-function views_bulk_operations_confirm_form($form, $form_state, $view, $output) {
+function views_bulk_operations_confirm_form($form, &$form_state, $view, $output) {
   $vbo = _views_bulk_operations_get_field($view);
   $operation = $vbo->get_operation_info($form_state['views_bulk_operations']['views_form_views_form']['operation']);
   $rows = $form_state['views_bulk_operations']['views_form_views_form']['selection'];
@@ -755,7 +757,7 @@ function _views_bulk_operations_direct_finished($success, $results, $operations,
 function _views_bulk_operations_action_do($operation, $entity_id, $entity, $params, $account = NULL) {
   _views_bulk_operations_action_permission($operation, $account);
 
-  $params[$operation['type']] = $entity;
+  $params['entity_type'] = $operation['type'];
 
   if ($operation['source'] == 'action') {
     actions_do($operation['callback'], $entity, $params);
@@ -851,27 +853,33 @@ function _views_bulk_operations_entity_access($operation, $entity_type, $entity,
 /**
  * Helper function to let the configurable action provide its configuration form.
  */
-function _views_bulk_operations_action_form($action, $view, $selection, $settings) {
+function _views_bulk_operations_action_form($form, &$form_state, $action, $view, $selection, $settings) {
   $action_form = $action['callback'].'_form';
-  return call_user_func($action_form, array('view' => $view, 'selection' => $selection, 'settings' => $settings));
+  $context = array(
+    'view' => $view,
+    'selection' => $selection,
+    'settings' => $settings,
+    'action' => $action,
+  );
+  return $action_form($form, $form_state, $context);
 }
 
 /**
  * Helper function to let the configurable action validate the form if it provides a validator.
  */
-function _views_bulk_operations_action_validate($action, $form, $form_values) {
+function _views_bulk_operations_action_validate($action, $form, $form_state) {
   $action_validate = $action['callback'].'_validate';
   if (function_exists($action_validate)) {
-    call_user_func($action_validate, $form, $form_values);
+    $action_validate($form, $form_state);
   }
 }
 
 /**
  * Helper function to let the configurable action process the configuration form.
  */
-function _views_bulk_operations_action_submit($action, $form, $form_values) {
+function _views_bulk_operations_action_submit($action, $form, $form_state) {
   $action_submit = $action['callback'].'_submit';
-  return call_user_func($action_submit, $form, $form_values);
+  return $action_submit($form, $form_state);
 }
 
 /**

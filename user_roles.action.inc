@@ -8,7 +8,7 @@ function views_bulk_operations_user_roles_action_info() {
   ));
 }
 
-function views_bulk_operations_user_roles_action_form($context) {
+function views_bulk_operations_user_roles_action_form($form, &$form_state, $context) {
   $roles = user_roles(TRUE);
   unset($roles[DRUPAL_AUTHENTICATED_RID]);  // Can't edit authenticated role.
 
@@ -65,4 +65,3 @@ function views_bulk_operations_user_roles_action(&$user, $context) {
   }
   user_save($user, array('roles' => $roles));
 }
-
