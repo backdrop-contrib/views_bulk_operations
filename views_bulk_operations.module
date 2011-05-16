@@ -234,7 +234,7 @@ function views_bulk_operations_form($form, &$form_state, $vbo) {
     '#default_value' => $select_all,
   );
 
-  if (count($vbo->get_selected_operations()) == 1 && $vbo->options['merge_single_action']) {
+  if (count($vbo->get_selected_operations()) == 1 && $vbo->options['vbo']['merge_single_action']) {
     $form['single_operation'] = array(
       '#type' => 'value',
       '#value' => TRUE,
@@ -488,7 +488,7 @@ function views_bulk_operations_views_form_submit($form, &$form_state) {
         }
         $form_state['step'] = $operation['configurable'] ? 'views_bulk_operations_config_form' : 'views_bulk_operations_confirm_form';
       }
-
+      $form_state['single_operation'] = $form_state['values']['single_operation'];
       $form_state['rebuild'] = TRUE;
       return;
 
@@ -514,7 +514,12 @@ function views_bulk_operations_views_form_submit($form, &$form_state) {
   $operation = $vbo->get_operation_info($form_state['views_bulk_operations']['views_form_views_form']['operation']);
   $operation_arguments = array();
   if ($operation['configurable']) {
-    $form_state['values'] += $form_state['views_bulk_operations']['views_bulk_operations_config_form'];
+    if ($form_state['single_operation']) {
+      $form_state['values'] += $form_state['views_bulk_operations']['views_form_views_form'];
+    }
+    else {
+      $form_state['values'] += $form_state['views_bulk_operations']['views_bulk_operations_config_form'];
+    }
     $operation_arguments = $form_state['views_bulk_operations']['operation_arguments'];
   }
   _views_bulk_operations_execute(
