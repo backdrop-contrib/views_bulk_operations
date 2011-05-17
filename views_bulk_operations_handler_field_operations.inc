@@ -224,6 +224,11 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
           }
         }
       }
+      if ($this->all_operations[$key]['source'] == 'rules_action') {
+        if (!rules_action('component_' . $key)->access()) {
+          continue 2;
+        }
+      }
       $selected[$key] = $this->all_operations[$key]['label'];
     }
     return $selected;
@@ -279,6 +284,7 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
       }
     }
 
+    // Merge in Drupal actions, most declared by VBO itself through hook_action_info().
     $action_operations = actions_list() + $this->get_custom_actions();
     foreach ($action_operations as $callback => $operation) {
       $key = isset($operation['key']) ? $operation['key'] : $callback;
@@ -294,6 +300,34 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
         'access operation' => isset($operation['access operation']) ? $operation['access operation'] : 0,
         'permissions' => isset($operation['permissions']) ? $operation['permissions'] : NULL,
       );
+    }
+
+    // Merge in actions provided by Rules 2.
+    if (module_exists('rules')) {
+      $entity_info = entity_get_info();
+      $entity_types = array_keys($entity_info);
+      foreach (rules_get_components(FALSE, 'action') as $component_key => $component) {
+        $parameter_info = $component->parameterInfo();
+        $first_parameter = reset($parameter_info);
+        $entity_key = reset(array_keys($parameter_info));
+        // If the first param is not an entity type, skip the component.
+        if (!in_array($first_parameter['type'], $entity_types)) {
+          continue;
+        }
+
+        $operations[$component_key] = array(
+          'key' => $component_key,
+          'label' => $component->label,
+          'callback' => 'views_bulk_operations_rules_action',
+          'callback arguments' => array('component_key' => $component_key, 'entity_key' => $entity_key),
+          'configurable' => count($parameter_info) > 1,
+          'source' => 'rules_action',
+          'type' => $first_parameter['type'],
+          'aggregate' => VBO_AGGREGATE_FORBIDDEN,
+          'access operation' => VBO_ACCESS_OP_UPDATE, // assume edit by default.
+          'permissions' => NULL,
+        );
+      }
     }
 
     uasort($operations, create_function('$a, $b', 'return strcasecmp($a["label"], $b["label"]);'));

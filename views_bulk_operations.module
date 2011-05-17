@@ -768,7 +768,10 @@ function _views_bulk_operations_action_do($operation, $entity_id, $entity, $para
       node_save($entity);
     }
   }
-  else {
+  elseif ($operation['source'] == 'rules_action') {
+    call_user_func_array($operation['callback'], array('entity' => $entity, 'context' => $params));
+  }
+  elseif ($operation['source'] == 'operation') {
     $args = array_merge(array(array($entity_id)), $params);
     call_user_func_array($operation['callback'], $args);
   }
@@ -794,10 +797,11 @@ function _views_bulk_operations_action_aggregate_do($operation, $entities, $para
  * Helper function to verify access permission to execute operation.
  */
 function _views_bulk_operations_action_permission($operation, $account = NULL) {
+  global $user;
+
   if (module_exists('actions_permissions')) {
     $perm = actions_permissions_get_perm($operation['label'], $operation['callback']);
     if (!user_access($perm, $account)) {
-      global $user;
       watchdog('actions permissions', 'An attempt by user %user to !perm was blocked due to insufficient permissions.',
         array('!perm' => $perm, '%user' => isset($account) ? $account->name : $user->name), WATCHDOG_ALERT);
       drupal_access_denied();
@@ -806,11 +810,22 @@ function _views_bulk_operations_action_permission($operation, $account = NULL) {
   }
 
   // Check against additional permissions.
-  if (!empty($operation['permissions'])) foreach ($operation['permissions'] as $perm) {
-    if (!user_access($perm, $account)) {
-      global $user;
-      watchdog('actions permissions', 'An attempt by user %user to !perm was blocked due to insufficient permissions.',
-        array('!perm' => $perm, '%user' => isset($account) ? $account->name : $user->name), WATCHDOG_ALERT);
+  if (!empty($operation['permissions'])) {
+    foreach ($operation['permissions'] as $perm) {
+      if (!user_access($perm, $account)) {
+        watchdog('actions permissions', 'An attempt by user %user to !perm was blocked due to insufficient permissions.',
+          array('!perm' => $perm, '%user' => isset($account) ? $account->name : $user->name), WATCHDOG_ALERT);
+        drupal_access_denied();
+        drupal_exit();
+      }
+    }
+  }
+
+  // If this is a rules action, check its permissions.
+  if ($operation['source'] == 'rules_action') {
+    if (!rules_action('component_' . $operation['key'])->access()) {
+      watchdog('actions permissions', 'An attempt by user %user to rules action !key was blocked due to insufficient permissions.',
+        array('!key' => $operation['key'], '%user' => isset($account) ? $account->name : $user->name), WATCHDOG_ALERT);
       drupal_access_denied();
       drupal_exit();
     }
