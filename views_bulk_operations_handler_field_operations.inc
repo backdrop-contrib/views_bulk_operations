@@ -188,7 +188,7 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
     foreach ($this->view->result as $row_id => $row) {
       $entity_id = $this->get_value($row);
 
-      if ($default_rows['select_all'] || !empty($default_rows['selection'][$entity_id])) {
+      if ($default_rows['select_all'] || isset($default_rows['selection'][$entity_id])) {
         $default_value = TRUE;
       }
       else {

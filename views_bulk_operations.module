@@ -353,8 +353,6 @@ function views_bulk_operations_confirm_form($form, &$form_state, $view, $output)
  * Goes through the submitted values, and returns
  * an array of selected rows, in the form of
  * $entity_id => $row_index.
- * No need to include the full $row because that's
- * what _views_bulk_operations_adjust_selection() does.
  */
 function _views_bulk_operations_get_selection($vbo, $form_state) {
   $field_name = $vbo->options['id'];
@@ -425,23 +423,21 @@ function _views_bulk_operations_adjust_selection(&$selection, $select_all, $vbo)
     $view->set_exposed_input($vbo->view->get_exposed_input());
     $view->set_arguments($vbo->view->args);
     $view->build($vbo->view->current_display);
+    // Unset every field except the VBO one (which holds the entity id).
+    // That way the performance hit becomes much smaller, because there is no
+    // chance of views_handler_field_field::post_execute() firing entity_load().
+    foreach ($view->field as $field_name => $field) {
+      if ($field_name != $vbo->options['id']) {
+        unset($view->field[$field_name]);
+      }
+    }
     $view->query->set_limit(NULL); // reset the work done by the pager
     $view->query->set_offset(NULL);
 
     $view->execute($vbo->view->current_display);
     $results = array();
-    foreach ($view->result as $result) {
-      $results[$result->{$vbo->field_alias}] = $result;
-    }
-    $selection = $results;
-  }
-  else {
-    // Include the whole result row for each entity id.
-    $results = array();
-    foreach ($vbo->view->result as $result) {
-      if (isset($selection[$result->{$vbo->field_alias}])) {
-        $results[$result->{$vbo->field_alias}] = $result;
-      }
+    foreach ($view->result as $row_index => $result) {
+      $results[$result->{$vbo->field_alias}] = $row_index;
     }
     $selection = $results;
   }
@@ -557,8 +553,8 @@ function _views_bulk_operations_execute($vbo, $rows, $operation, $operation_argu
 
   if ($operation['aggregate'] != VBO_AGGREGATE_FORCED && $options['execution_type'] == VBO_EXECUTION_BATCH) {
     $operations = array();
-    foreach ($rows as $entity_id => $row) {
-      $operations[] = array('_views_bulk_operations_batch_process', array($entity_id, $row));
+    foreach ($rows as $entity_id => $row_index) {
+      $operations[] = array('_views_bulk_operations_batch_process', array($entity_id));
     }
 
     // Save the options in the session because Batch API doesn't give a way to
@@ -577,14 +573,14 @@ function _views_bulk_operations_execute($vbo, $rows, $operation, $operation_argu
   elseif ($operation['aggregate'] != VBO_AGGREGATE_FORCED && module_exists('job_queue') && $options['execution_type'] == VBO_EXECUTION_QUEUE) {
     global $user;
     unset($params['view']);
-    foreach ($rows as $entity_id => $row) {
+    foreach ($rows as $entity_id => $row_index) {
       job_queue_add('_views_bulk_operations_queue_process',
         t('Perform %action on @type %oid.', array(
           '%action' => $operation['label'],
           '@type' => t($operation['type']),
           '%oid' => $oid
         )),
-        array($oid, $row, $operation, $params, $user->uid, $options['display_result'])
+        array($oid, $row_index, $operation, $params, $user->uid, $options['display_result'])
       );
     }
     if ($options['display_result']) {
@@ -641,7 +637,7 @@ function _views_bulk_operations_queue_process($oid, $row, $operation, $params, $
 /**
  * Helper function to handle Batch API operations.
  */
-function _views_bulk_operations_batch_process($entity_id, $row, &$context) {
+function _views_bulk_operations_batch_process($entity_id, &$context) {
   views_include('view'); // Force include of view.inc before we unserialize the parameters to make sure view object can be restored.
 
   $operation = $_SESSION['vbo_options']['operation'];
@@ -891,14 +887,28 @@ function _views_bulk_operations_action_submit($action, $form, $form_state) {
  * Theme function to show the confirmation page before executing the action.
  */
 function theme_views_bulk_operations_confirmation($variables) {
-  $rows = $variables['rows'];
   $vbo = $variables['vbo'];
   $entity_type = $vbo->get_entity_type();
-  $entities = entity_load($entity_type, array_keys($rows));
+  $rows = $variables['rows'];
+  $result_count = count($vbo->view->result);
+  $row_count = count($rows);
   $items = array();
-  foreach ($entities as $entity) {
-    $items[] = check_plain(_views_bulk_operations_entity_label($entity_type, $entity));
+  // All rows on all pages have been selected.
+  if ($result_count < $row_count) {
+    $entity_ids = array_slice(array_keys($rows), 0, $result_count);
+    $entities = entity_load($entity_type, $entity_ids);
+    foreach ($entities as $entity) {
+      $items[] = check_plain(_views_bulk_operations_entity_label($entity_type, $entity));
+    }
+    $items[] = t('...and <strong>!count</strong> more.', array('!count' => $row_count - $result_count));
   }
+  else {
+    $entities = entity_load($entity_type, array_keys($rows));
+    foreach ($entities as $entity) {
+      $items[] = check_plain(_views_bulk_operations_entity_label($entity_type, $entity));
+    }
+  }
+
   $output = theme('item_list', array('items' => $items, 'title' => t('You selected the following <strong>!count</strong> rows:', array('!count' => count($entities)))));
   return $output;
 }
