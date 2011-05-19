@@ -114,30 +114,33 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
   }
 
   function options_validate(&$form, &$form_state) {
-    foreach (array_filter($form_state['values']['vbo']['selected_operations']) as $selected_operation) {
-      if (!isset($form_state['values']['vbo'][$selected_operation])) {
+    // Filter out the empty values.
+    $form_state['values']['options']['vbo']['selected_operations'] = array_filter($form_state['values']['options']['vbo']['selected_operations']);
+
+    foreach ($form_state['values']['options']['vbo']['selected_operations'] as $selected_operation) {
+      if (!isset($form_state['values']['options']['vbo'][$selected_operation])) {
         continue;
       }
 
       $operation = $this->all_operations[$selected_operation];
       $form_function = $operation['callback'] . '_settings_form_validate';
       if (function_exists($form_function)) {
-        $form_state['values']['vbo'][$selected_operation]['_error_element_base'] = 'vbo][' . $selected_operation . '][';
-        call_user_func($form_function, $form, array('values' => $form_state['values']['vbo'][$selected_operation]));
+        $form_state['values']['options']['vbo'][$selected_operation]['_error_element_base'] = 'vbo][' . $selected_operation . '][';
+        call_user_func($form_function, $form, array('values' => $form_state['values']['options']['vbo'][$selected_operation]));
       }
     }
   }
 
   function options_submit(&$form, &$form_state) {
-    foreach (array_filter($form_state['values']['vbo']['selected_operations']) as $selected_operation) {
-      if (!isset($form_state['values']['vbo'][$selected_operation])) {
+    foreach ($form_state['values']['options']['vbo']['selected_operations'] as $selected_operation) {
+      if (!isset($form_state['values']['options']['vbo'][$selected_operation])) {
         continue;
       }
 
       $operation = $this->all_operations[$selected_operation];
       $form_function = $operation['callback'] . '_settings_form_submit';
       if (function_exists($form_function)) {
-        call_user_func($form_function, $form, array('values' => $form_state['values']['vbo'][$selected_operation]));
+        call_user_func($form_function, $form, array('values' => $form_state['values']['options']['vbo'][$selected_operation]));
       }
     }
   }
