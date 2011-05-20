@@ -422,7 +422,9 @@ function _views_bulk_operations_adjust_selection(&$selection, $select_all, $vbo)
     $view = views_get_view($vbo->view->name);
     $view->set_exposed_input($vbo->view->get_exposed_input());
     $view->set_arguments($vbo->view->args);
-    $view->build($vbo->view->current_display);
+    $view->set_display($vbo->view->current_display);
+    $view->display_handler->set_option('pager', array('type' => 'none'));
+    $view->build();
     // Unset every field except the VBO one (which holds the entity id).
     // That way the performance hit becomes much smaller, because there is no
     // chance of views_handler_field_field::post_execute() firing entity_load().
@@ -431,8 +433,6 @@ function _views_bulk_operations_adjust_selection(&$selection, $select_all, $vbo)
         unset($view->field[$field_name]);
       }
     }
-    $view->query->set_limit(NULL); // reset the work done by the pager
-    $view->query->set_offset(NULL);
 
     $view->execute($vbo->view->current_display);
     $results = array();
