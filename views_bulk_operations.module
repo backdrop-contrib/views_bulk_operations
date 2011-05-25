@@ -678,7 +678,7 @@ function _views_bulk_operations_batch_process($entity_id, &$context) {
  */
 function _views_bulk_operations_batch_finished($success, $results, $operations, $display_result = NULL) {
   if ($success) {
-    if ($results['rows'] > 0) {
+    if (!empty($results['rows'])) {
       $message = t('!results rows processed in about !time ms:', array('!results' => $results['rows'], '!time' => round((microtime(TRUE) - $results['time']) * 1000)));
     }
     else {
