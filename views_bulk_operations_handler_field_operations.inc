@@ -260,6 +260,11 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
   }
 
   private function populate_operations() {
+    // The operations have already been populated.
+    if (!empty($this->all_operations)) {
+      return;
+    }
+
     $operations = array();
 
     // Merge in operations declared by hook_node_operations() and hook_user_operations().
