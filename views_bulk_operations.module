@@ -972,6 +972,7 @@ function _views_bulk_operations_node_access($op, $entity_type, $entity, $account
 
 /**
  * Implements hook_action_info().
+ * Registers custom VBO actions as Drupal actions.
  */
 function views_bulk_operations_action_info() {
   $actions = array();
@@ -986,146 +987,7 @@ function views_bulk_operations_action_info() {
     }
   }
 
-  // Add VBO's own programmatic action.
-  $actions['views_bulk_operations_action'] = array(
-    'label' => t('Execute a VBO programmatically'),
-    'type' => 'system',
-    'configurable' => TRUE,
-    'access operation' => VBO_ACCESS_OP_UPDATE,
-  );
-
   return $actions;
-}
-
-/**
- * Form function for views_bulk_operations_action action.
- * @todo Convert this function, or kill it? Don't see it used anywhere.
- */
-function views_bulk_operations_action_form($context) {
-  // Some views choke on being rebuilt at this moment because of validation errors in the action form.
-  // So we save the error state, reset it, build the views, then reinstate the errors.
-  // Also unset the error messages because they'll be displayed again after the loop.
-  $errors = form_get_errors();
-  if (!empty($errors)) foreach ($errors as $message) {
-    unset($_SESSION['messages']['error'][array_search($message, $_SESSION['messages']['error'])]);
-  }
-  form_set_error(NULL, '', TRUE);
-
-  // Look for all views with VBO styles, and for each find the operations they use.
-  $views[0] = t('- Choose a view -');
-  $operations[0] = t('- Choose an operation -');
-  foreach (views_get_all_views() as $name => $view) {
-    foreach (array_keys($view->display) as $display) {
-      $display_options = &$view->display[$display]->display_options;
-      if (isset($display_options['style_plugin']) && $display_options['style_plugin'] == 'bulk') {
-        $vid = empty($view->vid) ? $view->name : $view->vid;
-        $view->build($display);
-        $views[$vid] = $view->name . (!empty($view->description) ? ': ' . $view->description : '');
-        foreach (array_filter($display_options['style_options']['selected_operations']) as $operation) {
-          $views_operations[$vid][$operation] = $view->style_plugin->options['all_operations'][$operation]['label'];
-          $operations[$operation] = $view->style_plugin->options['all_operations'][$operation]['label'];
-        }
-      }
-    }
-  }
-
-  if (!empty($errors)) foreach ($errors as $name => $message) {
-    form_set_error($name, $message);
-  }
-
-  drupal_add_js(array('vbo' => array('action' => array('views_operations' => $views_operations))), 'setting');
-  drupal_add_js(drupal_get_path('module', 'views_bulk_operations') .'/js/views_bulk_operations.action.js');
-
-  $form['view_vid'] = array(
-    '#type' => 'select',
-    '#title' => t('View'),
-    '#description' => t('Select the VBO to be executed.'),
-    '#options' => $views,
-    '#default_value' => @$context['view_vid'],
-    '#attributes' => array('onchange' => 'Drupal.vbo.action.updateOperations(this.options[this.selectedIndex].value);'),
-  );
-  $form['operation_callback'] = array(
-    '#type' => 'select',
-    '#title' => t('Operation'),
-    '#description' => t('Select the operation to be executed.'),
-    '#options' => $operations,
-    '#default_value' => @$context['operation_callback'],
-  );
-  $form['operation_arguments'] = array(
-    '#type' => 'textarea',
-    '#title' => t('Operation arguments'),
-    '#description' => t('Enter PHP script that will assemble the operation arguments (in the case of configurable actions).
-                         These arguments should be of the form: <code>return array(\'argument1\' => \'value1\', ...);</code>
-                         and they should correspond to the values returned by the action\'s form submit function.
-                         The variables <code>$entity</code> and <code>$context</code> are available to this script.
-                        '),
-    '#default_value' => @$context['operation_arguments'],
-  );
-  $form['view_exposed_input'] = array(
-    '#type' => 'textarea',
-    '#title' => t('View exposed input'),
-    '#description' => t('Enter PHP script that will assemble the view exposed input (if the view accepts exposed input).
-                         These input should be of the form: <code>return array(\'input1\' => \'value1\', ...);</code>
-                         and they should correspond to the query values used on the view URL when exposed filters are applied.
-                         The variables <code>$entity</code> and <code>$context</code> are available to this script.
-                        '),
-    '#default_value' => @$context['view_exposed_input'],
-  );
-  $form['view_arguments'] = array(
-    '#type' => 'textarea',
-    '#title' => t('View arguments'),
-    '#description' => t('Enter PHP script that will assemble the view arguments (if the view accepts arguments).
-                         These input should be of the form: <code>return array(\'value1\', ...);</code>
-                         and they should correspond to the arguments defined in the view.
-                         The variables <code>$entity</code> and <code>$context</code> are available to this script.
-                        '),
-    '#default_value' => @$context['view_arguments'],
-  );
-  return $form;
-}
-
-/**
- * Form validate function for views_bulk_operations_action action.
- */
-function views_bulk_operations_action_validate($form, $form_state) {
-  if (empty($form_state['values']['view_vid'])) {
-    form_set_error('view_vid', t('You must choose a view to be executed.'));
-  }
-  if (empty($form_state['values']['operation_callback'])) {
-    form_set_error('operation_callback', t('You must choose an operation to be executed.'));
-  }
-}
-
-/**
- * Form submit function for views_bulk_operations_action action.
- */
-function views_bulk_operations_action_submit($form, $form_state) {
-  return array(
-    'view_vid' => $form_state['values']['view_vid'],
-    'operation_callback' => $form_state['values']['operation_callback'],
-    'operation_arguments' => $form_state['values']['operation_arguments'],
-    'view_exposed_input' => $form_state['values']['view_exposed_input'],
-    'view_arguments' => $form_state['values']['view_arguments'],
-  );
-}
-
-/**
- * Execution function for views_bulk_operations_action action.
- */
-function views_bulk_operations_action(&$object, $context) {
-  $operation_arguments = array();
-  if (!empty($context['operation_arguments'])) {
-    $operation_arguments = eval($context['operation_arguments']);
-  }
-  $view_exposed_input = array();
-  if (!empty($context['view_exposed_input'])) {
-    $view_exposed_input = eval($context['view_exposed_input']);
-  }
-  $view_arguments = array();
-  if (!empty($context['view_arguments'])) {
-    $view_arguments = eval($context['view_arguments']);
-  }
-  views_bulk_operations_execute($context['view_vid'], $context['operation_callback'], $operation_arguments, $view_exposed_input, $view_arguments);
 }
 
 /**
