@@ -48,10 +48,8 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
     $execution = array(
       VBO_EXECUTION_DIRECT => t('Invoke them directly'),
       VBO_EXECUTION_BATCH => t('Use Batch API'),
+      VBO_EXECUTION_QUEUE => t('Use Drupal Queue'),
     );
-    if (module_exists('job_queue')) {
-      $execution[VBO_EXECUTION_QUEUE] = t('Use <a href="@jobqueue">Job Queue</a>', array('@jobqueue' => url('http://drupal.org/project/job_queue')));
-    }
     $form['vbo']['execution_type'] = array(
       '#type' => 'radios',
       '#title' => t('To execute operations'),

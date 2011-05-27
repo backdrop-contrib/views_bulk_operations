@@ -22,6 +22,18 @@ define('VBO_ACCESS_OP_CREATE',    0x04);
 define('VBO_ACCESS_OP_DELETE',    0x08);
 
 /**
+ * Implementation of hook_cron_queue_info().
+ */
+function views_bulk_operations_cron_queue_info() {
+  return array(
+    'views_bulk_operations' => array(
+      'worker callback' => '_views_bulk_operations_queue_process',
+      'time' => 30,
+    ),
+  );
+}
+
+/**
  * Implements hook_views_api().
  */
 function views_bulk_operations_views_api() {
@@ -539,6 +551,8 @@ function views_bulk_operations_views_form_submit($form, &$form_state) {
  * Helper function to execute the chosen action upon selected entities.
  */
 function _views_bulk_operations_execute($vbo, $rows, $operation, $operation_arguments, $options) {
+  global $user;
+
   // Add action arguments.
   $params = array();
   if ($operation['configurable'] && is_array($operation_arguments)) {
@@ -571,25 +585,24 @@ function _views_bulk_operations_execute($vbo, $rows, $operation, $operation_argu
     );
     batch_set($batch);
   }
-  elseif ($operation['aggregate'] != VBO_AGGREGATE_FORCED && module_exists('job_queue') && $options['execution_type'] == VBO_EXECUTION_QUEUE) {
-    global $user;
+  elseif ($operation['aggregate'] != VBO_AGGREGATE_FORCED && $options['execution_type'] == VBO_EXECUTION_QUEUE) {
+    $entity_type = $vbo->get_entity_type();
     unset($params['view']);
     foreach ($rows as $entity_id => $row_index) {
-      job_queue_add('_views_bulk_operations_queue_process',
-        t('Perform %action on @type %oid.', array(
+      $job = array(
+        'description' => t('Perform %action on @type !entity_id.', array(
           '%action' => $operation['label'],
-          '@type' => t($operation['type']),
-          '%oid' => $oid
+          '@type' => $entity_type,
+          '!entity_id' => $entity_id
         )),
-        array($oid, $row_index, $operation, $params, $user->uid, $options['display_result'])
+        'arguments' => array($entity_id, $row_index, $operation, $params, $user->uid, $options['display_result']),
       );
+      $queue = DrupalQueue::get('views_bulk_operations');
+      $queue->createItem($job);
     }
     if ($options['display_result']) {
-      drupal_set_message(t('Enqueued %action on @types %oid. Check the <a href="@queue">queued jobs page</a>.', array(
+      drupal_set_message(t('Enqueued the selected operation (%action).', array(
         '%action' => $operation['label'],
-        '@types' => format_plural(count($rows), t($operation['type']), t($operation['type'] .'s')),
-        '%oid' => implode(', ', array_keys($rows)),
-        '@queue' => url('admin/reports/job_queue')
       )));
     }
   }
@@ -607,30 +620,28 @@ function _views_bulk_operations_execute($vbo, $rows, $operation, $operation_argu
 /**
  * Helper function to handle Job queue operations.
  */
-function _views_bulk_operations_queue_process($oid, $row, $operation, $params, $uid, $display_result) {
-  views_include('view'); // Force include of view.inc before we unserialize the parameters to make sure view object can be restored.
-  module_load_include('inc', 'node', 'node.admin');
+function _views_bulk_operations_queue_process($data) {
+  list($entity_id, $row_index, $operation, $params, $uid, $display_result) = $data['arguments'];
 
-  $object_info = _views_bulk_operations_object_info_for_type($operation['type']);
-  if (!$object_info) return;
-  $object = call_user_func($object_info['load'], $object_info['type'], $oid);
+  $entity_type = $operation['type'];
+  $entity = _views_bulk_operations_entity_load($entity_type, $entity_id);
   $account = user_load($uid);
-  if (!_views_bulk_operations_entity_access($operation, $object, $account)) {
+  if (!_views_bulk_operations_entity_access($operation, $entity_type, $entity, $account)) {
     watchdog('views bulk operations', 'Skipped %action on @type %title due to insufficient permissions.', array(
       '%action' => $operation['label'],
-      '@type' => t($operation['type']),
-      '%title' => _views_bulk_operations_entity_label($object_info['type'], $object),
+      '@type' => $entity_type,
+      '%title' => _views_bulk_operations_entity_label($entity_type, $entity),
     ), WATCHDOG_ALERT);
     return;
   }
 
-  _views_bulk_operations_action_do($operation, $oid, $object, $row, $params, $account);
+  _views_bulk_operations_action_do($operation, $entity_id, $entity, $params);
 
   if ($display_result) {
     watchdog('views bulk operations', 'Performed %action on @type %title.', array(
       '%action' => $operation['label'],
-      '@type' => t($operation['type']),
-      '%title' => _views_bulk_operations_entity_label($object_info['type'], $object),
+      '@type' => $entity_type,
+      '%title' => _views_bulk_operations_entity_label($entity_type, $entity),
     ), WATCHDOG_INFO);
   }
 }
