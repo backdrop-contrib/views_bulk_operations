@@ -6,4 +6,4 @@ core = 7.x
 
 dependencies[] = views_form
 
-files[] = views_bulk_operations_handler_field_operations.inc
+files[] = views/views_bulk_operations_handler_field_operations.inc

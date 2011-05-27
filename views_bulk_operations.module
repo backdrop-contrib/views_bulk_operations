@@ -27,6 +27,7 @@ define('VBO_ACCESS_OP_DELETE',    0x08);
 function views_bulk_operations_views_api() {
   return array(
     'api' => 3,
+    'path' => drupal_get_path('module', 'views_bulk_operations') . '/views',
   );
 }
 
@@ -42,7 +43,7 @@ function views_bulk_operations_theme() {
       'variables' => array('rows' => NULL, 'vbo' => NULL),
     ),
   );
-  $files = file_scan_directory(drupal_get_path('module', 'views_bulk_operations'), '/\.action\.inc$/');
+  $files = file_scan_directory(drupal_get_path('module', 'views_bulk_operations') . '/actions', '/\.action\.inc$/');
   if ($files) foreach ($files as $file) {
     $action_theme_fn = 'views_bulk_operations_'. str_replace('.', '_', basename($file->filename, '.inc')).'_theme';
     if (function_exists($action_theme_fn)) {
@@ -62,10 +63,10 @@ function views_bulk_operations_init() {
   }
 
   // Automatically include the action files.
-  $files = file_scan_directory(drupal_get_path('module', 'views_bulk_operations'), '/\.action\.inc$/');
+  $files = file_scan_directory(drupal_get_path('module', 'views_bulk_operations') . '/actions', '/\.action\.inc$/');
   if ($files) {
     foreach ($files as $file) {
-      require_once($file->filename);
+      require_once($file->uri);
     }
   }
 }
@@ -206,8 +207,8 @@ function theme_views_bulk_operations_select_all($variables) {
 function views_bulk_operations_form($form, &$form_state, $vbo) {
   $form['#prefix'] = '<div class="vbo-views-form">';
   $form['#suffix'] = '</div>';
-  $form['#attached']['js'][] = drupal_get_path('module', 'views_bulk_operations') . '/views_bulk_operations.js';
-  $form['#attached']['css'][] = drupal_get_path('module', 'views_bulk_operations') . '/views_bulk_operations.css';
+  $form['#attached']['js'][] = drupal_get_path('module', 'views_bulk_operations') . '/js/views_bulk_operations.js';
+  $form['#attached']['css'][] = drupal_get_path('module', 'views_bulk_operations') . '/css/views_bulk_operations.css';
 
   // Force browser to reload the page if Back is hit.
   if (preg_match('/msie/i', $_SERVER['HTTP_USER_AGENT'])) {
@@ -972,12 +973,15 @@ function _views_bulk_operations_node_access($op, $entity_type, $entity, $account
  */
 function views_bulk_operations_action_info() {
   $actions = array();
-  $files = file_scan_directory(drupal_get_path('module', 'views_bulk_operations'), '/\.action\.inc$/');
-  if ($files) foreach ($files as $file) {
-    require_once($file->filename);
-    $action_info_fn = 'views_bulk_operations_'. str_replace('.', '_', basename($file->filename, '.inc')).'_info';
-    $action_info = call_user_func($action_info_fn);
-    if (is_array($action_info)) $actions += $action_info;
+  $files = file_scan_directory(drupal_get_path('module', 'views_bulk_operations') . '/actions', '/\.action\.inc$/');
+  if ($files) {
+    foreach ($files as $file) {
+      $action_info_fn = 'views_bulk_operations_'. str_replace('.', '_', basename($file->filename, '.inc')).'_info';
+      $action_info = call_user_func($action_info_fn);
+      if (is_array($action_info)) {
+        $actions += $action_info;
+      }
+    }
   }
 
   // Add VBO's own programmatic action.
@@ -1028,7 +1032,7 @@ function views_bulk_operations_action_form($context) {
   }
 
   drupal_add_js(array('vbo' => array('action' => array('views_operations' => $views_operations))), 'setting');
-  drupal_add_js(drupal_get_path('module', 'views_bulk_operations') .'/views_bulk_operations.action.js');
+  drupal_add_js(drupal_get_path('module', 'views_bulk_operations') .'/js/views_bulk_operations.action.js');
 
   $form['view_vid'] = array(
     '#type' => 'select',

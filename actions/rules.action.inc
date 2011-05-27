@@ -2,11 +2,10 @@
 
 /**
  * Rules 2 actions are not integrated through Drupal actions, so no need
- * for hook_action_info(). However, VBO insists on calling it for every include,
- * so in this case it is declared but it returns an empty array.
+ * for this hook to do anything.
  */
 function views_bulk_operations_rules_action_info() {
-  return array();
+  return FALSE;
 }
 
 function views_bulk_operations_rules_action($entity, $context) {
