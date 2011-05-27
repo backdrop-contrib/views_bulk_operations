@@ -148,9 +148,9 @@ function theme_views_bulk_operations_select_all($variables) {
       return '';
     }
 
-    $this_page_count = format_plural(count($view->result), '1 row', '@count rows');
+    $this_page_count = format_plural(count($view->result), '1 row', '!count rows');
     $this_page = t('Selected <strong>!row_count</strong> in this page.', array('!row_count' => $this_page_count));
-    $all_pages_count = format_plural($view->total_rows, '1 row', '@count rows');
+    $all_pages_count = format_plural($view->total_rows, '1 row', '!count rows');
     $all_pages = t('Selected <strong>!row_count</strong> in this view.', array('!row_count' => $all_pages_count));
 
     $form['select_all_pages'] = array(
@@ -680,7 +680,8 @@ function _views_bulk_operations_batch_process($entity_id, &$context) {
 function _views_bulk_operations_batch_finished($success, $results, $operations, $display_result = NULL) {
   if ($success) {
     if (!empty($results['rows'])) {
-      $message = t('!results rows processed in about !time ms:', array('!results' => $results['rows'], '!time' => round((microtime(TRUE) - $results['time']) * 1000)));
+      $row_count = format_plural(count($results['rows']), '1 row', '!count rows');
+      $message = t('!row_count processed in about !time ms:', array('!row_count' => $row_count, '!time' => round((microtime(TRUE) - $results['time']) * 1000)));
     }
     else {
       $message = t('No rows were processed:');
@@ -925,7 +926,8 @@ function theme_views_bulk_operations_confirmation($variables) {
     }
   }
 
-  $output = theme('item_list', array('items' => $items, 'title' => t('You selected the following <strong>!count</strong> rows:', array('!count' => count($entities)))));
+  $row_count = format_plural(count($entities), '1 row', '!count rows');
+  $output = theme('item_list', array('items' => $items, 'title' => t('You selected the following <strong>!row_count</strong>:', array('!row_count' => $row_count))));
   return $output;
 }
 
