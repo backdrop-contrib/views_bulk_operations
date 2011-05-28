@@ -618,7 +618,7 @@ function _views_bulk_operations_execute($vbo, $rows, $operation, $operation_argu
 }
 
 /**
- * Helper function to handle Job queue operations.
+ * Worker function to handle actions coming from the Drupal Queue.
  */
 function _views_bulk_operations_queue_process($data) {
   list($entity_id, $row_index, $operation, $params, $uid, $display_result) = $data['arguments'];
