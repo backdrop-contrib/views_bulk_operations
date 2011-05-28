@@ -1,8 +1,10 @@
 <?php
 /**
- * @file Drupal action to set individual field values. 
- * 
+ * @file Drupal action to set individual field values.
+ *
  * Heavily "inspired" by fago's work in CCK on 'Populate a field' action (cck/includes/content.rules.inc).
+ *
+ * @todo Update for D7, or kill.
  */
 
 function views_bulk_operations_fields_action_info() {
@@ -11,7 +13,7 @@ function views_bulk_operations_fields_action_info() {
     'type' => 'node',
     'label' => t('Modify node fields'),
     'configurable' => TRUE,
-    'behavior' => array('changes_node_property'),
+    'access operation' => VBO_ACCESS_OP_UPDATE,
   ));
 }
 
@@ -67,7 +69,7 @@ function views_bulk_operations_fields_action_form($context) {
     }
     if (!isset($form[$field['field_name']])) continue;
     $form['#field_info'][$field['field_name']] = $field;
-    
+
     // Adjust some settings on the field itself.
     $form[$field['field_name']]['#weight'] = $weight++;
     $form[$field['field_name']]['#prefix'] = '<div class="fields-action-togglable">' . @$form[$field['field_name']]['#prefix'];
@@ -98,7 +100,7 @@ function views_bulk_operations_fields_action_form($context) {
                     "  // You'll usually want to stop here. Provide more values\n".
                     "  // if you want your 'default value' to be multi-valued:\n".
                     "  1 => array(\n    @columns\n  ),\n".
-                    "  2 => ...\n);", 
+                    "  2 => ...\n);",
                     array('@columns' => implode(",\n    ", $columns))
         );
       }
@@ -112,7 +114,7 @@ function views_bulk_operations_fields_action_form($context) {
         '#prefix' => '<div class="fields-action-togglable">',
         '#suffix' => '</div>',
       );
-    } 
+    }
   }
 
   // Special case for only one field: convert the checkbox into a value that's TRUE by default.
@@ -155,7 +157,7 @@ function theme_views_bulk_operations_fields_action_form(&$form) {
       foreach ($form['#field_info'] as $field_name => $field) {
         $rows[] = array(
           'class' => 'fields-action-row',
-          'id' => 'fields-action-row-' . str_replace('_', '-', $field_name), 
+          'id' => 'fields-action-row-' . str_replace('_', '-', $field_name),
           'data' => array(
             drupal_render($form[$field_name . '_check']),
             drupal_render($form[$field_name]),
@@ -169,7 +171,7 @@ function theme_views_bulk_operations_fields_action_form(&$form) {
       foreach ($form['#field_info'] as $field_name => $field) {
         $rows[] = array(
           'class' => 'fields-action-row',
-          'id' => 'fields-action-row-' . str_replace('_', '-', $field_name), 
+          'id' => 'fields-action-row-' . str_replace('_', '-', $field_name),
           'data' => array(
             drupal_render($form[$field_name . '_check']),
             drupal_render($form[$field_name]),
@@ -177,7 +179,7 @@ function theme_views_bulk_operations_fields_action_form(&$form) {
         );
       }
     }
-    $output .= theme('table', $header, $rows); 
+    $output .= theme('table', $header, $rows);
   }
   $output .= drupal_render($form);
   return $output;
@@ -252,14 +254,14 @@ function _views_bulk_operations_fields_action_non_cck($type) {
 function _views_bulk_operations_fields_action_non_cck_traverse($element, $fields) {
   $return = array();
   foreach (element_children($element) as $field_name) {
-    if (empty($element[$field_name]['#type']) || 
+    if (empty($element[$field_name]['#type']) ||
         in_array($element[$field_name]['#type'], array('value', 'hidden', 'fieldset')) ||
         empty($element[$field_name]['#title']) ||
         (isset($element[$field_name]['#access']) && !$element[$field_name]['#access'])
     ) {
       $return += _views_bulk_operations_fields_action_non_cck_traverse($element[$field_name], $fields);
     }
-    else if (in_array($field_name, $fields, TRUE)) {
+    elseif (in_array($field_name, $fields, TRUE)) {
       $element[$field_name]['#required'] = FALSE;
       $return[$field_name] = array(
         'field_name' => $field_name,
@@ -316,4 +318,3 @@ function views_bulk_operations_fields_action_settings_form_validate($form, $form
     form_set_error($form_state['values']['_error_element_base'] . 'display_fields', t('You must select at least one field to be shown to the user.'));
   }
 }
-

@@ -9,7 +9,7 @@ function views_bulk_operations_script_action_info() {
   ));
 }
 
-function views_bulk_operations_script_action(&$object, $context) {
+function views_bulk_operations_script_action(&$entity, $context) {
   if (!module_exists('actions_permissions') && !user_access('administer site configuration')) {
     global $user;
     $msg = 'An attempt to execute arbitrary PHP script action by user <a href="user/!uid">%user</a> was blocked because of lack of permission.';
@@ -21,12 +21,12 @@ function views_bulk_operations_script_action(&$object, $context) {
   @eval($context['script']);
 }
 
-function views_bulk_operations_script_action_form($context) {
+function views_bulk_operations_script_action_form($form, &$form_state, $context) {
   $form['script'] = array(
     '#type' => 'textarea',
     '#title' => t('PHP script'),
-    '#description' => t('Type the PHP snippet that will run upon execution of this action. You can use variables <code>&$object</code> and <code>$context</code> in your snippet.
-                         Note that it is up to the script to save the object once it\'s done modifying it.'),
+    '#description' => t('Type the PHP snippet that will run upon execution of this action. You can use variables <code>$entity</code> and <code>$context</code> in your snippet.
+                         Note that it is up to the script to save the $entity once it\'s done modifying it.'),
     '#default_value' => @$context['script'],
   );
   return $form;
@@ -40,4 +40,3 @@ function views_bulk_operations_script_action_submit($form, $form_state) {
     'script' => $form_state['values']['script'],
   );
 }
-
