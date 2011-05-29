@@ -990,6 +990,7 @@ function views_bulk_operations_action_info() {
   $files = file_scan_directory(drupal_get_path('module', 'views_bulk_operations') . '/actions', '/\.action\.inc$/');
   if ($files) {
     foreach ($files as $file) {
+      require_once($file->uri);
       $action_info_fn = 'views_bulk_operations_'. str_replace('.', '_', basename($file->filename, '.inc')).'_info';
       $action_info = call_user_func($action_info_fn);
       if (is_array($action_info)) {
