@@ -29,7 +29,13 @@ Operations are gathered from three sources:
 3) Rules 2 (preferred).
 The module also allows to use Batch API or the Drupal Queue to process the selected entities, in order to avoid timeouts.
 
-Rules 2 integration
---------------------
+RULES 2 INTEGRATION
+-------------------
 The module can use (as an action) any defined Rules component that accepts an entity as the first parameter.
 As a reminder, Rules components can be created at admin/config/workflow/rules/components.
+
+EXAMPLE VIEWS
+-------------
+VBO comes with two default views, reimplementing the Content and User listings.
+They are disabled by default. After enabling them at admin/structure/views
+they can be accessed at admin/content2 and admin/people2.

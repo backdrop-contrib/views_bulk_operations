@@ -77,13 +77,14 @@ function views_bulk_operations_views_default_views() {
   );
   $handler->display->display_options['style_options']['override'] = 1;
   $handler->display->display_options['style_options']['sticky'] = 0;
-  $handler->display->display_options['style_options']['empty_table'] = 0;
+  $handler->display->display_options['style_options']['empty_table'] = 1;
   /* No results behavior: Global: Text area */
   $handler->display->display_options['empty']['area']['id'] = 'area';
   $handler->display->display_options['empty']['area']['table'] = 'views';
   $handler->display->display_options['empty']['area']['field'] = 'area';
   $handler->display->display_options['empty']['area']['empty'] = FALSE;
-  $handler->display->display_options['empty']['area']['content'] = 'There are no objects satisfying the filter settings. Try changing them to get some results.';
+  $handler->display->display_options['empty']['area']['content'] = 'No content available.';
+  $handler->display->display_options['empty']['area']['format'] = 'filtered_html';
   $handler->display->display_options['empty']['area']['tokenize'] = 0;
   /* Field: Content: Bulk operations */
   $handler->display->display_options['fields']['views_bulk_operations']['id'] = 'views_bulk_operations';

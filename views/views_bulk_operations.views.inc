@@ -8,7 +8,7 @@ function views_bulk_operations_views_data_alter(&$data) {
     if (isset($data[$info['base table']])) {
       $data[$info['base table']]['views_bulk_operations'] = array(
         'title' => t('Bulk operations'),
-        'help' => t('Execute bulk operations on the current object.'),
+        'help' => t('Provide a checkbox to select the row for bulk operations.'),
         'real field' => $info['entity keys']['id'],
         'field' => array(
           'handler' => 'views_bulk_operations_handler_field_operations',
