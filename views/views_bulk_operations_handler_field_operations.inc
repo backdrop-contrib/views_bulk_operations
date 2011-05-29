@@ -162,7 +162,6 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
 
   /**
    * Returns the form which replaces the placeholder from render().
-   * This is done during post-processing by the views_form module.
    */
   function views_form(&$form, &$form_state) {
     // The view is empty, abort.
