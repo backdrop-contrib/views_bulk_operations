@@ -8,6 +8,7 @@
 
 class views_bulk_operations_handler_field_operations extends views_handler_field {
   var $all_operations = array();
+  var $revision = FALSE;
 
   function option_definition() {
     $options = parent::option_definition();
@@ -384,6 +385,10 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
     // The base table is now known, use it to determine the entity type.
     foreach (entity_get_info() as $entity_type => $info) {
       if ($info['base table'] == $base_table) {
+        return $entity_type;
+      }
+      elseif (isset($info['revision table']) && $info['revision table'] == $base_table) {
+        $this->revision = TRUE;
         return $entity_type;
       }
     }

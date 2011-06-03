@@ -563,8 +563,7 @@ function _views_bulk_operations_execute($vbo, $rows, $operation, $operation_argu
   if (isset($operation['callback arguments'])) {
     $params += $operation['callback arguments'];
   }
-  // Add this view as parameter.
-  $params['view'] = $vbo->view;
+  $params['revision'] = $vbo->revision;
 
   if ($operation['aggregate'] != VBO_AGGREGATE_FORCED && $options['execution_type'] == VBO_EXECUTION_BATCH) {
     $operations = array();
@@ -624,7 +623,9 @@ function _views_bulk_operations_queue_process($data) {
   list($entity_id, $row_index, $operation, $params, $uid, $display_result) = $data['arguments'];
 
   $entity_type = $operation['type'];
-  $entity = _views_bulk_operations_entity_load($entity_type, $entity_id);
+  $entities = _views_bulk_operations_entity_load($entity_type, array($entity_id), $params['revision']);
+  $entity = reset($entities);
+
   $account = user_load($uid);
   if (!_views_bulk_operations_entity_access($operation, $entity_type, $entity, $account)) {
     watchdog('views bulk operations', 'Skipped %action on @type %title due to insufficient permissions.', array(
@@ -650,8 +651,6 @@ function _views_bulk_operations_queue_process($data) {
  * Helper function to handle Batch API operations.
  */
 function _views_bulk_operations_batch_process($entity_id, &$context) {
-  views_include('view'); // Force include of view.inc before we unserialize the parameters to make sure view object can be restored.
-
   $operation = $_SESSION['vbo_options']['operation'];
   $params = unserialize($_SESSION['vbo_options']['params']);
 
@@ -660,7 +659,9 @@ function _views_bulk_operations_batch_process($entity_id, &$context) {
   }
 
   $entity_type = $operation['type'];
-  $entity = _views_bulk_operations_entity_load($entity_type, $entity_id);
+  $entities = _views_bulk_operations_entity_load($entity_type, array($entity_id), $params['revision']);
+  $entity = reset($entities);
+
   if (!_views_bulk_operations_entity_access($operation, $entity_type, $entity)) {
     $context['results']['log'][] = t('Skipped %action on @type %title due to insufficient permissions.', array(
       '%action' => $operation['label'],
@@ -717,11 +718,11 @@ function _views_bulk_operations_batch_finished($success, $results, $operations, 
  */
 function _views_bulk_operations_direct_process($operation, $rows, $params, &$context) {
   $entity_type = $operation['type'];
-  $entities = entity_load($entity_type, array_keys($rows));
+  $entities = _views_bulk_operations_entity_load($entity_type, array_keys($rows), $params['revision']);
 
-  foreach ($entities as $entity_id => $entity) {
+  foreach ($entities as $id => $entity) {
     if (!_views_bulk_operations_entity_access($operation, $entity_type, $entity)) {
-      unset($entities[$entity_id]);
+      unset($entities[$id]);
       $context['results']['log'][] = t('Skipped %action on @type %title due to insufficient permissions.', array(
         '%action' => $operation['label'],
         '@type' => $entity_type,
@@ -924,14 +925,14 @@ function theme_views_bulk_operations_confirmation($variables) {
   // All rows on all pages have been selected.
   if ($result_count < $row_count) {
     $entity_ids = array_slice(array_keys($rows), 0, $result_count);
-    $entities = entity_load($entity_type, $entity_ids);
+    $entities = _views_bulk_operations_entity_load($entity_type, $entity_ids, $vbo->revision);
     foreach ($entities as $entity) {
       $items[] = check_plain(_views_bulk_operations_entity_label($entity_type, $entity));
     }
     $items[] = t('...and <strong>!count</strong> more.', array('!count' => $row_count - $result_count));
   }
   else {
-    $entities = entity_load($entity_type, array_keys($rows));
+    $entities = _views_bulk_operations_entity_load($entity_type, array_keys($rows), $vbo->revision);
     foreach ($entities as $entity) {
       $items[] = check_plain(_views_bulk_operations_entity_label($entity_type, $entity));
     }
@@ -943,13 +944,23 @@ function theme_views_bulk_operations_confirmation($variables) {
 }
 
 /**
- * Loads a single entity and returns it.
+ * Loads multiple entities by their entity or revision ids, and returns them,
+ * keyed by the id used for loading.
  */
-function _views_bulk_operations_entity_load($entity_type, $id) {
-  $entities = entity_load($entity_type, array($id));
-  if ($entities) {
-    return reset($entities);
+function _views_bulk_operations_entity_load($entity_type, $ids, $revision = FALSE) {
+  if (!$revision) {
+    $entities = entity_load($entity_type, $ids);
   }
+  else {
+    // D7 can't load multiple entities by revision_id. Lovely.
+    $info = entity_get_info($entity_type);
+    foreach ($ids as $revision_id) {
+      $loaded_entities = entity_load($entity_type, array(), array($info['entity keys']['revision'] => $revision_id));
+      $entities[$revision_id] = reset($loaded_entities);
+    }
+  }
+
+  return $entities;
 }
 
 /**

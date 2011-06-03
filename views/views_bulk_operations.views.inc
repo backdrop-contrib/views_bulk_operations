@@ -16,5 +16,16 @@ function views_bulk_operations_views_data_alter(&$data) {
         ),
       );
     }
+    if (isset($info['revision table']) && isset($data[$info['revision table']])) {
+      $data[$info['revision table']]['views_bulk_operations'] = array(
+        'title' => t('Bulk operations'),
+        'help' => t('Provide a checkbox to select the row for bulk operations.'),
+        'real field' => $info['entity keys']['revision'],
+        'field' => array(
+          'handler' => 'views_bulk_operations_handler_field_operations',
+          'click sortable' => FALSE,
+        ),
+      );
+    }
   }
 }
