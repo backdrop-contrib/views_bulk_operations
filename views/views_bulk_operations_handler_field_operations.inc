@@ -302,7 +302,7 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
         'source' => 'action',
         'type' => $operation['type'],
         'aggregate' => isset($operation['aggregate']) ? (int)$operation['aggregate'] : VBO_AGGREGATE_FORBIDDEN,
-        'access operation' => isset($operation['access operation']) ? $operation['access operation'] : 0,
+        'access operation' => isset($operation['access operation']) ? $operation['access operation'] : VBO_ACCESS_OP_UPDATE,
         'permissions' => isset($operation['permissions']) ? $operation['permissions'] : NULL,
       );
     }
