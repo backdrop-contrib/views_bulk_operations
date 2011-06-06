@@ -283,6 +283,7 @@ function views_bulk_operations_form($form, &$form_state, $vbo) {
       '#type' => 'fieldset',
       '#title' => t('Operations'),
       '#collapsible' => TRUE,
+      '#attributes' => array('class' => array('container-inline')),
     );
     if ($vbo->options['vbo']['display_type'] == 0) {
       // Create dropdown and submit button.
