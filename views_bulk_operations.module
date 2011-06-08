@@ -786,10 +786,6 @@ function _views_bulk_operations_action_do($operation, $entity_id, $entity, $para
   elseif ($operation['source'] == 'rules_action') {
     call_user_func_array($operation['callback'], array('entity' => $entity, 'context' => $params));
   }
-  elseif ($operation['source'] == 'operation') {
-    $args = array_merge(array(array($entity_id)), $params);
-    call_user_func_array($operation['callback'], $args);
-  }
 }
 
 /**
@@ -799,13 +795,7 @@ function _views_bulk_operations_action_aggregate_do($operation, $entities, $para
   _views_bulk_operations_action_permission($operation);
 
   $params[$operation['type']] = $entities;
-  if ($operation['source'] == 'action') {
-    actions_do($operation['callback'], array_keys($entities), $params);
-  }
-  else {
-    $args = array_merge(array(array_keys($entities)), $params);
-    call_user_func_array($operation['callback'], $args);
-  }
+  actions_do($operation['callback'], array_keys($entities), $params);
 }
 
 /**

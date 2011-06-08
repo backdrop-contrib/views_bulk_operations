@@ -13,15 +13,6 @@ function actions_permissions_permission() {
   foreach ($actions as $callback => $action) {
     $perms += actions_permissions_get_perm($action['label'], $callback, 'advanced action');
   }
-  module_load_include('inc', 'node', 'node.admin');
-  foreach (array('node', 'user') as $type) { // node/user operations
-    foreach (module_invoke_all($type .'_operations') as $operation) {
-      if (is_array($operation['label']) || empty($operation['callback'])) {
-        continue;
-      }
-      $perms += actions_permissions_get_perm($operation['label'], $operation['callback'], "$type operation");
-    }
-  }
   return $perms;
 }
 

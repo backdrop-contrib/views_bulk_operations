@@ -265,30 +265,6 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
 
     $operations = array();
 
-    // Merge in operations declared by hook_node_operations() and hook_user_operations().
-    foreach (array('node', 'user') as $entity_type) {
-      $hook_name = $entity_type .'_operations';
-      foreach (module_invoke_all($hook_name) as $operation) {
-        if (empty($operation['callback'])) {
-          continue;
-        }
-
-        $key = $operation['callback'] . (empty($operation['callback arguments']) ? '' : ':'. md5(serialize($operation['callback arguments'])));
-        $operations[$key] = array(
-          'key' => $key,
-          'label' => $operation['label'],
-          'callback' => $operation['callback'],
-          'callback arguments' => isset($operation['callback arguments']) ? $operation['callback arguments'] : array(),
-          'configurable' => isset($operation['configurable']) ? $operation['configurable'] : FALSE,
-          'source' => 'operation',
-          'type' => $entity_type,
-          'aggregate' => isset($operation['aggregate']) ? (int)$operation['aggregate'] : VBO_AGGREGATE_OPTIONAL,
-          'access operation' => VBO_ACCESS_OP_UPDATE, // assume edit by default.
-          'permissions' => isset($operation['permissions']) ? $operation['permissions'] : NULL,
-        );
-      }
-    }
-
     // Merge in Drupal actions, most declared by VBO itself through hook_action_info().
     $action_operations = actions_list() + $this->get_custom_actions();
     foreach ($action_operations as $callback => $operation) {

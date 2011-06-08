@@ -118,18 +118,12 @@ function views_bulk_operations_views_default_views() {
     'node_unpromote_action' => 'node_unpromote_action',
     'node_unpublish_action' => 'node_unpublish_action',
     'node_unpublish_by_keyword_action' => 'node_unpublish_by_keyword_action',
-    'node_mass_update:a27b9efabcd054685a549378b174ad11' => 0,
     'system_message_action' => 0,
     'views_bulk_operations_action' => 0,
-    'node_mass_update:8ce21b08bb8e773d10018b484fe4815e' => 0,
-    'node_mass_update:c4d3b28efb86fd703619a50b74d43794' => 0,
     'views_bulk_operations_argument_selector_action' => 0,
-    'node_mass_update:14de7d028b4bffdf2b4a266562ca18ac' => 0,
-    'node_mass_update:9c585624b9b3af0b4687d5f97f35e047' => 0,
     'system_goto_action' => 0,
     'node_save_action' => 0,
     'system_send_email_action' => 0,
-    'node_mass_update:0ccad85c1ebe4c9ceada1aa64293b080' => 0,
   );
   $handler->display->display_options['fields']['views_bulk_operations']['vbo']['execution_type'] = '1';
   $handler->display->display_options['fields']['views_bulk_operations']['vbo']['display_type'] = '0';
@@ -440,13 +434,11 @@ function views_bulk_operations_views_default_views() {
   $handler->display->display_options['fields']['views_bulk_operations']['hide_empty'] = 0;
   $handler->display->display_options['fields']['views_bulk_operations']['empty_zero'] = 0;
   $handler->display->display_options['fields']['views_bulk_operations']['vbo']['selected_operations'] = array(
-    'user_user_operations_block' => 'user_user_operations_block',
     'views_bulk_operations_delete_user_action' => 'views_bulk_operations_delete_user_action',
     'views_bulk_operations_script_action' => 'views_bulk_operations_script_action',
     'views_bulk_operations_user_roles_action' => 'views_bulk_operations_user_roles_action',
-    'user_user_operations_unblock' => 'user_user_operations_unblock',
     'system_block_ip_action' => 0,
-    'user_block_user_action' => 0,
+    'user_block_user_action' => 'user_block_user_action',
     'system_message_action' => 0,
     'views_bulk_operations_action' => 0,
     'views_bulk_operations_argument_selector_action' => 0,

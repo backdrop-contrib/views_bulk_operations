@@ -23,10 +23,9 @@ entity access and entity delete functionality.
 There is Drush integration available, allowing you to run an action against the
 resultset of any View that has the VBO field in its master display.
 
-Operations are gathered from three sources:
+Operations are gathered from two sources:
 1) Drupal Core Action API
-2) hook_node_operations and hook_user_operations.
-3) Rules 2 (preferred).
+2) Rules 2 (preferred).
 The module also allows to use Batch API or the Drupal Queue to process the selected entities, in order to avoid timeouts.
 
 RULES 2 INTEGRATION
