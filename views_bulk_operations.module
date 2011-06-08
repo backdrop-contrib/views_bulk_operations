@@ -373,11 +373,17 @@ function views_bulk_operations_confirm_form($form, &$form_state, $view, $output)
  * $entity_id => $row_index.
  */
 function _views_bulk_operations_get_selection($vbo, $form_state) {
+  $selection = array();
   $field_name = $vbo->options['id'];
-  $selection = array_filter($form_state['values'][$field_name]);
-  // At this point, $selection is an array of $row_number => $base_key_value
-  // We need the $base_key_value to be the key, so the array gets flipped.
-  return array_flip($selection);
+
+  if (!empty($form_state['values'][$field_name])) {
+    $selected_rows = array_filter($form_state['values'][$field_name]);
+    // At this point, $selected_rows is an array of $row_number => $entity_id.
+    // We need the $entity_id to be the key, so the array gets flipped.
+    $selection = array_flip($selected_rows);
+  }
+
+  return $selection;
 }
 
 /**
