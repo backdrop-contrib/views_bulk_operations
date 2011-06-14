@@ -2,7 +2,9 @@
 
 /**
  * @file
- * Passes selected objects as arguments to a page or view.
+ * Passes selected ids as arguments to a page.
+ * The ids might be entity ids or revision ids, depending on the type of the
+ * VBO field.
  */
 
 /**
@@ -11,7 +13,7 @@
 function views_bulk_operations_argument_selector_action_info() {
   return array(
     'views_bulk_operations_argument_selector_action' => array(
-      'label' => t('Pass objects as arguments to a page'),
+      'label' => t('Pass ids as arguments to a page'),
       'type' => 'system',
       'aggregate' => TRUE,
       'configurable' => TRUE,
@@ -22,13 +24,16 @@ function views_bulk_operations_argument_selector_action_info() {
 
 /**
 * Implementation of a Drupal action.
-* Passes selected nodes as arguments to a view.
+* Passes selected ids as arguments to a view.
 */
-function views_bulk_operations_argument_selector_action($objects, $context = array()) {
+function views_bulk_operations_argument_selector_action($entities, $context = array()) {
   $base_url = $context['url'];
-  // $objects is an array of object IDs, since the action includes aggregate.
-  $arguments = implode(',', $objects);
-  drupal_goto($base_url . "/" . $arguments);
+  $arguments = implode(',', array_keys($entities));
+  // Add a trailing slash if missing.
+  if (substr($base_url, -1, 1) != '/') {
+    $base_url .= '/';
+  }
+  drupal_goto($base_url . $arguments);
 }
 
 function views_bulk_operations_argument_selector_action_form($form, &$form_state, $context) {

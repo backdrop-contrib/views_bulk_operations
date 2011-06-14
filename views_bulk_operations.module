@@ -802,8 +802,8 @@ function _views_bulk_operations_action_do($operation, $entity_id, $entity, $para
 function _views_bulk_operations_action_aggregate_do($operation, $entities, $params) {
   _views_bulk_operations_action_permission($operation);
 
-  $params[$operation['type']] = $entities;
-  actions_do($operation['callback'], array_keys($entities), $params);
+  $params['entity_type'] = $operation['type'];
+  actions_do($operation['callback'], $entities, $params);
 }
 
 /**

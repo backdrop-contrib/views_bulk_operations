@@ -9,7 +9,7 @@ function views_bulk_operations_script_action_info() {
   ));
 }
 
-function views_bulk_operations_script_action(&$entity, $context) {
+function views_bulk_operations_script_action($entity, $context) {
   if (!module_exists('actions_permissions') && !user_access('administer site configuration')) {
     global $user;
     $msg = 'An attempt to execute arbitrary PHP script action by user <a href="user/!uid">%user</a> was blocked because of lack of permission.';
