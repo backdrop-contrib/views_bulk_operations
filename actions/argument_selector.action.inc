@@ -14,7 +14,7 @@ function views_bulk_operations_argument_selector_action_info() {
   return array(
     'views_bulk_operations_argument_selector_action' => array(
       'label' => t('Pass ids as arguments to a page'),
-      'type' => 'system',
+      'type' => 'entity',
       'aggregate' => TRUE,
       'configurable' => TRUE,
       'hooks' => array(),

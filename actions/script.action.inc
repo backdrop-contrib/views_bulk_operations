@@ -3,7 +3,7 @@
 function views_bulk_operations_script_action_info() {
   if (!module_exists('actions_permissions') && !user_access('administer site configuration')) return array();
   return array('views_bulk_operations_script_action' => array(
-    'type' => 'system',
+    'type' => 'entity',
     'label' => t('Execute arbitrary PHP script'),
     'configurable' => TRUE,
   ));

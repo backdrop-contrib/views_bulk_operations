@@ -8,7 +8,7 @@
 function views_bulk_operations_delete_action_info() {
   return array(
     'views_bulk_operations_delete_item' => array(
-      'type' => 'system',
+      'type' => 'entity',
       'label' => t('Delete item'),
       'configurable' => FALSE,
       'access operation' => VBO_ACCESS_OP_DELETE,
