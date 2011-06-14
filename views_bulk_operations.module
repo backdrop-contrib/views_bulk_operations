@@ -890,7 +890,15 @@ function _views_bulk_operations_action_form($form, &$form_state, $action, $view,
     'settings' => $settings,
     'action' => $action,
   );
-  return $action_form($form, $form_state, $context);
+
+  if ($action['source'] == 'rules_action') {
+    $form = $action_form($form, $form_state, $context);
+  }
+  else {
+    $form = $action_form($context);
+  }
+
+  return $form;
 }
 
 /**

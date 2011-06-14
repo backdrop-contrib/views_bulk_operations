@@ -36,7 +36,7 @@ function views_bulk_operations_argument_selector_action($entities, $context = ar
   drupal_goto($base_url . $arguments);
 }
 
-function views_bulk_operations_argument_selector_action_form($form, &$form_state, $context) {
+function views_bulk_operations_argument_selector_action_form($context) {
   $form['url'] = array(
     '#title' => t('URL'),
     '#type' => 'textfield',

@@ -265,8 +265,8 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
 
     $operations = array();
 
-    // Merge in Drupal actions, most declared by VBO itself through hook_action_info().
-    $action_operations = actions_list() + $this->get_custom_actions();
+    // Merge in Drupal actions, including those declared by VBO itself.
+    $action_operations = actions_list();
     foreach ($action_operations as $callback => $operation) {
       $key = isset($operation['key']) ? $operation['key'] : $callback;
       $operations[$key] = array(
@@ -314,28 +314,6 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
 
     uasort($operations, create_function('$a, $b', 'return strcasecmp($a["label"], $b["label"]);'));
     $this->all_operations = $operations;
-  }
-
-  private function get_custom_actions() {
-    $actions = array();
-    $static_actions = actions_list();
-    $result = db_query("SELECT * FROM {actions} WHERE parameters > ''");
-    foreach ($result as $action) {
-      $parameters = unserialize($action->parameters);
-      $actions[$action->aid] = array(
-        'label' => isset($action->label) ? $action->label : '',
-        'type' => $action->type,
-        'configurable' => FALSE,
-        'parameters' => $parameters,
-        'key' => $action->callback . (empty($parameters) ? '' : ':'. md5($action->parameters)),
-      );
-      foreach (array('access operation', 'aggregate', 'permissions') as $attribute) {
-        if (isset($static_actions[$action->callback][$attribute])) {
-          $actions[$action->aid][$attribute] = $static_actions[$action->callback][$attribute];
-        }
-      }
-    }
-    return $actions;
   }
 
   function get_operation_settings($operation) {
