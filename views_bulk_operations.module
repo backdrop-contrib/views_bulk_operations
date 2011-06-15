@@ -1059,11 +1059,11 @@ function views_bulk_operations_execute($vid, $operation_callback, $operation_arg
   }
 
   // Execute the operation on the view results.
-  $execution_type = $plugin->options['execution_type'];
+  $execution_type = $vbo->options['vbo']['execution_type'];
   if ($execution_type == VBO_EXECUTION_BATCH) {
     $execution_type = VBO_EXECUTION_DIRECT; // we don't yet support Batch API here
   }
-  $display_result = $plugin->options['display_result'];
+  $display_result = $vbo->options['vbo']['display_result'];
   _views_bulk_operations_execute(
     $vbo,
     $rows,
