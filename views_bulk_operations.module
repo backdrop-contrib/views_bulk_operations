@@ -312,7 +312,8 @@ function views_bulk_operations_form($form, &$form_state, $vbo) {
   // Adds the "select all" functionality if the view has results.
   // If the view is using a table style plugin, the markup gets moved to
   // a table row below the header.
-  if (!empty($vbo->view->result)) {
+  // If we are using radio buttons, we don't use select all at all.
+  if (!empty($vbo->view->result) && empty($vbo->options['vbo']['force_single'])) {
     $form['select_all_markup'] = array(
       '#type' => 'markup',
       '#markup' => theme('views_bulk_operations_select_all', array('view' => $vbo->view)),
@@ -379,7 +380,13 @@ function _views_bulk_operations_get_selection($vbo, $form_state) {
   $field_name = $vbo->options['id'];
 
   if (!empty($form_state['values'][$field_name])) {
-    $selected_rows = array_filter($form_state['values'][$field_name]);
+    // If using "force single", the selection needs to be converted to an array.
+    if (is_array($form_state['values'][$field_name])) {
+      $selected_rows = array_filter($form_state['values'][$field_name]);
+    }
+    else {
+      $selected_rows = array($form_state['values'][$field_name]);
+    }
     // At this point, $selected_rows is an array of $row_number => $entity_id.
     // We need the $entity_id to be the key, so the array gets flipped.
     $selection = array_flip($selected_rows);
@@ -418,7 +425,12 @@ function views_bulk_operations_form_validate($form, &$form_state) {
       $field_name = $vbo->options['id'];
       $selection = _views_bulk_operations_get_selection($vbo, $form_state);
       if (!$selection) {
-        form_set_error($field_name, t('No row selected. Please select one or more rows.'));
+        form_set_error($field_name, t('Please select at least one item.'));
+      }
+
+      // if using force single, make sure only one value was submitted.
+      if (!empty($vbo->options['vbo']['force_single']) && count($selection) > 1) {
+        form_set_error($field_name, t('You may only select one item.'));
       }
 
       $_SESSION['vbo_values'][$_GET['q']] = array(

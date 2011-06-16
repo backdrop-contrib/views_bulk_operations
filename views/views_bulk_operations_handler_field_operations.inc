@@ -21,6 +21,7 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
         'skip_confirmation' => array('default' => FALSE),
         'display_result' => array('default' => TRUE),
         'merge_single_action' => array('default' => TRUE),
+        'force_single' => array('default' => FALSE),
       ),
     );
 
@@ -65,6 +66,12 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
         t('Dropdown selectbox with Submit button'),
         t('Each action as a separate button'),
       ),
+    );
+    $form['vbo']['force_single'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Force single'),
+      '#default_value' => $this->options['vbo']['force_single'],
+      '#description' => t('Check this box to restrict selection to a single value.'),
     );
     $form['vbo']['skip_confirmation'] = array(
       '#type' => 'checkbox',
@@ -149,7 +156,7 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
    * placeholder for a "select all" checkbox.
    */
   function label() {
-    if (is_a($this->view->style_plugin, 'views_plugin_style_table')) {
+    if (is_a($this->view->style_plugin, 'views_plugin_style_table') && empty($this->options['vbo']['force_single'])) {
       return '<!--views-bulk-operations-select-all-->';
     }
     else {
@@ -195,12 +202,20 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
       else {
         $default_value = FALSE;
       }
-
-      $form[$this->options['id']][$row_id] = array(
-        '#type' => 'checkbox',
-        '#return_value' => $entity_id,
-        '#default_value' => $default_value,
-      );
+      if ($this->options['vbo']['force_single']) {
+        $form[$this->options['id']][$row_id] = array(
+          '#type' => 'radio',
+          '#parents' => array($this->options['id']),
+          '#return_value' => $entity_id,
+        );
+      }
+      else {
+        $form[$this->options['id']][$row_id] = array(
+          '#type' => 'checkbox',
+          '#return_value' => $entity_id,
+          '#default_value' => $default_value,
+        );
+      }
     }
   }
 

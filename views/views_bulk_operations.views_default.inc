@@ -130,6 +130,7 @@ function views_bulk_operations_views_default_views() {
   $handler->display->display_options['fields']['views_bulk_operations']['vbo']['skip_confirmation'] = 0;
   $handler->display->display_options['fields']['views_bulk_operations']['vbo']['display_result'] = 1;
   $handler->display->display_options['fields']['views_bulk_operations']['vbo']['merge_single_action'] = 1;
+  $handler->display->display_options['fields']['views_bulk_operations']['vbo']['force_single'] = 0;
   /* Field: Content: Title */
   $handler->display->display_options['fields']['title']['id'] = 'title';
   $handler->display->display_options['fields']['title']['table'] = 'node';
@@ -447,6 +448,7 @@ function views_bulk_operations_views_default_views() {
   );
   $handler->display->display_options['fields']['views_bulk_operations']['vbo']['execution_type'] = '1';
   $handler->display->display_options['fields']['views_bulk_operations']['vbo']['display_type'] = '0';
+  $handler->display->display_options['fields']['views_bulk_operations']['vbo']['force_single'] = '0';
   $handler->display->display_options['fields']['views_bulk_operations']['vbo']['skip_confirmation'] = 0;
   $handler->display->display_options['fields']['views_bulk_operations']['vbo']['display_result'] = 1;
   $handler->display->display_options['fields']['views_bulk_operations']['vbo']['merge_single_action'] = 1;
