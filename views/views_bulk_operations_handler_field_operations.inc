@@ -278,7 +278,8 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
         'source' => 'action',
         'type' => $operation['type'],
         'aggregate' => isset($operation['aggregate']) ? (int)$operation['aggregate'] : VBO_AGGREGATE_FORBIDDEN,
-        'access operation' => isset($operation['access operation']) ? $operation['access operation'] : VBO_ACCESS_OP_UPDATE,
+        'behavior' => isset($operation['behavior']) ? $operation['behavior'] : array(),
+        'access operation' => $this->get_access_op($operation),
         'permissions' => isset($operation['permissions']) ? $operation['permissions'] : NULL,
       );
     }
@@ -318,6 +319,28 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
 
     uasort($operations, create_function('$a, $b', 'return strcasecmp($a["label"], $b["label"]);'));
     $this->all_operations = $operations;
+  }
+
+  private function get_access_op($operation) {
+    // Assume edit by default.
+    if (!isset($operation['behavior'])) {
+      $operation['behavior'] = array('changes_property');
+    }
+
+    $access_op = 0;
+    if (in_array('views_property', $operation['behavior'])) {
+      $access_op |= VBO_ACCESS_OP_VIEW;
+    }
+    if (in_array('changes_property', $operation['behavior'])) {
+      $access_op |= VBO_ACCESS_OP_UPDATE;
+    }
+    if (in_array('creates_property', $operation['behavior'])) {
+      $access_op |= VBO_ACCESS_OP_CREATE;
+    }
+    if (in_array('deletes_property', $operation['behavior'])) {
+      $access_op |= VBO_ACCESS_OP_DELETE;
+    }
+    return $access_op;
   }
 
   function get_operation_settings($operation) {

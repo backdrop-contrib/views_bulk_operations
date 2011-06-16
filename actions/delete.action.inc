@@ -11,7 +11,7 @@ function views_bulk_operations_delete_action_info() {
       'type' => 'entity',
       'label' => t('Delete item'),
       'configurable' => FALSE,
-      'access operation' => VBO_ACCESS_OP_DELETE,
+      'behavior' => array('deletes_property'),
     ),
   );
 }

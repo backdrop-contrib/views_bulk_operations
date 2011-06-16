@@ -785,10 +785,9 @@ function _views_bulk_operations_action_do($operation, $entity_id, $entity, $para
 
   if ($operation['source'] == 'action') {
     actions_do($operation['callback'], $entity, $params);
-    if ($operation['type'] == 'node' && ($operation['access operation'] & VBO_ACCESS_OP_UPDATE)) { // Save nodes explicitly if needed
-      $node_options = variable_get('node_options_'. $entity->type, array('status', 'promote'));
-      $entity->revision = in_array('revision', $node_options);
-      node_save($entity);
+    // Actions that specify 'changes_property' need to be explicitly saved.
+    if (in_array('changes_property', $operation['behavior'])) {
+      entity_save($operation['type'], $entity);
     }
   }
   elseif ($operation['source'] == 'rules_action') {
