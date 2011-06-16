@@ -588,7 +588,7 @@ function _views_bulk_operations_execute($vbo, $rows, $operation, $operation_argu
 
     $batch = array(
       'operations' => $operations,
-      'finished' => '_views_bulk_operations_batch_finished',
+      'finished' => '_views_bulk_operations_execute_finished',
       'title' => t('Performing %action on selected rows...', array('%action' => $operation['label'])),
     );
     batch_set($batch);
@@ -621,7 +621,7 @@ function _views_bulk_operations_execute($vbo, $rows, $operation, $operation_argu
     $context['results']['time'] = microtime(TRUE);
 
     _views_bulk_operations_direct_process($operation, $rows, $params, $context);
-    _views_bulk_operations_direct_finished(TRUE, $context['results'], array(), $options['display_result']);
+    _views_bulk_operations_execute_finished(TRUE, $context['results'], array(), 0, $options + array('operation' => $operation, 'params' => $params));
   }
 }
 
@@ -696,33 +696,6 @@ function _views_bulk_operations_batch_process($entity_id, &$context) {
 }
 
 /**
- * Helper function to cleanup Batch API operations.
- */
-function _views_bulk_operations_batch_finished($success, $results, $operations, $display_result = NULL) {
-  if ($success) {
-    if (!empty($results['rows'])) {
-      $row_count = format_plural(count($results['rows']), '1 row', '@count rows');
-      $message = t('!row_count processed in about !time ms:', array('!row_count' => $row_count, '!time' => round((microtime(TRUE) - $results['time']) * 1000)));
-    }
-    else {
-      $message = t('No rows were processed:');
-    }
-    $message .= "\n". theme('item_list', array('items' => $results['log']));
-  }
-  else {
-    // An error occurred.
-    // $operations contains the operations that remained unprocessed.
-    $error_operation = reset($operations);
-    $message = t('An error occurred while processing @operation with arguments: @arguments',
-      array('@operation' => $error_operation[0], '@arguments' => print_r($error_operation[0], TRUE)));
-  }
-  if ($display_result || @$_SESSION['vbo_options']['display_result']) {
-    _views_bulk_operations_log($message);
-  }
-  unset($_SESSION['vbo_options']); // unset the options which were used for just one invocation
-}
-
-/**
  * Helper function for direct execution operations.
  */
 function _views_bulk_operations_direct_process($operation, $rows, $params, &$context) {
@@ -769,10 +742,36 @@ function _views_bulk_operations_direct_process($operation, $rows, $params, &$con
 }
 
 /**
- * Helper function to cleanup direct execution operations.
+ * Helper function to cleanup operations.
  */
-function _views_bulk_operations_direct_finished($success, $results, $operations, $display_result) {
-  _views_bulk_operations_batch_finished($success, $results, $operations, $display_result);
+function _views_bulk_operations_execute_finished($success, $results, $operations, $elapsed, $options = NULL) {
+  if ($success) {
+    if (!empty($results['rows'])) {
+      $row_count = format_plural(count($results['rows']), '1 row', '@count rows');
+      $message = t('!row_count processed in about !time ms:', array('!row_count' => $row_count, '!time' => round((microtime(TRUE) - $results['time']) * 1000)));
+    }
+    else {
+      $message = t('No rows were processed:');
+    }
+    $message .= "\n". theme('item_list', array('items' => $results['log']));
+  }
+  else {
+    // An error occurred.
+    // $operations contains the operations that remained unprocessed.
+    $error_operation = reset($operations);
+    $message = t('An error occurred while processing @operation with arguments: @arguments',
+      array('@operation' => $error_operation[0], '@arguments' => print_r($error_operation[0], TRUE)));
+  }
+  if (empty($options)) {
+    $options = $_SESSION['vbo_options'];
+  }
+
+  // Inform other modules that VBO has finished executing.
+  module_invoke_all('views_bulk_operations_finish', $options['operation'], $options['params'], array('results' => $results));
+  if (!empty($options['display_result'])) {
+    drupal_set_message($message);
+  }
+  unset($_SESSION['vbo_options']); // unset the options which were used for just one invocation
 }
 
 /**
