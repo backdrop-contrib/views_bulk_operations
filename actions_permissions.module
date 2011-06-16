@@ -5,40 +5,18 @@
  */
 function actions_permissions_permission() {
   $perms = array();
-  $actions = actions_list(); // standard actions
+  $actions = actions_list();
   foreach ($actions as $callback => $action) {
-    $perms += actions_permissions_get_perm($action['label'], $callback, 'action');
-  }
-  $actions = _actions_permissions_get_custom_actions(); // advanced actions
-  foreach ($actions as $callback => $action) {
-    $perms += actions_permissions_get_perm($action['label'], $callback, 'advanced action');
+    $perms += actions_permissions_get_perm($action['label'], $callback);
   }
   return $perms;
 }
 
-function _actions_permissions_get_custom_actions() {
-  $actions = array();
-  $static_actions = actions_list();
-  $result = db_query("SELECT * FROM {actions} WHERE parameters > ''");
-  foreach ($result as $action) {
-    $actions[$action->aid] = array(
-      'label' => $action->label,
-      'type' => $action->type,
-      'configurable' => FALSE,
-      'parameters' => unserialize($action->parameters),
-    );
-    $actions[$action->aid]['access operation'] = isset($static_actions[$action->callback]['access operation']) ? $static_actions[$action->callback]['access operation'] : null;
-  }
-  return $actions;
-}
-
-function actions_permissions_get_perm($label, $callback, $type = FALSE) {
+function actions_permissions_get_perm($label, $callback) {
   $key = "execute $callback";
-  return empty($type) ?
-    $key :
-    array($key => array(
+  return array($key => array(
       'title' => t('Execute !label', array('!label' => $label)),
-      'description' => t('Execute !type "!label" (!callback).', array('!type' => t($type), '!label' => $label, '!callback' => is_numeric($callback) ? "aid:$callback" : $callback)),
+      'description' => t('Execute action "!label" (!callback).', array('!label' => $label, '!callback' => is_numeric($callback) ? "aid:$callback" : $callback)),
     ),
   );
 }
