@@ -5,7 +5,7 @@
  */
 function views_bulk_operations_views_data_alter(&$data) {
   foreach (entity_get_info() as $entity_type => $info) {
-    if (isset($data[$info['base table']])) {
+    if (isset($info['base table']) && isset($data[$info['base table']])) {
       $data[$info['base table']]['views_bulk_operations'] = array(
         'title' => t('Bulk operations'),
         'help' => t('Provide a checkbox to select the row for bulk operations.'),
