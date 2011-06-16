@@ -313,7 +313,7 @@ function views_bulk_operations_form($form, &$form_state, $vbo) {
   // If the view is using a table style plugin, the markup gets moved to
   // a table row below the header.
   // If we are using radio buttons, we don't use select all at all.
-  if (!empty($vbo->view->result) && empty($vbo->options['vbo']['force_single'])) {
+  if (!empty($vbo->view->result) && !$vbo->options['vbo']['force_single']) {
     $form['select_all_markup'] = array(
       '#type' => 'markup',
       '#markup' => theme('views_bulk_operations_select_all', array('view' => $vbo->view)),
@@ -429,7 +429,7 @@ function views_bulk_operations_form_validate($form, &$form_state) {
       }
 
       // if using force single, make sure only one value was submitted.
-      if (!empty($vbo->options['vbo']['force_single']) && count($selection) > 1) {
+      if ($vbo->options['vbo']['force_single'] && count($selection) > 1) {
         form_set_error($field_name, t('You may only select one item.'));
       }
 
