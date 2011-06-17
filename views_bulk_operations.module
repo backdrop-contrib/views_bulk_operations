@@ -859,16 +859,7 @@ function _views_bulk_operations_action_permission($operation, $account = NULL) {
  * Helper function to verify access permission to operate on an entity.
  */
 function _views_bulk_operations_entity_access($operation, $entity_type, $entity, $account = NULL) {
-  if (module_exists('entity')) {
-    // The Entity API module extends support for other entity types.
-    if (entity_type_supports($entity_type, 'access')) {
-      $access_function = 'entity_access';
-    }
-  }
-  elseif ($entity_type == 'node') {
-    $access_function = '_views_bulk_operations_node_access';
-  }
-  else {
+  if (!entity_type_supports($entity_type, 'access')) {
     return TRUE;
   }
 
@@ -880,7 +871,7 @@ function _views_bulk_operations_entity_access($operation, $entity_type, $entity,
   );
   foreach ($access_ops as $bit => $op) {
     if ($operation['access operation'] & $bit) {
-      if (!call_user_func($access_function, $op, $entity_type, $entity, $account)) {
+      if (!entity_access($op, $entity_type, $entity, $account)) {
         return FALSE;
       }
     }
@@ -1000,13 +991,6 @@ function _views_bulk_operations_entity_label($entity_type, $entity) {
     }
   }
   return $label;
-}
-
-/**
- * Dummy access callback for nodes.
- */
-function _views_bulk_operations_node_access($op, $entity_type, $entity, $account = NULL) {
-  return node_access($op, $entity, $account);
 }
 
 /**

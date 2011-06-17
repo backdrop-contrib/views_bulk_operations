@@ -1,5 +1,6 @@
 name = Views Bulk Operations
 description = Provides a way of selecting multiple rows and applying operations to them.
+dependencies[] = entity
 dependencies[] = views
 package = Views
 core = 7.x
