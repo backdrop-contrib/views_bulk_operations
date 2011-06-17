@@ -9,7 +9,7 @@ actions visible to the user are selected.
 TECHNICAL DETAILS
 -----------------
 The module relies on the Views 3 "form" feature available in all Views releases after May 28th 2011.
-The checkbox is provided as a views field called "Bulk operations".
+The selection field (checkbox / radio) is provided as a views field called "Bulk operations".
 The field can use a relationship, allowing you to have a node view with
 operations on node authors, for example.
 Note that currently a View can only have one VBO field.
@@ -17,8 +17,6 @@ Even if the view has several VBO fields, only the first one found will be used.
 
 The "Bulk operations" views field is available in Views for all entity base tables,
 since VBO relies on entities directly and no longer has its own "object" abstraction.
-The Entity API module is strongly recommended. If it is installed, VBO uses its
-entity access and entity delete functionality.
 
 There is Drush integration available, allowing you to run an action against the
 resultset of any View that has the VBO field in its master display.
@@ -30,7 +28,8 @@ The module also allows to use Batch API or the Drupal Queue to process the selec
 
 RULES 2 INTEGRATION
 -------------------
-The module can use (as an action) any defined Rules component that accepts an entity as the first parameter.
+The module can execute any created Rules component (rule, ruleset, action set)
+that accepts an entity (example types: "node", "entity") as the first parameter.
 As a reminder, Rules components can be created at admin/config/workflow/rules/components.
 
 EXAMPLE VIEWS
