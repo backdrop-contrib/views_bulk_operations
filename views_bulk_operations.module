@@ -91,7 +91,7 @@ function views_bulk_operations_init() {
  */
 function _views_bulk_operations_get_field($view) {
   foreach ($view->field as $field_name => $field) {
-    if (is_a($field, 'views_bulk_operations_handler_field_operations')) {
+    if ($field instanceof views_bulk_operations_handler_field_operations) {
       // Add in the view object for convenience.
       $field->view = $view;
       return $field;
@@ -158,7 +158,7 @@ function theme_views_bulk_operations_select_all($variables) {
   $view = $variables['view'];
   $form = array();
 
-  if (is_a($view->style_plugin, 'views_plugin_style_table')) {
+  if ($view->style_plugin instanceof views_plugin_style_table) {
     // Table displays only get the "select all" markup if they are paginated.
     if (count($view->result) == $view->total_rows) {
       return '';
