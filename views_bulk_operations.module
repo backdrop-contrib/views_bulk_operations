@@ -507,13 +507,13 @@ function views_bulk_operations_form_submit($form, &$form_state) {
         if ($operation['configurable']) {
           $form_state['views_bulk_operations']['operation_arguments'] = _views_bulk_operations_action_submit($operation, $form, $form_state);
         }
-        if ($vbo->options['vbo']['skip_confirmation']) {
+        if (!empty($operation['options']['skip_confirmation'])) {
           break; // Go directly to execution
         }
         $form_state['step'] = 'views_bulk_operations_confirm_form';
       }
       else {
-        if (!$operation['configurable'] && $vbo->options['vbo']['skip_confirmation']) {
+        if (!$operation['configurable'] && !empty($operation['options']['skip_confirmation'])) {
           break; // Go directly to execution
         }
         $form_state['step'] = $operation['configurable'] ? 'views_bulk_operations_config_form' : 'views_bulk_operations_confirm_form';
@@ -527,7 +527,7 @@ function views_bulk_operations_form_submit($form, &$form_state) {
       $form_state['views_bulk_operations']['views_bulk_operations_config_form'] = $form_state['values'];
       $operation = $vbo->get_operation_info($form_state['views_bulk_operations']['views_form_views_form']['operation']);
       $form_state['views_bulk_operations']['operation_arguments'] = _views_bulk_operations_action_submit($operation, $form, $form_state);
-      if ($vbo->options['vbo']['skip_confirmation']) {
+      if (!empty($operation['options']['skip_confirmation'])) {
         break; // Go directly to execution
       }
       $form_state['rebuild'] = TRUE;
@@ -823,7 +823,7 @@ function _views_bulk_operations_action_permission($operation, $account = NULL) {
   global $user;
 
   if (module_exists('actions_permissions')) {
-    $perm = actions_permissions_get_perm($operation['label'], $operation['callback']);
+    $perm = actions_permissions_get_perm($operation['original label'], $operation['callback']);
     if (!user_access($perm, $account)) {
       watchdog('actions permissions', 'An attempt by user %user to !perm was blocked due to insufficient permissions.',
         array('!perm' => $perm, '%user' => isset($account) ? $account->name : $user->name), WATCHDOG_ALERT);

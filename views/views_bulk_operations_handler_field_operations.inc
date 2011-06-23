@@ -10,29 +10,34 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
   var $all_operations = array();
   var $revision = FALSE;
 
+  function init(&$view, &$options) {
+    parent::init($view, $options);
+
+    $this->populate_operations();
+
+    // Update old settings.
+    if (!empty($options['vbo']['selected_operations'])) {
+      foreach (array_filter($options['vbo']['selected_operations']) as $key) {
+        $this->options['vbo']['operations'][$key]['selected'] = TRUE;
+        $this->options['vbo']['operations'][$key]['skip_confirmation'] = $options['vbo']['skip_confirmation'];
+      }
+      unset($this->options['vbo']['selected_operations']);
+    }
+  }
+
   function option_definition() {
     $options = parent::option_definition();
 
     $options['vbo'] = array(
       'contains' => array(
-        'selected_operations' => array('default' => array()),
+        'operations' => array('default' => array()),
         'execution_type' => array('default' => VBO_EXECUTION_DIRECT),
         'display_type' => array('default' => 0),
-        'skip_confirmation' => array('default' => FALSE),
         'display_result' => array('default' => TRUE),
         'merge_single_action' => array('default' => TRUE),
         'force_single' => array('default' => FALSE),
       ),
     );
-
-    // Per-action settings.
-    $this->populate_operations();
-    foreach ($this->all_operations as $key => $operation) {
-      $form_function = $operation['callback'] . '_settings_form_options';
-      if (function_exists($form_function)) {
-        $options['vbo']['contains'][$key] = array('default' => call_user_func($form_function));
-      }
-    }
 
     return $options;
   }
@@ -73,12 +78,6 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
       '#default_value' => $this->options['vbo']['force_single'],
       '#description' => t('Check this box to restrict selection to a single value.'),
     );
-    $form['vbo']['skip_confirmation'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Skip confirmation step'),
-      '#description' => t('Check this box to skip the confirmation page on this view and directly execute the operation.'),
-      '#default_value' => $this->options['vbo']['skip_confirmation'],
-    );
     $form['vbo']['display_result'] = array(
       '#type' => 'checkbox',
       '#title' => t('Display processing result'),
@@ -91,62 +90,75 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
       '#description' => t('In case only one action is selected *and* this action is configurable, display its action form along with the row selection view.'),
       '#default_value' => $this->options['vbo']['merge_single_action'],
     );
-    $form['vbo']['selected_operations'] = array(
-      '#type' => 'checkboxes',
+    // Display operations and their settings.
+    $form['vbo']['operations'] = array(
+      '#tree' => TRUE,
+      '#type' => 'fieldset',
       '#title' => t('Selected operations'),
-      '#options' => $this->get_operations_options(),
-      '#default_value' => $this->options['vbo']['selected_operations'],
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
     );
-
-    // Per-action settings form.
-    $entity_type = $this->get_entity_type();
-    foreach ($this->all_operations as $key => $operation) {
-      if ($operation['type'] != 'entity' && $operation['type'] != $entity_type) {
-        continue;
-      }
-
-      $form_function = $operation['callback'] . '_settings_form';
+    foreach ($this->get_operations_options() as $key => $label) {
+      $dom_id = 'edit-options-vbo-operations-' . str_replace('_', '-', $key) . '-selected';
+      $form['vbo']['operations'][$key]['selected'] = array(
+        '#type' => 'checkbox',
+        '#title' => $label,
+        '#default_value' => @$this->options['vbo']['operations'][$key]['selected'],
+      );
+      $form['vbo']['operations'][$key]['skip_confirmation'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Skip confirmation step'),
+        '#default_value' => @$this->options['vbo']['operations'][$key]['skip_confirmation'],
+        '#dependency' => array(
+          $dom_id => array(1),
+        ),
+      );
+      $form['vbo']['operations'][$key]['label'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Override label'),
+        '#default_value' => @$this->options['vbo']['operations'][$key]['label'],
+        '#dependency' => array(
+          $dom_id => array(1),
+        ),
+      );
+      $form_function = $this->all_operations[$key]['callback'] . '_views_bulk_operations_form';
       if (function_exists($form_function)) {
-        $form['vbo'][$key] = array(
-          '#tree' => TRUE,
-          '#type' => 'fieldset',
-          '#title' => $operation['label'],
-          '#collapsible' => TRUE,
-          '#collapsed' => TRUE,
-        );
-        $form['vbo'][$key] += call_user_func($form_function, $this->options['vbo'][$key]);
+        $form_settings = call_user_func($form_function, @$this->options['operations'][$key]['settings']);
+        foreach (element_children($form_settings) as $child) {
+          $form_settings[$child] += array(
+            '#dependency' => array(
+              $dom_id => array(1),
+            ),
+          );
+        }
+        $form['vbo']['operations'][$key]['settings'] = $form_settings;
       }
     }
   }
 
   function options_validate(&$form, &$form_state) {
-    // Filter out the empty values.
-    $form_state['values']['options']['vbo']['selected_operations'] = array_filter($form_state['values']['options']['vbo']['selected_operations']);
-
-    foreach ($form_state['values']['options']['vbo']['selected_operations'] as $selected_operation) {
-      if (!isset($form_state['values']['options']['vbo'][$selected_operation])) {
+    foreach ($form_state['values']['options']['vbo']['operations'] as $key => &$options) {
+      if (empty($options['selected']) || !isset($options['settings'])) {
         continue;
       }
-
-      $operation = $this->all_operations[$selected_operation];
-      $form_function = $operation['callback'] . '_settings_form_validate';
+      $operation = $this->all_operations[$key];
+      $form_function = $operation['callback'] . '_views_bulk_operations_form_validate';
       if (function_exists($form_function)) {
-        $form_state['values']['options']['vbo'][$selected_operation]['_error_element_base'] = 'vbo][' . $selected_operation . '][';
-        call_user_func($form_function, $form, array('values' => $form_state['values']['options']['vbo'][$selected_operation]));
+        $options['settings']['_error_element_base'] = 'vbo][operations][' . $key . '][settings][';
+        call_user_func($form_function, $form, array('values' => $options['settings']));
       }
     }
   }
 
   function options_submit(&$form, &$form_state) {
-    foreach ($form_state['values']['options']['vbo']['selected_operations'] as $selected_operation) {
-      if (!isset($form_state['values']['options']['vbo'][$selected_operation])) {
+    foreach ($form_state['values']['options']['vbo']['operations'] as $key => &$options) {
+      if (empty($options['selected']) || !isset($options['settings'])) {
         continue;
       }
-
-      $operation = $this->all_operations[$selected_operation];
-      $form_function = $operation['callback'] . '_settings_form_submit';
+      $operation = $this->all_operations[$key];
+      $form_function = $operation['callback'] . '_views_bulk_operations_form_submit';
       if (function_exists($form_function)) {
-        call_user_func($form_function, $form, array('values' => $form_state['values']['options']['vbo'][$selected_operation]));
+        call_user_func($form_function, $form, array('values' => $options['settings']));
       }
     }
   }
@@ -221,8 +233,8 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
 
   function get_selected_operations() {
     $selected = array();
-    foreach (array_filter($this->options['vbo']['selected_operations']) as $key) {
-      if (!isset($this->all_operations[$key])) {
+    foreach ($this->options['vbo']['operations'] as $key => $options) {
+      if (empty($options['selected']) || !isset($this->all_operations[$key])) {
         continue;
       }
 
@@ -244,17 +256,32 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
           continue 2;
         }
       }
-      $selected[$key] = $this->all_operations[$key]['label'];
+
+      if (!empty($this->options['vbo']['operations'][$key]['label'])) {
+        $selected[$key] = t($this->options['vbo']['operations'][$key]['label']);
+      }
+      else {
+        $selected[$key] = $this->all_operations[$key]['label'];
+      }
     }
     return $selected;
   }
 
   function get_operation_info($key) {
+    if (empty($this->all_operations[$key])) {
+      return NULL;
+    }
     $operation = $this->all_operations[$key];
     if ($operation['type'] == 'entity') { // Actions that accept any entity type.
       $entity_type = $this->get_entity_type();
       $operation['type'] = $entity_type;
     }
+    // Remember the original label for use in permissions.
+    $operation['original label'] = $operation['label'];
+    if (!empty($this->options['vbo']['operations'][$key]['label'])) {
+      $operation['label'] = t($this->options['vbo']['operations'][$key]['label']);
+    }
+    $operation['options'] = $this->options['vbo']['operations'][$key] + array('settings' => NULL);
     return $operation;
   }
 
