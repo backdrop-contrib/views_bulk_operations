@@ -123,7 +123,7 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
       );
       $form_function = $this->all_operations[$key]['callback'] . '_views_bulk_operations_form';
       if (function_exists($form_function)) {
-        $form_settings = call_user_func($form_function, @$this->options['operations'][$key]['settings']);
+        $form_settings = call_user_func($form_function, @$this->options['vbo']['operations'][$key]['settings']);
         foreach (element_children($form_settings) as $child) {
           $form_settings[$child] += array(
             '#dependency' => array(
@@ -181,7 +181,7 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
   }
 
   /**
-   * Returns the form which replaces the placeholder from render().
+   * The form which replaces the placeholder from render().
    */
   function views_form(&$form, &$form_state) {
     // The view is empty, abort.
@@ -407,7 +407,7 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
     }
     // The base table is now known, use it to determine the entity type.
     foreach (entity_get_info() as $entity_type => $info) {
-      if ($info['base table'] == $base_table) {
+      if (isset($info['base table']) && $info['base table'] == $base_table) {
         return $entity_type;
       }
       elseif (isset($info['revision table']) && $info['revision table'] == $base_table) {

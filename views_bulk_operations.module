@@ -946,8 +946,7 @@ function theme_views_bulk_operations_confirmation($variables) {
     }
   }
 
-  $row_count = format_plural(count($entities), '1 row', '@count rows');
-  $output = theme('item_list', array('items' => $items, 'title' => t('You selected the following <strong>!row_count</strong>:', array('!row_count' => $row_count))));
+  $output = theme('item_list', array('items' => $items, 'title' => t('You selected the following rows:')));
   return $output;
 }
 
