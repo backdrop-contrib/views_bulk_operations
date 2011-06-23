@@ -759,7 +759,7 @@ function _views_bulk_operations_direct_process($operation, $rows, $params, &$con
 function _views_bulk_operations_execute_finished($success, $results, $operations, $elapsed, $options = NULL) {
   if ($success) {
     if (!empty($results['rows'])) {
-      $row_count = format_plural(count($results['rows']), '1 row', '@count rows');
+      $row_count = format_plural($results['rows'], '1 row', '@count rows');
       $message = t('!row_count processed in about !time ms:', array('!row_count' => $row_count, '!time' => round((microtime(TRUE) - $results['time']) * 1000)));
     }
     else {

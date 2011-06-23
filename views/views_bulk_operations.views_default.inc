@@ -113,7 +113,7 @@ function views_bulk_operations_views_default_views() {
   $handler->display->display_options['fields']['views_bulk_operations']['empty_zero'] = 0;
   $handler->display->display_options['fields']['views_bulk_operations']['vbo']['selected_operations'] = array(
     'node_assign_owner_action' => 'node_assign_owner_action',
-    'views_bulk_operations_delete_node_action' => 'views_bulk_operations_delete_node_action',
+    'views_bulk_operations_delete_item' => 'views_bulk_operations_delete_item',
     'views_bulk_operations_script_action' => 'views_bulk_operations_script_action',
     'node_make_sticky_action' => 'node_make_sticky_action',
     'node_make_unsticky_action' => 'node_make_unsticky_action',
@@ -441,7 +441,7 @@ function views_bulk_operations_views_default_views() {
   $handler->display->display_options['fields']['views_bulk_operations']['hide_empty'] = 0;
   $handler->display->display_options['fields']['views_bulk_operations']['empty_zero'] = 0;
   $handler->display->display_options['fields']['views_bulk_operations']['vbo']['selected_operations'] = array(
-    'views_bulk_operations_delete_user_action' => 'views_bulk_operations_delete_user_action',
+    'views_bulk_operations_delete_item' => 'views_bulk_operations_delete_item',
     'views_bulk_operations_script_action' => 'views_bulk_operations_script_action',
     'views_bulk_operations_user_roles_action' => 'views_bulk_operations_user_roles_action',
     'system_block_ip_action' => 0,
