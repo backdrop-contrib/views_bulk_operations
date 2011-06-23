@@ -6,6 +6,9 @@ QUICK START GUIDE
 actions visible to the user are selected.
 4. Go to the View page. VBO functionality should be present.
 
+Note that your old (D6, pre-alpha D7) views that used the VBO style plugin
+instead of the VBO field will need to be recreated.
+
 TECHNICAL DETAILS
 -----------------
 The module relies on the Views 3 "form" feature available in all Views releases after May 28th 2011.
@@ -24,7 +27,8 @@ resultset of any View that has the VBO field in its master display.
 Operations are gathered from two sources:
 1) Drupal Core Action API
 2) Rules 2 (preferred).
-The module also allows to use Batch API or the Drupal Queue to process the selected entities, in order to avoid timeouts.
+The module also allows to use Batch API or the Drupal Queue to process the
+selected entities, in order to avoid timeouts.
 
 RULES 2 INTEGRATION
 -------------------
