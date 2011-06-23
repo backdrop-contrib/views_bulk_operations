@@ -272,7 +272,7 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
       return NULL;
     }
     $operation = $this->all_operations[$key];
-    if ($operation['type'] == 'entity') { // Actions that accept any entity type.
+    if ($operation['type'] == 'entity' || $operation['type'] == 'system') { // Actions that accept any entity type.
       $entity_type = $this->get_entity_type();
       $operation['type'] = $entity_type;
     }
@@ -289,7 +289,7 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
     $options = array();
     $entity_type = $this->get_entity_type();
     foreach ($this->all_operations as $key => $operation) {
-      if ($operation['type'] == 'entity') { // Actions that accept any entity type.
+      if ($operation['type'] == 'entity' || $operation['type'] == 'system') { // Actions that accept any entity type.
         $operation['type'] = $entity_type;
       }
       if ($operation['type'] == $entity_type) {
