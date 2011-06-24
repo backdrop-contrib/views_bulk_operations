@@ -137,6 +137,8 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
   }
 
   function options_validate(&$form, &$form_state) {
+    parent::options_validate($form, $form_state);
+
     foreach ($form_state['values']['options']['vbo']['operations'] as $key => &$options) {
       if (empty($options['selected']) || !isset($options['settings'])) {
         continue;
@@ -151,6 +153,8 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
   }
 
   function options_submit(&$form, &$form_state) {
+    parent::options_submit($form, $form_state);
+
     foreach ($form_state['values']['options']['vbo']['operations'] as $key => &$options) {
       if (empty($options['selected']) || !isset($options['settings'])) {
         continue;
