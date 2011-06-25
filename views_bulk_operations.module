@@ -137,13 +137,6 @@ function views_bulk_operations_form_alter(&$form, &$form_state, $form_id) {
   if ($form_state['step'] == 'views_form_views_form') {
     $form = views_bulk_operations_form($form, $form_state, $vbo);
   }
-
-  // Usability improvement to standard "Send e-mail" action.
-  if (isset($form['operation']) && ($form['operation']['#value']['callback'] == 'system_send_email_action' || $form['operation']['#value'] == 'system_send_email_action')) {
-    // Hide recipient field, as we have already chosen it from user list.
-    $form['recipient']['#default_value'] = '%author';
-    $form['recipient']['#type'] = 'hidden';
-  }
 }
 
 /**
