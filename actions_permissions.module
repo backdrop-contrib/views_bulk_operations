@@ -4,19 +4,21 @@
  * Implements hook_permission().
  */
 function actions_permissions_permission() {
-  $perms = array();
+  $permissions = array();
   $actions = actions_list();
   foreach ($actions as $callback => $action) {
-    $perms += actions_permissions_get_perm($action['label'], $callback);
+    $permission = actions_permissions_get_perm($action['label'], $callback);
+    $permissions[$permission] = array(
+      'title' => t('Execute %label', array('%label' => $action['label'])),
+      'description' => t('Execute action %label (!callback).', array('%label' => $action['label'], '!callback' => $callback)),
+    );
   }
-  return $perms;
+  return $permissions;
 }
 
+/**
+ * Returns the permission name used in user_access().
+ */
 function actions_permissions_get_perm($label, $callback) {
-  $key = "execute $callback";
-  return array($key => array(
-      'title' => t('Execute !label', array('!label' => $label)),
-      'description' => t('Execute action "!label" (!callback).', array('!label' => $label, '!callback' => is_numeric($callback) ? "aid:$callback" : $callback)),
-    ),
-  );
+  return "execute $callback";
 }
