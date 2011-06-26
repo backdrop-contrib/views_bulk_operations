@@ -99,7 +99,7 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
       '#collapsed' => FALSE,
     );
     foreach ($this->get_operations_options() as $key => $label) {
-      $dom_id = 'edit-options-vbo-operations-' . str_replace('_', '-', $key) . '-selected';
+      $dom_id = 'edit-options-vbo-operations-' . str_replace('_', '-', $key);
       $form['vbo']['operations'][$key]['selected'] = array(
         '#type' => 'checkbox',
         '#title' => $label,
@@ -110,16 +110,28 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
         '#title' => t('Skip confirmation step'),
         '#default_value' => @$this->options['vbo']['operations'][$key]['skip_confirmation'],
         '#dependency' => array(
-          $dom_id => array(1),
+          $dom_id . '-selected' => array(1),
+        ),
+      );
+      $label = @$this->options['vbo']['operations'][$key]['label'];
+      $form['vbo']['operations'][$key]['override_label'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Override label'),
+        '#default_value' => $label !== '',
+        '#dependency' => array(
+          $dom_id . '-selected' => array(1),
         ),
       );
       $form['vbo']['operations'][$key]['label'] = array(
         '#type' => 'textfield',
-        '#title' => t('Override label'),
-        '#default_value' => @$this->options['vbo']['operations'][$key]['label'],
+        '#title' => t('Provide label'),
+        '#title_display' => 'invisible',
+        '#default_value' => $label,
         '#dependency' => array(
-          $dom_id => array(1),
+          $dom_id . '-selected' => array(1),
+          $dom_id . '-override-label' => array(1),
         ),
+        '#dependency_count' => 2,
       );
       $form_function = $this->all_operations[$key]['callback'] . '_views_bulk_operations_form';
       if (function_exists($form_function)) {
@@ -156,13 +168,21 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
     parent::options_submit($form, $form_state);
 
     foreach ($form_state['values']['options']['vbo']['operations'] as $key => &$options) {
-      if (empty($options['selected']) || !isset($options['settings'])) {
+      if (empty($options['selected'])) {
         continue;
       }
-      $operation = $this->all_operations[$key];
-      $form_function = $operation['callback'] . '_views_bulk_operations_form_submit';
-      if (function_exists($form_function)) {
-        call_user_func($form_function, $form, array('values' => $options['settings']));
+      // If the "Override label" checkbox was deselected, clear the entered value.
+      if (empty($options['override_label'])) {
+        $options['label'] = '';
+      }
+      // This action has its own settings, call the submit function that
+      // should handle them (if any).
+      if (!empty($options['settings'])) {
+        $operation = $this->all_operations[$key];
+        $form_function = $operation['callback'] . '_views_bulk_operations_form_submit';
+        if (function_exists($form_function)) {
+          call_user_func($form_function, $form, array('values' => $options['settings']));
+        }
       }
     }
   }
