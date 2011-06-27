@@ -21,13 +21,16 @@ function views_bulk_operations_rules_action($entity, $context) {
 }
 
 function views_bulk_operations_rules_action_form($form, &$form_state, $context) {
-  require_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'rules') . "/ui/ui.forms.inc";
+  $entity_key = $context['action']['callback arguments']['entity_key'];
+  $entity_type = $context['action']['type'];
+  $info = entity_get_info($entity_type);
 
-  $element = rules_action('component_' . $context['action']['key']);
-  $element->form($form, $form_state);
+  $set = rules_action_set(array($entity_key => array('type' => $entity_type, 'label' => $info['label'])));
+  $action = rules_action('component_' . $context['action']['key'], array($entity_key . ':select' => $entity_key));
+  $set->action($action);
+  $action->form($form, $form_state);
 
   // Remove the form element for the "entity" param. It will be passed in manually.
-  $entity_key = $context['action']['callback arguments']['entity_key'];
   unset($form['parameter'][$entity_key]);
 
   return $form;
@@ -39,6 +42,7 @@ function views_bulk_operations_rules_action_validate($form, $form_state) {
 
 function views_bulk_operations_rules_action_submit($form, $form_state) {
   return array(
-    'rules_element' => $form_state['rules_element'],
+    // Pass on the whole-action set for execution.
+    'rules_element' => $form_state['rules_element']->root(),
   );
 }
