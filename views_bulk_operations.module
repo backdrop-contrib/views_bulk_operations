@@ -133,6 +133,10 @@ function views_bulk_operations_form_alter(&$form, &$form_state, $form_id) {
   $form['#validate'][] = 'views_bulk_operations_form_validate';
   $form['#submit'][] = 'views_bulk_operations_form_submit';
 
+  // Quickfix for VBO & exposed filters using ajax. See http://drupal.org/node/1191928.
+  $query = drupal_get_query_parameters($_GET, array('q'));
+  $form['#action'] = url($vbo->view->get_url(), array('query' => $query));
+
   // Add basic VBO functionality.
   if ($form_state['step'] == 'views_form_views_form') {
     $form = views_bulk_operations_form($form, $form_state, $vbo);
