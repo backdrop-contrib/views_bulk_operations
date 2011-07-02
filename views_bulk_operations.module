@@ -10,11 +10,6 @@ define('VBO_EXECUTION_DIRECT',    1);
 define('VBO_EXECUTION_BATCH',     2);
 define('VBO_EXECUTION_QUEUE',     3);
 
-// Types of aggregate actions.
-define('VBO_AGGREGATE_FORCED',    1);
-define('VBO_AGGREGATE_FORBIDDEN', 0);
-define('VBO_AGGREGATE_OPTIONAL',  2);
-
 // Access operations.
 define('VBO_ACCESS_OP_VIEW',      0x01);
 define('VBO_ACCESS_OP_UPDATE',    0x02);
@@ -584,7 +579,7 @@ function _views_bulk_operations_execute($vbo, $rows, $operation, $operation_argu
   }
   $params['revision'] = $vbo->revision;
 
-  if ($operation['aggregate'] != VBO_AGGREGATE_FORCED && $options['execution_type'] == VBO_EXECUTION_BATCH) {
+  if (!$operation['aggregate'] && $options['execution_type'] == VBO_EXECUTION_BATCH) {
     $operations = array();
     foreach ($rows as $entity_id => $row_index) {
       $operations[] = array('_views_bulk_operations_batch_process', array($entity_id));
@@ -603,7 +598,7 @@ function _views_bulk_operations_execute($vbo, $rows, $operation, $operation_argu
     );
     batch_set($batch);
   }
-  elseif ($operation['aggregate'] != VBO_AGGREGATE_FORCED && $options['execution_type'] == VBO_EXECUTION_QUEUE) {
+  elseif (!$operation['aggregate'] && $options['execution_type'] == VBO_EXECUTION_QUEUE) {
     $entity_type = $vbo->get_entity_type();
     unset($params['view']);
     foreach ($rows as $entity_id => $row_index) {
@@ -624,7 +619,7 @@ function _views_bulk_operations_execute($vbo, $rows, $operation, $operation_argu
       )));
     }
   }
-  else /*if ($options['execution_type'] == VBO_EXECUTION_DIRECT)*/ {
+  else {
     @set_time_limit(0);
 
     $context['results']['rows'] = 0;
@@ -727,7 +722,7 @@ function _views_bulk_operations_direct_process($operation, $rows, $params, &$con
     return;
   }
 
-  if ($operation['aggregate'] != VBO_AGGREGATE_FORBIDDEN) {
+  if ($operation['aggregate']) {
     _views_bulk_operations_action_aggregate_do($operation, $entities, $params);
 
     $context['results']['log'][] = t('Performed aggregate %action on @types %ids.', array(

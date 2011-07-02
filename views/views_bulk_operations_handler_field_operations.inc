@@ -340,10 +340,10 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
         'label' => isset($operation['label']) ? $operation['label'] : '',
         'callback' => $callback,
         'callback arguments' => isset($operation['parameters']) ? $operation['parameters'] : array(),
-        'configurable' => isset($operation['configurable']) ? $operation['configurable'] : FALSE,
+        'configurable' => !empty($operation['configurable']),
         'source' => 'action',
         'type' => $operation['type'],
-        'aggregate' => isset($operation['aggregate']) ? (int)$operation['aggregate'] : VBO_AGGREGATE_FORBIDDEN,
+        'aggregate' => !empty($operation['aggregate']),
         'behavior' => isset($operation['behavior']) ? $operation['behavior'] : array(),
         'access operation' => $this->get_access_op($operation),
         'permissions' => isset($operation['permissions']) ? $operation['permissions'] : NULL,
@@ -376,7 +376,7 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
           'configurable' => count($parameter_info) > 1,
           'source' => 'rules_action',
           'type' => $first_parameter['type'],
-          'aggregate' => VBO_AGGREGATE_FORBIDDEN,
+          'aggregate' => FALSE,
           'access operation' => VBO_ACCESS_OP_UPDATE, // assume edit by default.
           'permissions' => NULL,
         );
