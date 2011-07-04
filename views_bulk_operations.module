@@ -5,11 +5,6 @@
  * Allows operations to be performed on items selected in a view.
  */
 
-// Types of bulk execution.
-define('VBO_EXECUTION_DIRECT',    1);
-define('VBO_EXECUTION_BATCH',     2);
-define('VBO_EXECUTION_QUEUE',     3);
-
 // Access operations.
 define('VBO_ACCESS_OP_VIEW',      0x01);
 define('VBO_ACCESS_OP_UPDATE',    0x02);
@@ -562,43 +557,45 @@ function views_bulk_operations_form_submit($form, &$form_state) {
 }
 
 /**
- * Helper function to execute the chosen action upon selected entities.
+ * Execute the chosen action upon selected entities.
+ *
+ * There are three different ways of executing the action:
+ * - Executing the action directly.
+ *     Simple, fast, fragile. Tells PHP to ignore the execution time limit,
+ *     loads all selected entities, runs the action. Of course, it's still
+ *     limited by available memory, so it's very easy to try and load too many
+ *     entities, which kills the script. This is the only execution type
+ *     available for aggregate actions, because they need all selected entities,
+ *     and Batch API / Drupal Queue are all about segmenting the entity loading
+ *     and action executing in order to get around memory limits and timeouts.
+ * - Using Batch API
+ *     The most commonly used method. Spreads the execution across several
+ *     background page requests, while showing a progress bar to the user.
+ *     Each time _views_bulk_operations_batch_process() runs, it tries to load
+ *     and execute a safe number of entities ($entity_load_capacity, defaults
+ *     to 10). If the total selected number of entities is less than that, the
+ *     code falls back to the direct execution method, since the execution can
+ *     fit into a single page request, and there's no gain in using Batch API.
+ * - Using the Drupal Queue.
+ *     Adds each entity separately to the queue, to be processed by a worker
+ *     function, which usually happens on cron.
  */
 function _views_bulk_operations_execute($vbo, $rows, $operation, $operation_arguments, $options) {
   global $user;
 
-  // Add action arguments.
+  // Add action arguments, callback arguments, other settings needed by helper
+  // functions for specific execution types.
   $params = array();
   if ($operation['configurable'] && is_array($operation_arguments)) {
     $params += $operation_arguments;
   }
-  // Add static callback arguments. Note that in the case of actions, static arguments
-  // are picked up from the database in actions_do().
   if (isset($operation['callback arguments'])) {
     $params += $operation['callback arguments'];
   }
   $params['revision'] = $vbo->revision;
+  $params['entity_load_capacity'] = $vbo->options['vbo']['entity_load_capacity'];
 
-  if (!$operation['aggregate'] && $options['execution_type'] == VBO_EXECUTION_BATCH) {
-    $operations = array();
-    foreach ($rows as $entity_id => $row_index) {
-      $operations[] = array('_views_bulk_operations_batch_process', array($entity_id));
-    }
-
-    // Save the options in the session because Batch API doesn't give a way to
-    // send a parameter to the finished callback.
-    $_SESSION['vbo_options']['display_result'] = $options['display_result'];
-    $_SESSION['vbo_options']['operation'] = $operation;
-    $_SESSION['vbo_options']['params'] = serialize($params);
-
-    $batch = array(
-      'operations' => $operations,
-      'finished' => '_views_bulk_operations_execute_finished',
-      'title' => t('Performing %action on selected rows...', array('%action' => $operation['label'])),
-    );
-    batch_set($batch);
-  }
-  elseif (!$operation['aggregate'] && $options['execution_type'] == VBO_EXECUTION_QUEUE) {
+  if (!$operation['aggregate'] && !empty($operation['options']['use_queue'])) {
     $entity_type = $vbo->get_entity_type();
     unset($params['view']);
     foreach ($rows as $entity_id => $row_index) {
@@ -618,6 +615,23 @@ function _views_bulk_operations_execute($vbo, $rows, $operation, $operation_argu
         '%action' => $operation['label'],
       )));
     }
+  }
+  elseif (!$operation['aggregate'] && $params['entity_load_capacity'] < count($rows)) {
+    // Save the options in the session because Batch API doesn't give a way to
+    // send a parameter to the finished callback.
+    $_SESSION['vbo_options']['display_result'] = $options['display_result'];
+    $_SESSION['vbo_options']['operation'] = $operation;
+    $_SESSION['vbo_options']['params'] = serialize($params);
+
+    $batch = array(
+      'operations' => array(
+        array('_views_bulk_operations_batch_process', array($rows)),
+      ),
+      'finished' => '_views_bulk_operations_execute_finished',
+      'progress_message' => '',
+      'title' => t('Performing %action on selected rows...', array('%action' => $operation['label'])),
+    );
+    batch_set($batch);
   }
   else {
     @set_time_limit(0);
@@ -639,6 +653,10 @@ function _views_bulk_operations_queue_process($data) {
   $entity_type = $operation['type'];
   $entities = _views_bulk_operations_entity_load($entity_type, array($entity_id), $params['revision']);
   $entity = reset($entities);
+  // No entity found. It might have been deleted in the meantime. Abort.
+  if (!$entity) {
+    return;
+  }
 
   $account = user_load($uid);
   if (!_views_bulk_operations_entity_access($operation, $entity_type, $entity, $account)) {
@@ -664,39 +682,56 @@ function _views_bulk_operations_queue_process($data) {
 /**
  * Helper function to handle Batch API operations.
  */
-function _views_bulk_operations_batch_process($entity_id, &$context) {
-  $operation = $_SESSION['vbo_options']['operation'];
-  $params = unserialize($_SESSION['vbo_options']['params']);
-
-  if (!isset($context['results']['time'])) {
+function _views_bulk_operations_batch_process($rows, &$context) {
+  if (!isset($context['sandbox']['progress'])) {
+    $context['sandbox']['progress'] = 0;
+    $context['sandbox']['max'] = count($rows);
     $context['results']['time'] = microtime(TRUE);
   }
 
+  $operation = $_SESSION['vbo_options']['operation'];
+  $params = unserialize($_SESSION['vbo_options']['params']);
+  // Process rows in groups.
+  $remaining = $context['sandbox']['max'] - $context['sandbox']['progress'];
+  $count = min($params['entity_load_capacity'], $remaining);
+  $row_group = array_slice($rows, $context['sandbox']['progress'], $count, TRUE);
   $entity_type = $operation['type'];
-  $entities = _views_bulk_operations_entity_load($entity_type, array($entity_id), $params['revision']);
-  $entity = reset($entities);
 
-  if (!_views_bulk_operations_entity_access($operation, $entity_type, $entity)) {
-    $context['results']['log'][] = t('Skipped %action on @type %title due to insufficient permissions.', array(
+  $entities = _views_bulk_operations_entity_load($entity_type, array_keys($row_group), $params['revision']);
+  foreach ($entities as $entity_id => $entity) {
+    if (!_views_bulk_operations_entity_access($operation, $entity_type, $entity)) {
+      $context['results']['log'][] = t('Skipped %action on @type %title due to insufficient permissions.', array(
+        '%action' => $operation['label'],
+        '@type' => $entity_type,
+        '%title' => _views_bulk_operations_entity_label($entity_type, $entity),
+      ));
+      $context['sandbox']['progress']++;
+      continue;
+    }
+
+    _views_bulk_operations_action_do($operation, $entity_id, $entity, $params);
+
+    $context['results']['log'][] = t('Performed %action on @type %title.', array(
       '%action' => $operation['label'],
       '@type' => $entity_type,
       '%title' => _views_bulk_operations_entity_label($entity_type, $entity),
     ));
-    return;
+    $context['sandbox']['progress']++;
+    unset($row_group[$entity_id]);
+  }
+  // Looks like some entities couldn't be loaded. Adjust the count and move on.
+  if (count($row_group)) {
+    $context['sandbox']['progress'] += count($row_group);
   }
 
-  _views_bulk_operations_action_do($operation, $entity_id, $entity, $params);
-
-  $context['results']['log'][] = t('Performed %action on @type %title.', array(
-    '%action' => $operation['label'],
-    '@type' => $entity_type,
-    '%title' => _views_bulk_operations_entity_label($entity_type, $entity),
-  ));
-  if (isset($context['results']['rows'])) {
-    $context['results']['rows'] += 1;
+  if ($context['sandbox']['progress'] != $context['sandbox']['max']) {
+    // Provide an estimation of the completion level we've reached.
+    $context['finished'] = $context['sandbox']['progress'] / $context['sandbox']['max'];
+    $context['message'] = t('Processed @current out of @total', array('@current' => $context['sandbox']['progress'], '@total' => $context['sandbox']['max']));
   }
   else {
-    $context['results']['rows'] = 1;
+    // All done. Save the number of results processed, for the finish callback.
+    $context['results']['rows'] = $context['sandbox']['progress'];
   }
 }
 
@@ -717,7 +752,6 @@ function _views_bulk_operations_direct_process($operation, $rows, $params, &$con
       ));
     }
   }
-
   if (empty($entities)) {
     return;
   }
@@ -960,6 +994,7 @@ function _views_bulk_operations_entity_load($entity_type, $ids, $revision = FALS
   else {
     // D7 can't load multiple entities by revision_id. Lovely.
     $info = entity_get_info($entity_type);
+    $entities = array();
     foreach ($ids as $revision_id) {
       $loaded_entities = entity_load($entity_type, array(), array($info['entity keys']['revision'] => $revision_id));
       $entities[$revision_id] = reset($loaded_entities);

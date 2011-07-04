@@ -30,8 +30,8 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
 
     $options['vbo'] = array(
       'contains' => array(
+        'entity_load_capacity' => array('default' => 10),
         'operations' => array('default' => array()),
-        'execution_type' => array('default' => VBO_EXECUTION_DIRECT),
         'display_type' => array('default' => 0),
         'display_result' => array('default' => TRUE),
         'merge_single_action' => array('default' => TRUE),
@@ -49,19 +49,14 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
       '#type' => 'fieldset',
       '#title' => t('Views Bulk Operations'),
       '#collapsible' => TRUE,
-      '#collapsed' => TRUE,
+      '#collapsed' => FALSE,
     );
 
-    $execution = array(
-      VBO_EXECUTION_DIRECT => t('Invoke them directly'),
-      VBO_EXECUTION_BATCH => t('Use Batch API'),
-      VBO_EXECUTION_QUEUE => t('Use Drupal Queue'),
-    );
-    $form['vbo']['execution_type'] = array(
-      '#type' => 'radios',
-      '#title' => t('To execute operations'),
-      '#default_value' => $this->options['vbo']['execution_type'],
-      '#options' => $execution,
+    $form['vbo']['entity_load_capacity'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Number of entities to load at once'),
+      '#description' => t("Improve performance at the cost of memory usage. Set to '1' if you're having problems."),
+      '#default_value' => $this->options['vbo']['entity_load_capacity'],
     );
     $form['vbo']['display_type'] = array(
       '#type' => 'radios',
@@ -105,6 +100,16 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
         '#title' => $label,
         '#default_value' => @$this->options['vbo']['operations'][$key]['selected'],
       );
+      if (!$this->all_operations[$key]['aggregate']) {
+        $form['vbo']['operations'][$key]['use_queue'] = array(
+          '#type' => 'checkbox',
+          '#title' => t('Enqueue the operation instead of executing it directly'),
+          '#default_value' => @$this->options['vbo']['operations'][$key]['use_queue'],
+          '#dependency' => array(
+            $dom_id . '-selected' => array(1),
+          ),
+        );
+      }
       $form['vbo']['operations'][$key]['skip_confirmation'] = array(
         '#type' => 'checkbox',
         '#title' => t('Skip confirmation step'),
