@@ -815,11 +815,16 @@ function _views_bulk_operations_action_aggregate_do($operation, $entities, $para
 function _views_bulk_operations_action_permission($operation, $account = NULL) {
   global $user;
 
+  if (!$account) {
+    $account = $user;
+  }
+  $user_label = _views_bulk_operations_entity_label('user', $account);
+
   if (module_exists('actions_permissions')) {
     $perm = actions_permissions_get_perm($operation['original label'], $operation['callback']);
     if (!user_access($perm, $account)) {
       watchdog('actions permissions', 'An attempt by user %user to !perm was blocked due to insufficient permissions.',
-        array('!perm' => $perm, '%user' => isset($account) ? $account->name : $user->name), WATCHDOG_ALERT);
+        array('!perm' => $perm, '%user' => $user_label), WATCHDOG_ALERT);
       drupal_access_denied();
       drupal_exit();
     }
@@ -830,7 +835,7 @@ function _views_bulk_operations_action_permission($operation, $account = NULL) {
     foreach ($operation['permissions'] as $perm) {
       if (!user_access($perm, $account)) {
         watchdog('actions permissions', 'An attempt by user %user to !perm was blocked due to insufficient permissions.',
-          array('!perm' => $perm, '%user' => isset($account) ? $account->name : $user->name), WATCHDOG_ALERT);
+          array('!perm' => $perm, '%user' => $user_label), WATCHDOG_ALERT);
         drupal_access_denied();
         drupal_exit();
       }
@@ -841,7 +846,7 @@ function _views_bulk_operations_action_permission($operation, $account = NULL) {
   if ($operation['source'] == 'rules_action') {
     if (!rules_action('component_' . $operation['key'])->access()) {
       watchdog('actions permissions', 'An attempt by user %user to rules action !key was blocked due to insufficient permissions.',
-        array('!key' => $operation['key'], '%user' => isset($account) ? $account->name : $user->name), WATCHDOG_ALERT);
+        array('!key' => $operation['key'], '%user' => $user_label), WATCHDOG_ALERT);
       drupal_access_denied();
       drupal_exit();
     }
