@@ -595,17 +595,24 @@ function _views_bulk_operations_execute($vbo, $rows, $operation, $operation_argu
   $params['revision'] = $vbo->revision;
   $params['entity_load_capacity'] = $vbo->options['vbo']['entity_load_capacity'];
 
+  // If the selected rows need to be passed to the action, add them in.
+  if ($operation['pass rows']) {
+    foreach ($rows as $entity_id => $row_index) {
+      $rows[$entity_id] = $vbo->view->result[$row_index];
+    }
+  }
+
   if (!$operation['aggregate'] && !empty($operation['options']['use_queue'])) {
     $entity_type = $vbo->get_entity_type();
     unset($params['view']);
-    foreach ($rows as $entity_id => $row_index) {
+    foreach ($rows as $entity_id => $row) {
       $job = array(
         'description' => t('Perform %action on @type !entity_id.', array(
           '%action' => $operation['label'],
           '@type' => $entity_type,
           '!entity_id' => $entity_id
         )),
-        'arguments' => array($entity_id, $row_index, $operation, $params, $user->uid, $options['display_result']),
+        'arguments' => array($entity_id, $row, $operation, $params, $user->uid, $options['display_result']),
       );
       $queue = DrupalQueue::get('views_bulk_operations');
       $queue->createItem($job);
@@ -648,7 +655,7 @@ function _views_bulk_operations_execute($vbo, $rows, $operation, $operation_argu
  * Worker function to handle actions coming from the Drupal Queue.
  */
 function _views_bulk_operations_queue_process($data) {
-  list($entity_id, $row_index, $operation, $params, $uid, $display_result) = $data['arguments'];
+  list($entity_id, $row, $operation, $params, $uid, $display_result) = $data['arguments'];
 
   $entity_type = $operation['type'];
   $entities = _views_bulk_operations_entity_load($entity_type, array($entity_id), $params['revision']);
@@ -668,6 +675,10 @@ function _views_bulk_operations_queue_process($data) {
     return;
   }
 
+  // Pass the selected row to the action if needed.
+  if ($operation['pass rows']) {
+    $params['rows'] = array($entity_id => $row);
+  }
   _views_bulk_operations_action_do($operation, $entity_id, $entity, $params);
 
   if ($display_result) {
@@ -709,6 +720,10 @@ function _views_bulk_operations_batch_process($rows, &$context) {
       continue;
     }
 
+    // Pass the selected row to the action if needed.
+    if ($operation['pass rows']) {
+      $params['rows'] = array($entity_id => $rows[$entity_id]);
+    }
     _views_bulk_operations_action_do($operation, $entity_id, $entity, $params);
 
     $context['results']['log'][] = t('Performed %action on @type %title.', array(
@@ -757,6 +772,10 @@ function _views_bulk_operations_direct_process($operation, $rows, $params, &$con
   }
 
   if ($operation['aggregate']) {
+    // Pass the selected rows to the action if needed.
+    if ($operation['pass rows']) {
+      $params['rows'] = $rows;
+    }
     _views_bulk_operations_action_aggregate_do($operation, $entities, $params);
 
     $context['results']['log'][] = t('Performed aggregate %action on @types %ids.', array(
@@ -768,6 +787,10 @@ function _views_bulk_operations_direct_process($operation, $rows, $params, &$con
   }
   else {
     foreach ($entities as $entity_id => $entity) {
+      // Pass the selected row to the action if needed.
+      if ($operation['pass rows']) {
+        $params['rows'] = array($entity_id => $rows[$entity_id]);
+      }
       _views_bulk_operations_action_do($operation, $entity_id, $entity, $params);
 
       $context['results']['log'][] = t('Performed %action on @type %title.', array(

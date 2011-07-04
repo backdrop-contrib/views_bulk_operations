@@ -352,6 +352,7 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
         'behavior' => isset($operation['behavior']) ? $operation['behavior'] : array(),
         'access operation' => $this->get_access_op($operation),
         'permissions' => isset($operation['permissions']) ? $operation['permissions'] : NULL,
+        'pass rows' => !empty($operation['pass rows']),
       );
     }
 
@@ -384,6 +385,7 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
           'aggregate' => FALSE,
           'access operation' => VBO_ACCESS_OP_UPDATE, // assume edit by default.
           'permissions' => NULL,
+          'pass rows' => FALSE,
         );
       }
     }
