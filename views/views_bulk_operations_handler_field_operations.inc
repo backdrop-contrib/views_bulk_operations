@@ -52,12 +52,6 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
       '#collapsed' => FALSE,
     );
 
-    $form['vbo']['entity_load_capacity'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Number of entities to load at once'),
-      '#description' => t("Improve performance at the cost of memory usage. Set to '1' if you're having problems."),
-      '#default_value' => $this->options['vbo']['entity_load_capacity'],
-    );
     $form['vbo']['display_type'] = array(
       '#type' => 'radios',
       '#title' => t('Display operations as'),
@@ -84,6 +78,12 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
       '#title' => t('Merge single action\'s form with the row selection view'),
       '#description' => t('In case only one action is selected *and* this action is configurable, display its action form along with the row selection view.'),
       '#default_value' => $this->options['vbo']['merge_single_action'],
+    );
+    $form['vbo']['entity_load_capacity'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Number of entities to load at once'),
+      '#description' => t("Improve execution performance at the cost of memory usage. Set to '1' if you're having problems."),
+      '#default_value' => $this->options['vbo']['entity_load_capacity'],
     );
     // Display operations and their settings.
     $form['vbo']['operations'] = array(
