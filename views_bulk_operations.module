@@ -388,10 +388,6 @@ function _views_bulk_operations_get_selection($vbo, $form_state) {
  */
 function views_bulk_operations_form_validate($form, &$form_state) {
   $vbo = _views_bulk_operations_get_field($form_state['build_info']['args'][0]);
-  // This is not a VBO-enabled views form.
-  if (!$vbo) {
-    return;
-  }
 
   switch ($form_state['step']) {
     case 'views_form_views_form':
@@ -402,8 +398,8 @@ function views_bulk_operations_form_validate($form, &$form_state) {
         }
       }
       else {
-        if (!empty($form_state['clicked_button']['#hash'])) {
-          $form_state['values']['operation'] = $form_state['clicked_button']['#hash'];
+        if (!empty($form_state['triggering_element']['#hash'])) {
+          $form_state['values']['operation'] = $form_state['triggering_element']['#hash'];
         }
         if (!$form_state['values']['operation']) { // No action selected
           form_set_error('operation', t('No operation selected. Please select an operation to perform.'));
@@ -475,10 +471,6 @@ function _views_bulk_operations_adjust_selection(&$selection, $select_all, $vbo)
  */
 function views_bulk_operations_form_submit($form, &$form_state) {
   $vbo = _views_bulk_operations_get_field($form_state['build_info']['args'][0]);
-  // This is not a VBO-enabled views form.
-  if (!$vbo) {
-    return;
-  }
 
   switch ($form_state['step']) {
     case 'views_form_views_form':
@@ -604,7 +596,6 @@ function _views_bulk_operations_execute($vbo, $rows, $operation, $operation_argu
 
   if (!$operation['aggregate'] && !empty($operation['options']['use_queue'])) {
     $entity_type = $vbo->get_entity_type();
-    unset($params['view']);
     foreach ($rows as $entity_id => $row) {
       $job = array(
         'description' => t('Perform %action on @type !entity_id.', array(
