@@ -138,7 +138,7 @@ class ViewsBulkOperationsAction extends ViewsBulkOperationsBaseOperation {
    *   An array of related data provided by the caller.
    */
   public function execute($entity, $context) {
-    $context['entity_type'] = $this->operationInfo['type'];
+    $context['entity_type'] = $this->entityType;
     $context += $this->formOptions;
     $context += $this->operationInfo['parameters'];
 
