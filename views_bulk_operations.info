@@ -5,4 +5,5 @@ dependencies[] = views
 package = Views
 core = 7.x
 
+files[] = plugins/operation_types/base.class.php
 files[] = views/views_bulk_operations_handler_field_operations.inc

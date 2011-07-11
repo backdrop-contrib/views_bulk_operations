@@ -34,7 +34,7 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
         'operations' => array('default' => array()),
         'display_type' => array('default' => 0),
         'display_result' => array('default' => TRUE),
-        'merge_single_action' => array('default' => TRUE),
+        'merge_single_action' => array('default' => FALSE),
         'force_single' => array('default' => FALSE),
       ),
     );
@@ -261,57 +261,42 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
   }
 
   function get_selected_operations() {
+    global $user;
+
     $selected = array();
     foreach ($this->options['vbo']['operations'] as $key => $options) {
       if (empty($options['selected']) || !isset($this->all_operations[$key])) {
         continue;
       }
 
-      if (module_exists('actions_permissions')) {
-        $perm = actions_permissions_get_perm($this->all_operations[$key]['label'], $this->all_operations[$key]['callback']);
-        if (!user_access($perm)) {
-          continue;
-        }
+      $operation = $this->get_operation($key);
+      if (!$operation->access($user)) {
+        continue;
       }
-      if (!empty($this->all_operations[$key]['permissions'])) {
-        foreach ($this->all_operations[$key]['permissions'] as $perm) {
-          if (!user_access($perm)) {
-            continue 2;
-          }
-        }
-      }
-      if ($this->all_operations[$key]['source'] == 'rules_action') {
-        if (!rules_action('component_' . $key)->access()) {
-          continue 2;
-        }
-      }
-
-      if (!empty($this->options['vbo']['operations'][$key]['label'])) {
-        $selected[$key] = t($this->options['vbo']['operations'][$key]['label']);
-      }
-      else {
-        $selected[$key] = $this->all_operations[$key]['label'];
-      }
+      $selected[$key] = $operation->label();
     }
     return $selected;
   }
 
-  function get_operation_info($key) {
+  function get_operation($key) {
     if (empty($this->all_operations[$key])) {
       return NULL;
     }
-    $operation = $this->all_operations[$key];
-    if ($operation['type'] == 'entity' || $operation['type'] == 'system') { // Actions that accept any entity type.
+
+    $operations = &drupal_static(__FUNCTION__);
+    if (!isset($operations[$key])) {
+      $operation_info = $this->all_operations[$key];
       $entity_type = $this->get_entity_type();
-      $operation['type'] = $entity_type;
+      // Remember the original label for use in permissions.
+      $operation_info['original label'] = $operation_info['label'];
+      if (!empty($this->options['vbo']['operations'][$key]['label'])) {
+        $operation_info['label'] = t($this->options['vbo']['operations'][$key]['label']);
+      }
+      $plugin = views_bulk_operations_get_operation_type($operation_info['plugin']);
+
+      $operations[$key] = new $plugin['handler']['class']($entity_type, $operation_info, $this->options['vbo']['operations'][$key]);
     }
-    // Remember the original label for use in permissions.
-    $operation['original label'] = $operation['label'];
-    if (!empty($this->options['vbo']['operations'][$key]['label'])) {
-      $operation['label'] = t($this->options['vbo']['operations'][$key]['label']);
-    }
-    $operation['options'] = $this->options['vbo']['operations'][$key] + array('settings' => NULL);
-    return $operation;
+    return $operations[$key];
   }
 
   private function get_operations_options() {
@@ -335,85 +320,15 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
     }
 
     $operations = array();
-
-    // Merge in Drupal actions, including those declared by VBO itself.
-    $action_operations = actions_list();
-    foreach ($action_operations as $callback => $operation) {
-      $key = isset($operation['key']) ? $operation['key'] : $callback;
-      $operations[$key] = array(
-        'key' => $key,
-        'label' => isset($operation['label']) ? $operation['label'] : '',
-        'callback' => $callback,
-        'callback arguments' => isset($operation['parameters']) ? $operation['parameters'] : array(),
-        'configurable' => !empty($operation['configurable']),
-        'source' => 'action',
-        'type' => $operation['type'],
-        'aggregate' => !empty($operation['aggregate']),
-        'behavior' => isset($operation['behavior']) ? $operation['behavior'] : array(),
-        'access operation' => $this->get_access_op($operation),
-        'permissions' => isset($operation['permissions']) ? $operation['permissions'] : NULL,
-        'pass rows' => !empty($operation['pass rows']),
-      );
-    }
-
-    // Merge in actions provided by Rules 2.
-    if (module_exists('rules')) {
-      $entity_info = entity_get_info();
-      $entity_types = array_keys($entity_info);
-      $supported_types = array('entity');
-      foreach ($entity_types as $type) {
-        $supported_types[] = $type;
-      }
-      foreach (rules_get_components(FALSE, 'action') as $component_key => $component) {
-        $parameter_info = $component->parameterInfo();
-        $first_parameter = reset($parameter_info);
-        $parameter_keys = array_keys($parameter_info);
-        $entity_key = reset($parameter_keys);
-        // If the first param is not an entity type, skip the component.
-        if (!in_array($first_parameter['type'], $supported_types)) {
-          continue;
-        }
-
-        $operations[$component_key] = array(
-          'key' => $component_key,
-          'label' => $component->label,
-          'callback' => 'views_bulk_operations_rules_action',
-          'callback arguments' => array('component_key' => $component_key, 'entity_key' => $entity_key),
-          'configurable' => count($parameter_info) > 1,
-          'source' => 'rules_action',
-          'type' => $first_parameter['type'],
-          'aggregate' => FALSE,
-          'access operation' => VBO_ACCESS_OP_UPDATE, // assume edit by default.
-          'permissions' => NULL,
-          'pass rows' => FALSE,
-        );
+    $plugins = views_bulk_operations_get_operation_types();
+    foreach ($plugins as $plugin) {
+      if (isset($plugin['list callback']) && function_exists($plugin['list callback'])) {
+        $operations += $plugin['list callback']();
       }
     }
 
     uasort($operations, create_function('$a, $b', 'return strcasecmp($a["label"], $b["label"]);'));
     $this->all_operations = $operations;
-  }
-
-  private function get_access_op($operation) {
-    // Assume edit by default.
-    if (!isset($operation['behavior'])) {
-      $operation['behavior'] = array('changes_property');
-    }
-
-    $access_op = 0;
-    if (in_array('views_property', $operation['behavior'])) {
-      $access_op |= VBO_ACCESS_OP_VIEW;
-    }
-    if (in_array('changes_property', $operation['behavior'])) {
-      $access_op |= VBO_ACCESS_OP_UPDATE;
-    }
-    if (in_array('creates_property', $operation['behavior'])) {
-      $access_op |= VBO_ACCESS_OP_CREATE;
-    }
-    if (in_array('deletes_property', $operation['behavior'])) {
-      $access_op |= VBO_ACCESS_OP_DELETE;
-    }
-    return $access_op;
   }
 
   function get_operation_settings($operation) {
