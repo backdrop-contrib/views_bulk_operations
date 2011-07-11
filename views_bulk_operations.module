@@ -703,14 +703,9 @@ function _views_bulk_operations_execute($vbo, $rows, $operation, $force_direct =
     }
   }
   elseif (!$force_direct && $options['entity_load_capacity'] < count($rows)) {
-    // Save the options in the session because Batch API doesn't give a way to
-    // send a parameter to the finished callback.
-    $_SESSION['vbo_options']['options'] = $options;
-    $_SESSION['vbo_options']['operation'] = $operation;
-
     $batch = array(
       'operations' => array(
-        array('_views_bulk_operations_batch_process', array($rows)),
+        array('_views_bulk_operations_batch_process', array($rows, $operation, $options)),
       ),
       'finished' => '_views_bulk_operations_execute_finished',
       'progress_message' => '',
@@ -772,15 +767,13 @@ function _views_bulk_operations_queue_process($data) {
 /**
  * Process function for the Batch API execution type.
  */
-function _views_bulk_operations_batch_process($rows, &$context) {
+function _views_bulk_operations_batch_process($rows, $operation, $options, &$context) {
   if (!isset($context['sandbox']['progress'])) {
     $context['sandbox']['progress'] = 0;
     $context['sandbox']['max'] = count($rows);
     $context['results']['time'] = microtime(TRUE);
   }
 
-  $operation = $_SESSION['vbo_options']['operation'];
-  $options = unserialize($_SESSION['vbo_options']['options']);
   // Process rows in groups.
   $remaining = $context['sandbox']['max'] - $context['sandbox']['progress'];
   $count = min($options['entity_load_capacity'], $remaining);
@@ -825,8 +818,9 @@ function _views_bulk_operations_batch_process($rows, &$context) {
     $context['message'] = t('Processed @current out of @total', array('@current' => $context['sandbox']['progress'], '@total' => $context['sandbox']['max']));
   }
   else {
-    // All done. Save the number of results processed, for the finish callback.
+    // All done. Save data for the finish callback.
     $context['results']['rows'] = $context['sandbox']['progress'];
+    $context['results']['options'] = $options;
   }
 }
 
@@ -928,15 +922,13 @@ function _views_bulk_operations_execute_finished($success, $results, $operations
       array('@operation' => $error_operation[0], '@arguments' => print_r($error_operation[0], TRUE)));
   }
   if (empty($options)) {
-    $options = $_SESSION['vbo_options'];
+    // If the execution went through Batch API, the options are in $results.
+    $options = $results['options'];
   }
 
-  // Inform other modules that VBO has finished executing.
-  module_invoke_all('views_bulk_operations_finish', $options['operation'], array('results' => $results));
   if (!empty($options['display_result'])) {
     drupal_set_message($message);
   }
-  unset($_SESSION['vbo_options']); // unset the options which were used for just one invocation
 }
 
 /**
