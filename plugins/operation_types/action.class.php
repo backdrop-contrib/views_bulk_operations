@@ -47,7 +47,7 @@ class ViewsBulkOperationsAction extends ViewsBulkOperationsBaseOperation {
   public function access($account) {
     // Use actions_permissions if enabled.
     if (module_exists('actions_permissions')) {
-      $perm = actions_permissions_get_perm($this->operationInfo['original label'], $this->operationInfo['callback']);
+      $perm = actions_permissions_get_perm($this->operationInfo['label'], $this->operationInfo['callback']);
       if (!user_access($perm, $account)) {
         return FALSE;
       }
@@ -75,7 +75,7 @@ class ViewsBulkOperationsAction extends ViewsBulkOperationsBaseOperation {
    * @param $context
    *   An array of related data provided by the caller ("selection", for example).
    */
-  public function form($form, &$form_state, $context) {
+  public function form($form, &$form_state, array $context) {
     $form_callback = $this->operationInfo['callback'] . '_form';
     return $form_callback($context);
   }
@@ -137,7 +137,7 @@ class ViewsBulkOperationsAction extends ViewsBulkOperationsBaseOperation {
    * @param $context
    *   An array of related data provided by the caller.
    */
-  public function execute($entity, $context) {
+  public function execute($entity, array $context) {
     $context['entity_type'] = $this->entityType;
     $context += $this->formOptions;
     $context += $this->operationInfo['parameters'];

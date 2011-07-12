@@ -287,11 +287,6 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
     if (!isset($operations[$key])) {
       $operation_info = $this->all_operations[$key];
       $entity_type = $this->get_entity_type();
-      // Remember the original label for use in permissions.
-      $operation_info['original label'] = $operation_info['label'];
-      if (!empty($this->options['vbo']['operations'][$key]['label'])) {
-        $operation_info['label'] = t($this->options['vbo']['operations'][$key]['label']);
-      }
       $plugin = views_bulk_operations_get_operation_type($operation_info['plugin']);
 
       $operations[$key] = new $plugin['handler']['class']($entity_type, $operation_info, $this->options['vbo']['operations'][$key]);

@@ -27,7 +27,7 @@ class ViewsBulkOperationsRulesComponent extends ViewsBulkOperationsBaseOperation
    * @param $context
    *   An array of related data provided by the caller ("selection", for example).
    */
-  public function form($form, &$form_state, $context) {
+  public function form($form, &$form_state, array $context) {
     $entity_key = $this->operationInfo['parameters']['entity_key'];
     $entity_type = $this->entityType;
     $info = entity_get_info($entity_type);
@@ -80,7 +80,7 @@ class ViewsBulkOperationsRulesComponent extends ViewsBulkOperationsBaseOperation
    * @param $context
    *   An array of related data provided by the caller.
    */
-  public function execute($entity, $context) {
+  public function execute($entity, array $context) {
     // If there was a config form, there's a rules_element.
     // If not, fallback to the component key.
     if ($this->configurable()) {

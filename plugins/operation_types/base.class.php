@@ -65,9 +65,12 @@ abstract class ViewsBulkOperationsBaseOperation {
    * to the user.
    */
   public function label() {
-    $label = $this->getAdminOption('label');
-    // If the admin didn't specify any label, fallback to the default one.
-    if (!$label) {
+    $admin_label = $this->getAdminOption('label');
+    if (!empty($admin_label)) {
+      $label = t($admin_label);
+    }
+    else {
+      // If the admin didn't specify any label, fallback to the default one.
       $label = $this->operationInfo['label'];
     }
     return $label;
@@ -101,7 +104,7 @@ abstract class ViewsBulkOperationsBaseOperation {
    * @param $context
    *   An array of related data provided by the caller ("selection", for example).
    */
-  abstract function form($form, &$form_state, $context);
+  abstract function form($form, &$form_state, array $context);
 
   /**
    * Validates the configuration form.
@@ -152,5 +155,5 @@ abstract class ViewsBulkOperationsBaseOperation {
    * @param $context
    *   An array of related data provided by the caller.
    */
-  abstract function execute($entity, $context);
+  abstract function execute($entity, array $context);
 }
