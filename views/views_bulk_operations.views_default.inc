@@ -13,7 +13,7 @@ function views_bulk_operations_views_default_views() {
   $view->base_table = 'node';
   $view->human_name = 'Content';
   $view->core = 7;
-  $view->api_version = '3.0-alpha1';
+  $view->api_version = '3.0';
   $view->disabled = TRUE; /* Edit this to true to make a default view disabled initially */
 
   /* Display: Master */
@@ -129,16 +129,6 @@ function views_bulk_operations_views_default_views() {
       'skip_confirmation' => 0,
       'label' => '',
     ),
-    'flag_node_action' => array(
-      'selected' => 0,
-      'skip_confirmation' => 0,
-      'label' => '',
-    ),
-    'rules_jedan_rule' => array(
-      'selected' => 0,
-      'skip_confirmation' => 0,
-      'label' => '',
-    ),
     'node_make_sticky_action' => array(
       'selected' => 1,
       'skip_confirmation' => 0,
@@ -169,27 +159,7 @@ function views_bulk_operations_views_default_views() {
       'skip_confirmation' => 0,
       'label' => '',
     ),
-    'presswire_action' => array(
-      'selected' => 0,
-      'skip_confirmation' => 0,
-      'label' => '',
-    ),
     'node_save_action' => array(
-      'selected' => 0,
-      'skip_confirmation' => 0,
-      'label' => '',
-    ),
-    'rules_test_action_set' => array(
-      'selected' => 0,
-      'skip_confirmation' => 0,
-      'label' => '',
-    ),
-    'rules_test2' => array(
-      'selected' => 0,
-      'skip_confirmation' => 0,
-      'label' => '',
-    ),
-    'rules_test3' => array(
       'selected' => 0,
       'skip_confirmation' => 0,
       'label' => '',
@@ -381,7 +351,7 @@ function views_bulk_operations_views_default_views() {
   $handler->display->display_options['filters']['status']['id'] = 'status';
   $handler->display->display_options['filters']['status']['table'] = 'node';
   $handler->display->display_options['filters']['status']['field'] = 'status';
-  $handler->display->display_options['filters']['status']['value'] = '0';
+  $handler->display->display_options['filters']['status']['value'] = 'All';
   $handler->display->display_options['filters']['status']['group'] = 0;
   $handler->display->display_options['filters']['status']['exposed'] = TRUE;
   $handler->display->display_options['filters']['status']['expose']['operator_id'] = '';
@@ -428,7 +398,7 @@ function views_bulk_operations_views_default_views() {
   $view->base_table = 'users';
   $view->human_name = 'People';
   $view->core = 7;
-  $view->api_version = '3.0-alpha1';
+  $view->api_version = '3.0';
   $view->disabled = TRUE; /* Edit this to true to make a default view disabled initially */
 
   /* Display: Master */
@@ -537,37 +507,12 @@ function views_bulk_operations_views_default_views() {
       'skip_confirmation' => 0,
       'label' => '',
     ),
-    'flag_user_action' => array(
-      'selected' => 0,
-      'skip_confirmation' => 0,
-      'label' => '',
-    ),
-    'rules_jedan_rule' => array(
-      'selected' => 0,
-      'skip_confirmation' => 0,
-      'label' => '',
-    ),
     'views_bulk_operations_user_roles_action' => array(
       'selected' => 1,
       'skip_confirmation' => 0,
       'label' => '',
     ),
     'views_bulk_operations_argument_selector_action' => array(
-      'selected' => 0,
-      'skip_confirmation' => 0,
-      'label' => '',
-    ),
-    'rules_test_action_set' => array(
-      'selected' => 0,
-      'skip_confirmation' => 0,
-      'label' => '',
-    ),
-    'rules_test2' => array(
-      'selected' => 0,
-      'skip_confirmation' => 0,
-      'label' => '',
-    ),
-    'rules_test3' => array(
       'selected' => 0,
       'skip_confirmation' => 0,
       'label' => '',
