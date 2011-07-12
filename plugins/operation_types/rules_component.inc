@@ -28,6 +28,8 @@ function views_bulk_operations_operation_rules_component_list() {
     $supported_types[] = "list<$type>";
     $list_types[] = "list<$type>";
   }
+
+  $operations = array();
   foreach (rules_get_components(FALSE, 'action') as $component_key => $component) {
     $parameter_info = $component->parameterInfo();
     $first_parameter = reset($parameter_info);

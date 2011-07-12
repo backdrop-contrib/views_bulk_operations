@@ -16,6 +16,7 @@ $plugin = array(
 
 function views_bulk_operations_operation_action_list() {
   $action_operations = actions_list() + views_bulk_operations_operation_advanced_action_list();
+  $operations = array();
   foreach ($action_operations as $callback => $operation) {
     $key = isset($operation['key']) ? $operation['key'] : $callback;
     $operations[$key] = array(
