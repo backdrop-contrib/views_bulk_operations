@@ -29,8 +29,12 @@ class ViewsBulkOperationsRulesComponent extends ViewsBulkOperationsBaseOperation
    */
   public function form($form, &$form_state, array $context) {
     $entity_key = $this->operationInfo['parameters']['entity_key'];
-    $entity_type = $this->entityType;
-    $info = entity_get_info($entity_type);
+    // List types need to match the original, so passing list<node> instead of
+    // list<entity> won't work. However, passing 'node' instead of 'entity'
+    // will work, and is needed in order to get the right tokens.
+    $list_type = 'list<' . $this->operationInfo['type'] . '>';
+    $entity_type = $this->aggregate() ? $list_type : $this->entityType;
+    $info = entity_get_info($this->entityType);
 
     // The component is wrapped in an action set so that the configuration form
     // has access to the entity's tokens.

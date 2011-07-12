@@ -112,16 +112,6 @@ class ViewsBulkOperationsAction extends ViewsBulkOperationsBaseOperation {
   }
 
   /**
-   * Returns whether the selected entities should be aggregated
-   * (loaded in bulk and passed in together).
-   * To be avoided if possible, since aggregation makes it impossible to use
-   * Batch API or the Drupal Queue for execution.
-   */
-  public function aggregate() {
-    return !empty($this->operationInfo['aggregate']);
-  }
-
-  /**
    * Returns whether the operation needs the full selected views rows to be
    * passed to execute() as a part of $context.
    */

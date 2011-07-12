@@ -136,7 +136,7 @@ abstract class ViewsBulkOperationsBaseOperation {
    * Batch API or the Drupal Queue for execution.
    */
   public function aggregate() {
-    return FALSE;
+    return !empty($this->operationInfo['aggregate']);
   }
 
   /**
