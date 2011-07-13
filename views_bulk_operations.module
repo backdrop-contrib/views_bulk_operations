@@ -491,7 +491,7 @@ function _views_bulk_operations_adjust_selection(&$selection, $select_all, $vbo)
     $view->set_exposed_input($vbo->view->get_exposed_input());
     $view->set_arguments($vbo->view->args);
     $view->set_display($vbo->view->current_display);
-    $view->display_handler->set_option('pager', array('type' => 'none'));
+    $view->display_handler->set_option('pager', array('type' => 'none', 'options' => array()));
     $view->build();
     // Unset every field except the VBO one (which holds the entity id).
     // That way the performance hit becomes much smaller, because there is no
