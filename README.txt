@@ -25,10 +25,10 @@ There is Drush integration available, allowing you to run an action against the
 resultset of any View that has the VBO field in its master display.
 
 Operations are gathered from two sources:
-1) Drupal Core Action API
-2) Rules 2 (preferred).
-The module also allows to use Batch API or the Drupal Queue to process the
-selected entities, in order to avoid timeouts.
+1) Drupal core actions (hook_action_info() and advanced actions added through the Actions UI)
+2) Rules 2
+Note that VBO no longer supports hook_node_operations() and hook_user_operations()
+which were supported in previous releases.
 
 RULES 2 INTEGRATION
 -------------------
@@ -36,6 +36,13 @@ The module can execute any created Rules component (rule, ruleset, action set)
 that accepts an entity (example types: "node", "entity") or a list entity type
 (example types: "list<node>", "list<entity>") as the first parameter.
 As a reminder, Rules components can be created at admin/config/workflow/rules/components.
+
+A Rules action is provided that loads a list of entities from a VBO View.
+That list can then be iterated on in Rules, and used in further actions.
+The purpose of this action is to replace the old "Execute VBO" action with a
+more elegant solution.
+There is also a Rules condition for checking the number of results returned
+by a VBO View.
 
 AGGREGATION
 -----------
@@ -69,7 +76,7 @@ Alternatively, the user can choose to use the Drupal Queue, by enabling the
 "Enqueue the operation instead of executing it directly" checkbox for each
 desired action in the VBO field settings.
 The entities and their operation are then enqueued one by one, to be processed
-by a queue worker (which is usually cron).
+by the queue worker (which usually happens when cron is run).
 This is useful for postponing long running operations.
 
 EXAMPLE VIEWS
@@ -77,3 +84,15 @@ EXAMPLE VIEWS
 VBO comes with two default views, reimplementing the Content and User listings.
 They are disabled by default. After enabling them at admin/structure/views
 they can be accessed at admin/content2 and admin/people2.
+
+ACTIONS PERMISSIONS
+-------------------
+A module called actions_permissions is included in the package.
+This module generates a permission for each core action, and VBO honors those
+permissions before showing or executing the corresponding actions.
+This is useful if you want to provide your VBO to several groups of users with
+different privileges: the same view will accommodate those different groups,
+showing to each the actions that they are permitted to see.
+
+Rules components still don't support something like this, but there's an
+open feature request in the Rules issue queue: http://drupal.org/node/1217128
