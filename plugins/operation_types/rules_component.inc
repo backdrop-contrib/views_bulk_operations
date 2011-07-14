@@ -16,7 +16,7 @@ $plugin = array(
 
 function views_bulk_operations_operation_rules_component_list() {
   if (!module_exists('rules')) {
-    return;
+    return array();
   }
 
   $entity_info = entity_get_info();
