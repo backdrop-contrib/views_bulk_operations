@@ -667,7 +667,6 @@ function _views_bulk_operations_execute($vbo, $rows, $operation, $force_direct =
   // Options that affect execution.
   $options = array(
     'revision' => $vbo->revision,
-    'execution_type' => $vbo->options['vbo']['execution_type'],
     'display_result' => $vbo->options['vbo']['display_result'],
     'entity_load_capacity' => $vbo->options['vbo']['entity_load_capacity'],
   );

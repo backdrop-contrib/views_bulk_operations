@@ -116,66 +116,88 @@ function views_bulk_operations_views_default_views() {
   $handler->display->display_options['fields']['views_bulk_operations']['vbo']['operations'] = array(
     'node_assign_owner_action' => array(
       'selected' => 1,
+      'use_queue' => 0,
       'skip_confirmation' => 0,
+      'override_label' => 0,
       'label' => '',
     ),
     'views_bulk_operations_delete_item' => array(
       'selected' => 1,
+      'use_queue' => 0,
       'skip_confirmation' => 0,
+      'override_label' => 0,
       'label' => '',
     ),
     'views_bulk_operations_script_action' => array(
       'selected' => 1,
+      'use_queue' => 0,
       'skip_confirmation' => 0,
+      'override_label' => 0,
       'label' => '',
     ),
     'node_make_sticky_action' => array(
       'selected' => 1,
+      'use_queue' => 0,
       'skip_confirmation' => 0,
+      'override_label' => 0,
       'label' => '',
     ),
     'node_make_unsticky_action' => array(
       'selected' => 1,
+      'use_queue' => 0,
       'skip_confirmation' => 0,
+      'override_label' => 0,
       'label' => '',
     ),
     'views_bulk_operations_argument_selector_action' => array(
       'selected' => 0,
       'skip_confirmation' => 0,
+      'override_label' => 0,
       'label' => '',
     ),
     'node_promote_action' => array(
       'selected' => 1,
+      'use_queue' => 0,
       'skip_confirmation' => 0,
+      'override_label' => 0,
       'label' => '',
     ),
     'node_publish_action' => array(
       'selected' => 1,
+      'use_queue' => 0,
       'skip_confirmation' => 0,
+      'override_label' => 0,
       'label' => '',
     ),
     'node_unpromote_action' => array(
       'selected' => 1,
+      'use_queue' => 0,
       'skip_confirmation' => 0,
+      'override_label' => 0,
       'label' => '',
     ),
     'node_save_action' => array(
       'selected' => 0,
+      'use_queue' => 0,
       'skip_confirmation' => 0,
+      'override_label' => 0,
       'label' => '',
     ),
     'node_unpublish_action' => array(
       'selected' => 1,
+      'use_queue' => 0,
       'skip_confirmation' => 0,
+      'override_label' => 0,
       'label' => '',
     ),
     'node_unpublish_by_keyword_action' => array(
       'selected' => 1,
+      'use_queue' => 0,
       'skip_confirmation' => 0,
+      'override_label' => 0,
       'label' => '',
     ),
   );
-  $handler->display->display_options['fields']['views_bulk_operations']['vbo']['execution_type'] = '1';
   $handler->display->display_options['fields']['views_bulk_operations']['vbo']['display_type'] = '0';
   $handler->display->display_options['fields']['views_bulk_operations']['vbo']['display_result'] = 1;
   $handler->display->display_options['fields']['views_bulk_operations']['vbo']['merge_single_action'] = 1;
@@ -489,36 +511,46 @@ function views_bulk_operations_views_default_views() {
   $handler->display->display_options['fields']['views_bulk_operations']['vbo']['operations'] = array(
     'system_block_ip_action' => array(
       'selected' => 0,
+      'use_queue' => 0,
       'skip_confirmation' => 0,
+      'override_label' => 0,
       'label' => '',
     ),
     'user_block_user_action' => array(
       'selected' => 1,
+      'use_queue' => 0,
       'skip_confirmation' => 0,
+      'override_label' => 0,
       'label' => '',
     ),
     'views_bulk_operations_delete_item' => array(
       'selected' => 1,
+      'use_queue' => 0,
       'skip_confirmation' => 0,
+      'override_label' => 0,
       'label' => '',
     ),
     'views_bulk_operations_script_action' => array(
       'selected' => 1,
+      'use_queue' => 0,
       'skip_confirmation' => 0,
+      'override_label' => 0,
       'label' => '',
     ),
     'views_bulk_operations_user_roles_action' => array(
       'selected' => 1,
+      'use_queue' => 0,
       'skip_confirmation' => 0,
+      'override_label' => 0,
       'label' => '',
     ),
     'views_bulk_operations_argument_selector_action' => array(
       'selected' => 0,
       'skip_confirmation' => 0,
+      'override_label' => 0,
       'label' => '',
     ),
   );
-  $handler->display->display_options['fields']['views_bulk_operations']['vbo']['execution_type'] = '1';
   $handler->display->display_options['fields']['views_bulk_operations']['vbo']['display_type'] = '0';
   $handler->display->display_options['fields']['views_bulk_operations']['vbo']['display_result'] = 1;
   $handler->display->display_options['fields']['views_bulk_operations']['vbo']['merge_single_action'] = 1;
