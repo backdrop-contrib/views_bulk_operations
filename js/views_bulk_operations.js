@@ -26,7 +26,7 @@
     $('.vbo-select-all', form).show();
     // Set up the "select all" functionality.
     $('.vbo-select-all', form).click(function() {
-      $('input[id^="edit-views-bulk-operations"]', form).attr('checked', this.checked);
+      $('input[id^="edit-views-bulk-operations"]:not(:disabled)', form).attr('checked', this.checked);
       $('.views-row-select-all', form).toggle();
     });
     $('.vbo-select-all-pages', form).click(function() {
@@ -45,7 +45,7 @@
     // Set up the ability to click anywhere on the row to select it.
     $('tbody tr', form).click(function(event) {
       if (event.target.tagName.toLowerCase() != 'input' && event.target.tagName.toLowerCase() != 'a') {
-        $('input[id^="edit-views-bulk-operations"]', this).each(function() {
+        $('input[id^="edit-views-bulk-operations"]:not(:disabled)', this).each(function() {
           var checked = this.checked;
           // trigger() toggles the checkmark *after* the event is set,
           // whereas manually clicking the checkbox toggles it *beforehand*.
