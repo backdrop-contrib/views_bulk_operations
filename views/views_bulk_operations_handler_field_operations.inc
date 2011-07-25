@@ -94,17 +94,19 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
       '#collapsed' => FALSE,
     );
     foreach ($this->get_operations_options() as $key => $label) {
+      $options = isset($this->options['vbo']['operations'][$key]) ? $this->options['vbo']['operations'][$key] : array();
+
       $dom_id = 'edit-options-vbo-operations-' . str_replace('_', '-', $key);
       $form['vbo']['operations'][$key]['selected'] = array(
         '#type' => 'checkbox',
         '#title' => $label,
-        '#default_value' => @$this->options['vbo']['operations'][$key]['selected'],
+        '#default_value' => !empty($options['selected']),
       );
       if (!$this->all_operations[$key]['aggregate']) {
         $form['vbo']['operations'][$key]['use_queue'] = array(
           '#type' => 'checkbox',
           '#title' => t('Enqueue the operation instead of executing it directly'),
-          '#default_value' => @$this->options['vbo']['operations'][$key]['use_queue'],
+          '#default_value' => !empty($options['use_queue']),
           '#dependency' => array(
             $dom_id . '-selected' => array(1),
           ),
@@ -113,12 +115,12 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
       $form['vbo']['operations'][$key]['skip_confirmation'] = array(
         '#type' => 'checkbox',
         '#title' => t('Skip confirmation step'),
-        '#default_value' => @$this->options['vbo']['operations'][$key]['skip_confirmation'],
+        '#default_value' => !empty($options['skip_confirmation']),
         '#dependency' => array(
           $dom_id . '-selected' => array(1),
         ),
       );
-      $label = @$this->options['vbo']['operations'][$key]['label'];
+      $label = isset($options['label']) ? $options['label'] : '';
       $form['vbo']['operations'][$key]['override_label'] = array(
         '#type' => 'checkbox',
         '#title' => t('Override label'),
@@ -140,7 +142,8 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
       );
       $form_function = $this->all_operations[$key]['callback'] . '_views_bulk_operations_form';
       if (function_exists($form_function)) {
-        $form_settings = call_user_func($form_function, @$this->options['vbo']['operations'][$key]['settings']);
+        $settings = isset($options['settings']) ? $options['settings'] : array();
+        $form_settings = call_user_func($form_function, $settings);
         foreach (element_children($form_settings) as $child) {
           $form_settings[$child] += array(
             '#dependency' => array(
