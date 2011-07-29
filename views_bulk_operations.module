@@ -191,9 +191,11 @@ function views_bulk_operations_form_alter(&$form, &$form_state, $form_id) {
   $form['#validate'][] = 'views_bulk_operations_form_validate';
   $form['#submit'][] = 'views_bulk_operations_form_submit';
 
-  // This allows VBO to work when embedded using views_embed_view().
-  if (empty($vbo->view->override_path) && !empty($vbo->view->preview)) {
-    $vbo->view->override_path = $_GET['q'];
+  // Allow VBO to work when embedded using views_embed_view(), or in a block.
+  if (empty($vbo->view->override_path)) {
+    if (!empty($vbo->view->preview) || $vbo->view->display_handler instanceof views_plugin_display_block) {
+      $vbo->view->override_path = $_GET['q'];
+    }
   }
 
   // Quickfix for VBO & exposed filters using ajax. See http://drupal.org/node/1191928.
