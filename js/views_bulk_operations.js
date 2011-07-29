@@ -19,19 +19,11 @@
       $('.views-table-row-select-all', form).html('<td colspan="' + colspan + '">' + selectAllMarkup.html() + '</td>');
 
       $('.vbo-table-select-all-pages', form).click(function() {
-        $('.vbo-table-this-page', form).hide();
-        $('.vbo-table-all-pages', form).show();
-        // Modify the value of the hidden form field.
-        $('.select-all-rows', form).val('1');
-
+        Drupal.vbo.tableSelectAllPages(form);
         return false;
       });
       $('.vbo-table-select-this-page', form).click(function() {
-        $('.vbo-table-all-pages', form).hide();
-        $('.vbo-table-this-page', form).show();
-        // Modify the value of the hidden form field.
-        $('.select-all-rows', form).val('0');
-
+        Drupal.vbo.tableSelectThisPage(form);
         return false;
       });
     }
@@ -43,7 +35,14 @@
       $('input[id^="edit-views-bulk-operations"]:not(:disabled)', table).attr('checked', this.checked);
 
       // Toggle the visibility of the "select all" row (if any).
-      $('.views-table-row-select-all', table).toggle();
+      if (this.checked) {
+        $('.views-table-row-select-all', table).show();
+      }
+      else {
+        $('.views-table-row-select-all', table).hide();
+        // Disable "select all across pages".
+        Drupal.vbo.tableSelectThisPage(form);
+      }
     });
 
     // Set up the ability to click anywhere on the row to select it.
@@ -62,6 +61,19 @@
         });
       }
     });
+  }
+
+  Drupal.vbo.tableSelectAllPages = function(form) {
+    $('.vbo-table-this-page', form).hide();
+    $('.vbo-table-all-pages', form).show();
+    // Modify the value of the hidden form field.
+    $('.select-all-rows', form).val('1');
+  }
+  Drupal.vbo.tableSelectThisPage = function(form) {
+    $('.vbo-table-all-pages', form).hide();
+    $('.vbo-table-this-page', form).show();
+    // Modify the value of the hidden form field.
+    $('.select-all-rows', form).val('0');
   }
 
   Drupal.vbo.initGenericBehaviors = function(form) {
@@ -84,6 +96,29 @@
 
       // Modify the value of the hidden form field.
       $('.select-all-rows', form).val(this.checked);
+    });
+
+    $('.vbo-select', form).click(function() {
+      // If a checkbox was deselected, uncheck any "select all" checkboxes.
+      if (!this.checked) {
+        $('.vbo-select-this-page', form).attr('checked', false);
+        $('.vbo-select-all-pages', form).attr('checked', false);
+        // Modify the value of the hidden form field.
+        $('.select-all-rows', form).val('0')
+
+        var table = $(this).closest('table')[0];
+        if (table) {
+          // Uncheck the "select all" checkbox in the table header.
+          $('.vbo-table-select-all', table).attr('checked', false);
+
+          // If there's a "select all" row, hide it.
+          if ($('.vbo-table-select-this-page', table).length) {
+            $('.views-table-row-select-all', table).hide();
+            // Disable "select all across pages".
+            Drupal.vbo.tableSelectThisPage(form);
+          }
+        }
+      }
     });
   }
 
