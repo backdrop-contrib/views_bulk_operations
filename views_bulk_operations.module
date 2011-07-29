@@ -910,7 +910,12 @@ function _views_bulk_operations_operation_do($operation, $entity, $context, $acc
  */
 function _views_bulk_operations_execute_finished($success, $results, $operations, $elapsed, $options = NULL) {
   if ($success) {
-    $message = theme('item_list', array('items' => $results['log']));
+    if (count($results['log']) > 1) {
+      $message = theme('item_list', array('items' => $results['log']));
+    }
+    else {
+      $message = reset($results['log']);
+    }
   }
   else {
     // An error occurred.
