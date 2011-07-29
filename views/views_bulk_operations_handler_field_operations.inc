@@ -70,7 +70,7 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
     $form['vbo']['display_result'] = array(
       '#type' => 'checkbox',
       '#title' => t('Display processing result'),
-      '#description' => t('Check this box to let Drupal display a message with the result of processing the selected objects.'),
+      '#description' => t('Check this box to let Drupal display a message with the result of processing the selected items.'),
       '#default_value' => $this->options['vbo']['display_result'],
     );
     $form['vbo']['merge_single_action'] = array(

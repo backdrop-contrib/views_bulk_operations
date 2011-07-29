@@ -421,7 +421,7 @@ function views_bulk_operations_confirm_form($form, &$form_state, $view, $output)
   $rows = $form_state['selection'];
   $query = drupal_get_query_parameters($_GET, array('q'));
   $form = confirm_form($form,
-    t('Are you sure you want to perform %operation on selected rows?', array('%operation' => $operation->label())),
+    t('Are you sure you want to perform %operation on the selected items?', array('%operation' => $operation->label())),
     array('path' => $view->get_url(), 'query' => $query),
     theme('views_bulk_operations_confirmation', array('rows' => $rows, 'vbo' => $vbo))
   );
@@ -455,8 +455,8 @@ function theme_views_bulk_operations_confirmation($variables) {
     }
   }
 
-  $row_count = format_plural(count($entities), 'row', 'rows');
-  $output = theme('item_list', array('items' => $items, 'title' => t('You selected the following <strong>!row_count</strong>:', array('!row_count' => $row_count))));
+  $count = format_plural(count($entities), 'item', 'items');
+  $output = theme('item_list', array('items' => $items, 'title' => t('You selected the following <strong>!count</strong>:', array('!count' => $count))));
   return $output;
 }
 
@@ -712,7 +712,7 @@ function _views_bulk_operations_execute($vbo, $rows, $operation, $force_direct =
       ),
       'finished' => '_views_bulk_operations_execute_finished',
       'progress_message' => '',
-      'title' => t('Performing %operation on selected rows...', array('%operation' => $operation->label())),
+      'title' => t('Performing %operation on the selected items...', array('%operation' => $operation->label())),
     );
     batch_set($batch);
   }
@@ -758,6 +758,7 @@ function _views_bulk_operations_queue_process($data) {
   }
   _views_bulk_operations_operation_do($operation, $entity, $operation_context, $account);
 
+  // @todo Provide a way to spam less here.
   if ($options['display_result']) {
     watchdog('views bulk operations', 'Performed %operation on @type %title.', array(
       '%operation' => $operation->label(),
@@ -802,11 +803,6 @@ function _views_bulk_operations_batch_process($rows, $operation, $options, &$con
     }
     _views_bulk_operations_operation_do($operation, $entity, $operation_context);
 
-    $context['results']['log'][] = t('Performed %operation on @type %title.', array(
-      '%operation' => $operation->label(),
-      '@type' => $entity_type,
-      '%title' => _views_bulk_operations_entity_label($entity_type, $entity),
-    ));
     $context['sandbox']['progress']++;
     unset($row_group[$entity_id]);
   }
@@ -824,6 +820,13 @@ function _views_bulk_operations_batch_process($rows, $operation, $options, &$con
     // All done. Save data for the finish callback.
     $context['results']['rows'] = $context['sandbox']['progress'];
     $context['results']['options'] = $options;
+
+    if ($options['display_result']) {
+      $context['results']['log'][] = t('Performed %operation on @items.', array(
+        '%operation' => $operation->label(),
+        '@items' => format_plural($context['results']['rows'], '1 item', '@count items'),
+      ));
+    }
   }
 }
 
@@ -856,10 +859,9 @@ function _views_bulk_operations_direct_process($operation, $rows, $options, &$co
     }
     _views_bulk_operations_operation_do($operation, $entities, $operation_context);
 
-    $context['results']['log'][] = t('Performed aggregate %operation on @types %ids.', array(
+    $context['results']['log'][] = t('Performed aggregate %operation on @items.', array(
       '%operation' => $operation->label(),
-      '@types' => format_plural(count($entities), $entity_type, $entity_type . 's'),
-      '%ids' => implode(',', array_keys($entities)),
+      '@items' => format_plural(count($entities), '1 item', '@count items'),
     ));
     $context['results']['rows'] += count($entities);
   }
@@ -872,13 +874,13 @@ function _views_bulk_operations_direct_process($operation, $rows, $options, &$co
       }
       _views_bulk_operations_operation_do($operation, $entity, $operation_context);
 
-      $context['results']['log'][] = t('Performed %operation on @type %title.', array(
-        '%operation' => $operation->label(),
-        '@type' => $entity_type,
-        '%title' => _views_bulk_operations_entity_label($entity_type, $entity),
-      ));
       $context['results']['rows'] += 1;
     }
+
+    $context['results']['log'][] = t('Performed %operation on @items.', array(
+      '%operation' => $operation->label(),
+      '@items' => format_plural(count($entities), '1 item', '@count items'),
+    ));
   }
 }
 
@@ -908,14 +910,7 @@ function _views_bulk_operations_operation_do($operation, $entity, $context, $acc
  */
 function _views_bulk_operations_execute_finished($success, $results, $operations, $elapsed, $options = NULL) {
   if ($success) {
-    if (!empty($results['rows'])) {
-      $row_count = format_plural($results['rows'], '1 row', '@count rows');
-      $message = t('!row_count processed in about !time ms:', array('!row_count' => $row_count, '!time' => round((microtime(TRUE) - $results['time']) * 1000)));
-    }
-    else {
-      $message = t('No rows were processed:');
-    }
-    $message .= "\n". theme('item_list', array('items' => $results['log']));
+    $message = theme('item_list', array('items' => $results['log']));
   }
   else {
     // An error occurred.
