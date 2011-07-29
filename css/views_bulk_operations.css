@@ -4,14 +4,16 @@
 
 /* "Select all" for table styles. */
 .vbo-views-form thead .form-type-checkbox {
-  margin-bottom: 0;
+  margin: 0;
 }
 .vbo-table-select-all {
   display: none;
 }
 .views-table-row-select-all {
-  text-align: center;
   display: none;
+}
+.views-table-row-select-all td {
+  text-align: center;
 }
 .vbo-table-select-all-pages, .vbo-table-select-this-page {
   margin: 0 !important;
@@ -21,12 +23,13 @@
 /* Generic "select all" */
 .vbo-fieldset-select-all {
   text-align: center;
-  width: 18%;
-  padding: 0.7em 0;
+  width: 200px;
+  padding: 0.6em 0;
 }
 .vbo-fieldset-select-all .form-item {
   margin-bottom: 0;
 }
-.vbo-fieldset-select-all .fieldset-wrapper {
-  padding: 0;
+.vbo-fieldset-select-all div {
+  padding: 0 !important;
+  margin: 0 !important;
 }
