@@ -96,7 +96,7 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
     foreach ($this->get_operations_options() as $key => $label) {
       $options = isset($this->options['vbo']['operations'][$key]) ? $this->options['vbo']['operations'][$key] : array();
 
-      $dom_id = 'edit-options-vbo-operations-' . str_replace('_', '-', $key);
+      $dom_id = 'edit-options-vbo-operations-' . str_replace(array('_', ':'), array('-', ''), $key);
       $form['vbo']['operations'][$key]['selected'] = array(
         '#type' => 'checkbox',
         '#title' => $label,
@@ -120,11 +120,11 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
           $dom_id . '-selected' => array(1),
         ),
       );
-      $label = isset($options['label']) ? $options['label'] : '';
+      $show_label = isset($options['label']) ? $options['label'] : '';
       $form['vbo']['operations'][$key]['override_label'] = array(
         '#type' => 'checkbox',
         '#title' => t('Override label'),
-        '#default_value' => $label !== '',
+        '#default_value' => $show_label !== '',
         '#dependency' => array(
           $dom_id . '-selected' => array(1),
         ),
@@ -133,7 +133,7 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
         '#type' => 'textfield',
         '#title' => t('Provide label'),
         '#title_display' => 'invisible',
-        '#default_value' => $label,
+        '#default_value' => $show_label,
         '#dependency' => array(
           $dom_id . '-selected' => array(1),
           $dom_id . '-override-label' => array(1),
@@ -144,14 +144,15 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
       if (function_exists($form_function)) {
         $settings = isset($options['settings']) ? $options['settings'] : array();
         $form_settings = call_user_func($form_function, $settings);
-        foreach (element_children($form_settings) as $child) {
-          $form_settings[$child] += array(
-            '#dependency' => array(
-              $dom_id => array(1),
-            ),
-          );
-        }
-        $form['vbo']['operations'][$key]['settings'] = $form_settings;
+        $form['vbo']['operations'][$key]['settings'] = array(
+          '#type' => 'fieldset',
+          '#title' => t('Operation settings'),
+          '#collapsible' => TRUE,
+          '#dependency' => array(
+            $dom_id . '-selected' => array(1),
+          ),
+        );
+        $form['vbo']['operations'][$key]['settings'] += $form_settings;
       }
     }
   }
@@ -328,10 +329,6 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
 
     uasort($operations, create_function('$a, $b', 'return strcasecmp($a["label"], $b["label"]);'));
     $this->all_operations = $operations;
-  }
-
-  function get_operation_settings($operation) {
-    return (isset($this->options[$operation['key']]) ? $this->options[$operation['key']] : NULL);
   }
 
   /**
