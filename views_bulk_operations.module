@@ -17,19 +17,46 @@ define('VBO_ACCESS_OP_DELETE',    0x08);
  */
 function views_bulk_operations_action_info() {
   $actions = array();
-  $files = file_scan_directory(drupal_get_path('module', 'views_bulk_operations') . '/actions', '/\.action\.inc$/');
-  if ($files) {
-    foreach ($files as $file) {
-      require_once($file->uri);
-      $action_info_fn = 'views_bulk_operations_'. str_replace('.', '_', basename($file->filename, '.inc')).'_info';
-      $action_info = call_user_func($action_info_fn);
-      if (is_array($action_info)) {
-        $actions += $action_info;
-      }
+  $files = views_bulk_operations_load_action_includes();
+  foreach ($files as $filename) {
+    $action_info_fn = 'views_bulk_operations_'. str_replace('.', '_', basename($filename, '.inc')).'_info';
+    $action_info = call_user_func($action_info_fn);
+    if (is_array($action_info)) {
+      $actions += $action_info;
     }
   }
 
   return $actions;
+}
+
+/**
+ * Loads the VBO actions placed in their own include files (under actions/).
+ *
+ * @return
+ *   An array of containing filenames of the included actions.
+ */
+function views_bulk_operations_load_action_includes() {
+  static $loaded = FALSE;
+
+  // The list of VBO actions is fairly static, so it's hardcoded for better
+  // performance (hitting the filesystem with file_scan_directory(), and then
+  // caching the result has its cost).
+  $path = drupal_get_path('module', 'views_bulk_operations') . '/actions/';
+  $files = array(
+    'argument_selector.action.inc',
+    'delete.action.inc',
+    'script.action.inc',
+    'user_roles.action.inc',
+  );
+
+  if (!$loaded) {
+    foreach ($files as $file) {
+      include_once $path . $file;
+    }
+    $loaded = TRUE;
+  }
+
+  return $files;
 }
 
 /**
@@ -66,9 +93,9 @@ function views_bulk_operations_theme() {
       'variables' => array('rows' => NULL, 'vbo' => NULL),
     ),
   );
-  $files = file_scan_directory(drupal_get_path('module', 'views_bulk_operations') . '/actions', '/\.action\.inc$/');
-  if ($files) foreach ($files as $file) {
-    $action_theme_fn = 'views_bulk_operations_'. str_replace('.', '_', basename($file->filename, '.inc')).'_theme';
+  $files = views_bulk_operations_load_action_includes();
+  foreach ($files as $filename) {
+    $action_theme_fn = 'views_bulk_operations_'. str_replace('.', '_', basename($filename, '.inc')).'_theme';
     if (function_exists($action_theme_fn)) {
       $themes += call_user_func($action_theme_fn);
     }
@@ -83,14 +110,6 @@ function views_bulk_operations_init() {
   // Reset selection if we're not in the view anymore.
   if (isset($_SESSION) && !isset($_SESSION['vbo_values'][$_GET['q']])) {
     unset($_SESSION['vbo_values']);
-  }
-
-  // Automatically include the action files.
-  $files = file_scan_directory(drupal_get_path('module', 'views_bulk_operations') . '/actions', '/\.action\.inc$/');
-  if ($files) {
-    foreach ($files as $file) {
-      require_once($file->uri);
-    }
   }
 }
 
