@@ -347,7 +347,7 @@ function views_bulk_operations_form($form, &$form_state, $vbo) {
     if ($operation->configurable()) {
       $dummy_selection = array();
       foreach ($vbo->view->result as $row_index => $result) {
-        $dummy_selection[$result->{$vbo->field_alias}] = $row_index;
+        $dummy_selection[$row_index] = $result->{$vbo->field_alias};
       }
       $context = array('selection' => $dummy_selection);
       $form += $operation->form($form, $form_state, $context);
@@ -467,7 +467,7 @@ function theme_views_bulk_operations_confirmation($variables) {
   $items = array();
   // All rows on all pages have been selected.
   if ($result_count < $row_count) {
-    $entity_ids = array_slice(array_keys($rows), 0, $result_count);
+    $entity_ids = array_slice(array_values($rows), 0, $result_count);
     $entities = _views_bulk_operations_entity_load($entity_type, $entity_ids, $vbo->revision);
     foreach ($entities as $entity) {
       $items[] = check_plain(_views_bulk_operations_entity_label($entity_type, $entity));
@@ -475,7 +475,7 @@ function theme_views_bulk_operations_confirmation($variables) {
     $items[] = t('...and <strong>!count</strong> more.', array('!count' => $row_count - $result_count));
   }
   else {
-    $entities = _views_bulk_operations_entity_load($entity_type, array_keys($rows), $vbo->revision);
+    $entities = _views_bulk_operations_entity_load($entity_type, array_values($rows), $vbo->revision);
     foreach ($entities as $entity) {
       $items[] = check_plain(_views_bulk_operations_entity_label($entity_type, $entity));
     }
@@ -489,7 +489,7 @@ function theme_views_bulk_operations_confirmation($variables) {
 /**
  * Goes through the submitted values, and returns
  * an array of selected rows, in the form of
- * $entity_id => $row_index.
+ * $row_index => $entity_id.
  */
 function _views_bulk_operations_get_selection($vbo, $form_state) {
   $selection = array();
@@ -498,14 +498,11 @@ function _views_bulk_operations_get_selection($vbo, $form_state) {
   if (!empty($form_state['values'][$field_name])) {
     // If using "force single", the selection needs to be converted to an array.
     if (is_array($form_state['values'][$field_name])) {
-      $selected_rows = array_filter($form_state['values'][$field_name]);
+      $selection = array_filter($form_state['values'][$field_name]);
     }
     else {
-      $selected_rows = array($form_state['values'][$field_name]);
+      $selection = array($form_state['values'][$field_name]);
     }
-    // At this point, $selected_rows is an array of $row_number => $entity_id.
-    // We need the $entity_id to be the key, so the array gets flipped.
-    $selection = array_flip($selected_rows);
   }
 
   return $selection;
@@ -535,7 +532,7 @@ function _views_bulk_operations_adjust_selection(&$selection, $select_all, $vbo)
     $view->execute($vbo->view->current_display);
     $results = array();
     foreach ($view->result as $row_index => $result) {
-      $results[$result->{$vbo->field_alias}] = $row_index;
+      $results[$row_index] = $result->{$vbo->field_alias};
     }
     $selection = $results;
   }
@@ -658,7 +655,7 @@ function views_bulk_operations_form_submit($form, &$form_state) {
 }
 
 /**
- * Entry point for executing the chosen operation upon selected entities.
+ * Entry point for executing the chosen operation upon selected rows.
  * Routes to the right process function (based on the chosen execution method).
  *
  * There are three different ways of executing the operation:
@@ -684,14 +681,14 @@ function views_bulk_operations_form_submit($form, &$form_state) {
  *
  * @param $vbo
  *   The VBO field, containing a reference to the view in $vbo->view.
- * @param $rows
- *   Selected rows, in the form of $entity_id => $row_index.
+ * @param $selection
+ *   An array in the form of $row_index => $entity_id.
  * @param $operation
  *   The operation object.
  * @param $force_direct
  *   Whether to force the direct method (when ran through drush, for example).
  */
-function _views_bulk_operations_execute($vbo, $rows, $operation, $force_direct = FALSE) {
+function _views_bulk_operations_execute($vbo, $selection, $operation, $force_direct = FALSE) {
   global $user;
 
   // Options that affect execution.
@@ -700,27 +697,34 @@ function _views_bulk_operations_execute($vbo, $rows, $operation, $force_direct =
     'display_result' => $vbo->options['vbo']['display_result'],
     'entity_load_capacity' => $vbo->options['vbo']['entity_load_capacity'],
   );
-  // Some operations require full selected rows.
-  if ($operation->needsRows()) {
-    foreach ($rows as $entity_id => $row_index) {
-      $rows[$entity_id] = $vbo->view->result[$row_index];
-    }
-  }
   // An operation that needs aggregated results can only be executed directly.
   if ($operation->aggregate()) {
     $force_direct = TRUE;
   }
+  // Create an array of rows with the data needed by the process functions.
+  $rows = array();
+  foreach ($selection as $row_index => $entity_id) {
+    $rows[$row_index] = array(
+      'entity_id' => $entity_id,
+      'views_row' => array(),
+    );
+    // Some operations require full selected rows.
+    // @todo Make this work when all rows on all pages are selected?
+    if ($operation->needsRows() && isset($vbo->view->result[$row_index])) {
+      $rows[$row_index]['views_row'] = $vbo->view->result[$row_index];
+    }
+  }
 
   if (!$force_direct && $operation->getAdminOption('use_queue')) {
     $entity_type = $vbo->get_entity_type();
-    foreach ($rows as $entity_id => $row) {
+    foreach ($rows as $row_index => $row) {
       $job = array(
         'description' => t('Perform %operation on @type !entity_id.', array(
           '%operation' => $operation->label(),
           '@type' => $entity_type,
-          '!entity_id' => $entity_id
+          '!entity_id' => $row['entity_id'],
         )),
-        'arguments' => array($entity_id, $row, $operation, $options, $user->uid),
+        'arguments' => array($row_index, $row, $operation, $options, $user->uid),
       );
       $queue = DrupalQueue::get('views_bulk_operations');
       $queue->createItem($job);
@@ -757,10 +761,10 @@ function _views_bulk_operations_execute($vbo, $rows, $operation, $force_direct =
  * Process function for the Drupal Queue execution type.
  */
 function _views_bulk_operations_queue_process($data) {
-  list($entity_id, $row, $operation, $options, $uid) = $data['arguments'];
+  list($row_index, $row, $operation, $options, $uid) = $data['arguments'];
 
   $entity_type = $operation->entityType;
-  $entities = _views_bulk_operations_entity_load($entity_type, array($entity_id), $options['revision']);
+  $entities = _views_bulk_operations_entity_load($entity_type, array($row['entity_id']), $options['revision']);
   $entity = reset($entities);
   // No entity found. It might have been deleted in the meantime. Abort.
   if (!$entity) {
@@ -777,10 +781,10 @@ function _views_bulk_operations_queue_process($data) {
     return;
   }
 
-  // Pass the selected row to the operation if needed.
   $operation_context = array();
+  // Pass the selected row to the operation if needed.
   if ($operation->needsRows()) {
-    $operation_context['rows'] = array($entity_id => $row);
+    $operation_context['rows'] = array($row_index => $row['views_row']);
   }
   _views_bulk_operations_operation_do($operation, $entity, $operation_context, $account);
 
@@ -804,14 +808,27 @@ function _views_bulk_operations_batch_process($rows, $operation, $options, &$con
     $context['results']['time'] = microtime(TRUE);
   }
 
-  // Process rows in groups.
+  // Process the rows in groups.
   $remaining = $context['sandbox']['max'] - $context['sandbox']['progress'];
   $count = min($options['entity_load_capacity'], $remaining);
   $row_group = array_slice($rows, $context['sandbox']['progress'], $count, TRUE);
   $entity_type = $operation->entityType;
+  $entity_ids = array();
+  foreach ($row_group as $row_id => $row) {
+    $entity_ids[] = $row['entity_id'];
+  }
 
-  $entities = _views_bulk_operations_entity_load($entity_type, array_keys($row_group), $options['revision']);
-  foreach ($entities as $entity_id => $entity) {
+  $entities = _views_bulk_operations_entity_load($entity_type, $entity_ids, $options['revision']);
+  foreach ($row_group as $row_id => $row) {
+    $entity_id = $row['entity_id'];
+    // A matching entity couldn't be loaded. Adjust the count and move on.
+    if (!isset($entities[$entity_id])) {
+      $context['sandbox']['progress']++;
+      unset($row_group[$row_id]);
+      continue;
+    }
+    $entity = $entities[$entity_id];
+
     if (!_views_bulk_operations_entity_access($operation, $entity_type, $entity)) {
       $context['results']['log'][] = t('Skipped %operation on @type %title due to insufficient permissions.', array(
         '%operation' => $operation->label(),
@@ -822,19 +839,15 @@ function _views_bulk_operations_batch_process($rows, $operation, $options, &$con
       continue;
     }
 
-    // Pass the selected row to the operation if needed.
     $operation_context = array();
+    // Pass the selected row to the operation if needed.
     if ($operation->needsRows()) {
-      $operation_context['rows'] = array($entity_id => $rows[$entity_id]);
+      $operation_context['rows'] = array($row_index => $row['views_row']);
     }
     _views_bulk_operations_operation_do($operation, $entity, $operation_context);
 
     $context['sandbox']['progress']++;
-    unset($row_group[$entity_id]);
-  }
-  // Looks like some entities couldn't be loaded. Adjust the count and move on.
-  if (count($row_group)) {
-    $context['sandbox']['progress'] += count($row_group);
+    unset($row_group[$row_id]);
   }
 
   if ($context['sandbox']['progress'] != $context['sandbox']['max']) {
@@ -861,7 +874,11 @@ function _views_bulk_operations_batch_process($rows, $operation, $options, &$con
  */
 function _views_bulk_operations_direct_process($operation, $rows, $options, &$context) {
   $entity_type = $operation->entityType;
-  $entities = _views_bulk_operations_entity_load($entity_type, array_keys($rows), $options['revision']);
+  $entity_ids = array();
+  foreach ($rows as $row_index => $row) {
+   $entity_ids[] = $row['entity_id'];
+  }
+  $entities = _views_bulk_operations_entity_load($entity_type, $entity_ids, $options['revision']);
 
   foreach ($entities as $id => $entity) {
     if (!_views_bulk_operations_entity_access($operation, $entity_type, $entity)) {
@@ -881,7 +898,10 @@ function _views_bulk_operations_direct_process($operation, $rows, $options, &$co
     // Pass the selected rows to the operation if needed.
     $operation_context = array();
     if ($operation->needsRows()) {
-      $operation_context['rows'] = $rows;
+      $operation_context['rows'] = array();
+      foreach ($rows as $row_index => $row) {
+        $operation_context['rows'][$row_index] = $row['views_row'];
+      }
     }
     _views_bulk_operations_operation_do($operation, $entities, $operation_context);
 
@@ -892,11 +912,18 @@ function _views_bulk_operations_direct_process($operation, $rows, $options, &$co
     $context['results']['rows'] += count($entities);
   }
   else {
-    foreach ($entities as $entity_id => $entity) {
-      // Pass the selected row to the operation if needed.
+    foreach ($rows as $row_index => $row) {
+      $entity_id = $row['entity_id'];
+      // A matching entity couldn't be loaded.
+      if (!isset($entities[$entity_id])) {
+        continue;
+      }
+
+      $entity = $entities[$entity_id];
       $operation_context = array();
+      // Pass the selected rows to the operation if needed.
       if ($operation->needsRows()) {
-        $operation_context['rows'] = array($entity_id => $rows[$entity_id]);
+        $operation_context['rows'] = array($row_index => $row['views_row']);
       }
       _views_bulk_operations_operation_do($operation, $entity, $operation_context);
 
@@ -1066,13 +1093,13 @@ function views_bulk_operations_execute($vid, $operation_callback, $operation_arg
   }
 
   // Select all rows.
-  $rows = array();
-  foreach ($view->result as $row_index => $result) {
-    $rows[$row->{$vbo->field_alias}] = $row_index;
+  $selection = array();
+  foreach ($view->result as $row_index => $row) {
+    $selection[$row_index] = $row->{$vbo->field_alias};
   }
 
   // Execute the operation on the view results.
-  _views_bulk_operations_execute($vbo, $rows, $operation, TRUE);
+  _views_bulk_operations_execute($vbo, $selection, $operation, TRUE);
 }
 
 /**

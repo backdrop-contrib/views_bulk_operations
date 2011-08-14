@@ -62,6 +62,24 @@ amount of items to be selected.
 See the VBO action "Pass ids as arguments to a page" in
 actions/argument_selector.action.inc for an example implementation.
 
+CONTEXT
+-------
+By default (for performance reasons), VBO doesn't pass the selected views rows
+to actions.
+
+However, when a Drupal core action declares 'pass rows' => TRUE in its
+definition (hook_action_info()), VBO does pass the full rows through the $context array.
+So $context['rows'] has an array of selected rows in the form of $row_index => $views_row.
+If the action is using aggregation, $context['rows'] will include all selected
+rows. Otherwise, only the current row (that is being operated on) will be included.
+
+Using this feature has a memory cost and is not recommended for actions
+that process a big number of rows. Also, if all rows on all pages are selected,
+only the rows from the first page will be passed through. This is a known issue.
+
+Right now there is no way for a Rules 2 component to receive context, but there
+are plans to change that.
+
 EXECUTION METHODS
 -----------------
 When configuring the VBO field, the following setting can be seen:
