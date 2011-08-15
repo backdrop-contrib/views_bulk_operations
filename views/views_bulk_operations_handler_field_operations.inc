@@ -238,24 +238,25 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
     );
     // At this point, the query has already been run, so we can access the results
     // in order to get the base key value (for example, nid for nodes).
-    foreach ($this->view->result as $row_id => $row) {
+    foreach ($this->view->result as $row_index => $row) {
       $entity_id = $this->get_value($row);
 
-      if ($default_rows['select_all'] || isset($default_rows['selection'][$entity_id])) {
-        $default_value = TRUE;
-      }
-      else {
-        $default_value = FALSE;
-      }
       if ($this->options['vbo']['force_single']) {
-        $form[$this->options['id']][$row_id] = array(
+        $form[$this->options['id']][$row_index] = array(
           '#type' => 'radio',
           '#parents' => array($this->options['id']),
           '#return_value' => $entity_id,
         );
       }
       else {
-        $form[$this->options['id']][$row_id] = array(
+        if ($default_rows['select_all'] || (isset($default_rows['selection'][$row_index]) && $default_rows['selection'][$row_index] == $entity_id)) {
+          $default_value = TRUE;
+        }
+        else {
+          $default_value = FALSE;
+        }
+
+        $form[$this->options['id']][$row_index] = array(
           '#type' => 'checkbox',
           '#return_value' => $entity_id,
           '#default_value' => $default_value,

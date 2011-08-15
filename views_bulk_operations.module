@@ -108,7 +108,7 @@ function views_bulk_operations_theme() {
  */
 function views_bulk_operations_init() {
   // Reset selection if we're not in the view anymore.
-  if (isset($_SESSION) && !isset($_SESSION['vbo_values'][$_GET['q']])) {
+  if (isset($_SESSION) && !isset($_SESSION['vbo_values'][$_GET['q']]) && $_GET['q'] != 'views/ajax') {
     unset($_SESSION['vbo_values']);
   }
 }
@@ -536,9 +536,6 @@ function _views_bulk_operations_adjust_selection(&$selection, $select_all, $vbo)
     }
     $selection = $results;
   }
-
-  // Adjust sticky selection accordingly.
-  $_SESSION['vbo_values'][$_GET['q']]['rows'] = array('selection' => $selection, 'select_all' => $select_all);
 }
 
 /**
@@ -574,16 +571,6 @@ function views_bulk_operations_form_validate($form, &$form_state) {
       if ($vbo->options['vbo']['force_single'] && count($selection) > 1) {
         form_set_error($field_name, t('You may only select one item.'));
       }
-
-      $_SESSION['vbo_values'][$_GET['q']] = array(
-        'rows' => array(
-          'selection' => $selection,
-          'select_all' => $form_state['values']['select_all'],
-        ),
-      );
-      if (!$form_state['values']['single_operation']) {
-        $_SESSION['vbo_values'][$_GET['q']]['operation'] = $form_state['values']['operation'];
-      }
       break;
 
     case 'views_bulk_operations_config_form':
@@ -603,6 +590,17 @@ function views_bulk_operations_form_submit($form, &$form_state) {
     case 'views_form_views_form':
       $form_state['selection'] = _views_bulk_operations_get_selection($vbo, $form_state);
       _views_bulk_operations_adjust_selection($form_state['selection'], $form_state['values']['select_all'], $vbo);
+
+      // Remember form element values.
+      $_SESSION['vbo_values'][$_GET['q']] = array(
+        'rows' => array(
+          'selection' => $form_state['selection'],
+          'select_all' => $form_state['values']['select_all'],
+        ),
+      );
+      if (!$form_state['values']['single_operation']) {
+        $_SESSION['vbo_values'][$_GET['q']]['operation'] = $form_state['values']['operation'];
+      }
 
       if ($form_state['values']['single_operation']) {
         $operation = &$form_state['operation'];
