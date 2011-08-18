@@ -139,10 +139,32 @@ function views_bulk_operations_action_load_list($view, $args) {
 }
 
 /**
+ * Info alteration callback for the 'views_bulk_operations_action_views_load_list' action.
+ *
+ * The info hook specifies that the action returns a generic list of entities
+ * (list<entity>). All actions that require entities of specific type can't
+ * use such entities, so this alter hook specifies the exact entity type
+ * after the action has been configured, allowing the view to be loaded
+ * and its entity type extracted.
+ */
+function views_bulk_operations_action_load_list_info_alter(&$element_info, RulesAbstractPlugin $element) {
+  // The action hasn't been configured yet, hence no view. Abort.
+  if (empty($element->settings['view'])) {
+    return;
+  }
+
+  $vbo = _views_bulk_operations_rules_get_field($element->settings['view'], $element->settings['args']);
+  $entity_type = $vbo->get_entity_type();
+  if ($entity_type) {
+    $element_info['provides']['entity_list']['type'] = "list<$entity_type>";
+  }
+}
+
+/**
  * Helper function that loads, builds and executes the specified view,
  * then returns its VBO field.
  *
- * @param $view
+ * @param $view_target
  *   A string in the format "$view_name|$display_name".
  * @param $args
  *   Arguments that should be passed to the View.
@@ -150,8 +172,16 @@ function views_bulk_operations_action_load_list($view, $args) {
  * @return
  *   The VBO field. Contains a reference to the View.
  */
-function _views_bulk_operations_rules_get_field($view, $args) {
-  $views_settings = explode('|', $view);
+function _views_bulk_operations_rules_get_field($view_target, $args) {
+  $views = &drupal_static(__FUNCTION__);
+
+  // Don't execute the requested View more than once in a single page request.
+  if (isset($views[$view_target])) {
+    $vbo = _views_bulk_operations_get_field($views[$view_target]);
+    return $vbo;
+  }
+
+  $views_settings = explode('|', $view_target);
   $view_name = $views_settings[0];
   $display_name = $views_settings[1];
   $view_arguments = explode("\r", $args);
@@ -172,6 +202,8 @@ function _views_bulk_operations_rules_get_field($view, $args) {
     }
   }
   $view->execute($view->current_display);
+  // Save the view in the static cache.
+  $views[$view_target] = $view;
 
   return $vbo;
 }
