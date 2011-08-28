@@ -129,6 +129,7 @@ class ViewsBulkOperationsAction extends ViewsBulkOperationsBaseOperation {
    */
   public function execute($entity, array $context) {
     $context['entity_type'] = $this->entityType;
+    $context['settings'] = $this->getAdminOption('settings', array());
     $context += $this->formOptions;
     $context += $this->operationInfo['parameters'];
 

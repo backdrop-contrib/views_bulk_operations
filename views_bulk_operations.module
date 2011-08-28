@@ -43,6 +43,7 @@ function views_bulk_operations_load_action_includes() {
   // caching the result has its cost).
   $path = drupal_get_path('module', 'views_bulk_operations') . '/actions/';
   $files = array(
+    'archive.action.inc',
     'argument_selector.action.inc',
     'delete.action.inc',
     'script.action.inc',
@@ -349,7 +350,11 @@ function views_bulk_operations_form($form, &$form_state, $vbo) {
       foreach ($vbo->view->result as $row_index => $result) {
         $dummy_selection[$row_index] = $result->{$vbo->field_alias};
       }
-      $context = array('selection' => $dummy_selection);
+
+      $context = array(
+        'settings' => $operation->getAdminOption('settings', array()),
+        'selection' => $dummy_selection,
+      );
       $form += $operation->form($form, $form_state, $context);
     }
     $form_state['operation'] = $operation;
@@ -419,6 +424,7 @@ function views_bulk_operations_config_form($form, &$form_state, $view, $output) 
   drupal_set_title(t('Set parameters for %operation', array('%operation' => $operation->label())), PASS_THROUGH);
 
   $context = array(
+    'settings' => $operation->getAdminOption('settings', array()),
     'selection' => $form_state['selection'],
   );
   $form += $operation->form($form, $form_state, $context);
@@ -715,17 +721,29 @@ function _views_bulk_operations_execute($vbo, $selection, $operation, $force_dir
 
   if (!$force_direct && $operation->getAdminOption('use_queue')) {
     $entity_type = $vbo->get_entity_type();
+    $current = 1;
     foreach ($rows as $row_index => $row) {
+      // Some operations rely on knowing their position in the execution set
+      // (because of specific things that need to be done at the beginning
+      // or the end of the set).
+      $context = array(
+        'progress' => array(
+          'current' => $current,
+          'total' => count($rows),
+        ),
+      );
+
       $job = array(
         'description' => t('Perform %operation on @type !entity_id.', array(
           '%operation' => $operation->label(),
           '@type' => $entity_type,
           '!entity_id' => $row['entity_id'],
         )),
-        'arguments' => array($row_index, $row, $operation, $options, $user->uid),
+        'arguments' => array($row_index, $row, $operation, $context, $options, $user->uid),
       );
       $queue = DrupalQueue::get('views_bulk_operations');
       $queue->createItem($job);
+      $current++;
     }
     if ($options['display_result']) {
       drupal_set_message(t('Enqueued the selected operation (%operation).', array(
@@ -759,7 +777,7 @@ function _views_bulk_operations_execute($vbo, $selection, $operation, $force_dir
  * Process function for the Drupal Queue execution type.
  */
 function _views_bulk_operations_queue_process($data) {
-  list($row_index, $row, $operation, $options, $uid) = $data['arguments'];
+  list($row_index, $row, $operation, $operation_context, $options, $uid) = $data['arguments'];
 
   $entity_type = $operation->entityType;
   $entities = _views_bulk_operations_entity_load($entity_type, array($row['entity_id']), $options['revision']);
@@ -779,7 +797,6 @@ function _views_bulk_operations_queue_process($data) {
     return;
   }
 
-  $operation_context = array();
   // Pass the selected row to the operation if needed.
   if ($operation->needsRows()) {
     $operation_context['rows'] = array($row_index => $row['views_row']);
@@ -837,7 +854,15 @@ function _views_bulk_operations_batch_process($rows, $operation, $options, &$con
       continue;
     }
 
-    $operation_context = array();
+    // Some operations rely on knowing their position in the execution set
+    // (because of specific things that need to be done at the beginning
+    // or the end of the set).
+    $operation_context = array(
+      'progress' => array(
+        'current' => $context['sandbox']['progress'] + 1,
+        'total' => $context['sandbox']['max'],
+      ),
+    );
     // Pass the selected row to the operation if needed.
     if ($operation->needsRows()) {
       $operation_context['rows'] = array($row_index => $row['views_row']);
@@ -918,7 +943,15 @@ function _views_bulk_operations_direct_process($operation, $rows, $options, &$co
       }
 
       $entity = $entities[$entity_id];
-      $operation_context = array();
+      // Some operations rely on knowing their position in the execution set
+      // (because of specific things that need to be done at the beginning
+      // or the end of the set).
+      $operation_context = array(
+        'progress' => array(
+          'current' => $context['results']['rows'] + 1,
+          'total' => count($rows),
+        ),
+      );
       // Pass the selected rows to the operation if needed.
       if ($operation->needsRows()) {
         $operation_context['rows'] = array($row_index => $row['views_row']);
@@ -981,7 +1014,7 @@ function _views_bulk_operations_execute_finished($success, $results, $operations
   }
 
   if (!empty($options['display_result'])) {
-    drupal_set_message($message);
+    _views_bulk_operations_log($message);
   }
 }
 
@@ -1111,9 +1144,10 @@ function _views_bulk_operations_report_error($msg, $arg) {
 }
 
 /**
- * Helper function to log an information.
+ * Display a message to the user through the relevant function.
  */
 function _views_bulk_operations_log($msg) {
+  // Is VBO being run through drush?
   if (function_exists('drush_log')) {
     drush_log(strip_tags($msg), 'ok');
   }

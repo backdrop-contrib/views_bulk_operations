@@ -48,8 +48,8 @@ abstract class ViewsBulkOperationsBaseOperation {
   /**
    * Returns the value of an admin option.
    */
-  public function getAdminOption($key) {
-    return isset($this->adminOptions[$key]) ? $this->adminOptions[$key] : NULL;
+  public function getAdminOption($key, $default = NULL) {
+    return isset($this->adminOptions[$key]) ? $this->adminOptions[$key] : $default;
   }
 
   /**
