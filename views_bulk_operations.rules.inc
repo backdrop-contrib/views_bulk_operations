@@ -184,7 +184,10 @@ function _views_bulk_operations_rules_get_field($view_target, $args) {
   $views_settings = explode('|', $view_target);
   $view_name = $views_settings[0];
   $display_name = $views_settings[1];
-  $view_arguments = explode("\r", $args);
+  // Create an array of arguments.
+  $view_arguments = explode("\n", $args);
+  $view_arguments = array_map('trim', $view_arguments);
+  $view_arguments = array_filter($view_arguments, 'strlen');
 
   // Load the view and set the properties.
   $view = views_get_view($view_name);
