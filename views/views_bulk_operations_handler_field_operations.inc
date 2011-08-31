@@ -32,6 +32,7 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
       'contains' => array(
         'entity_load_capacity' => array('default' => 10),
         'operations' => array('default' => array()),
+        'enable_select_all_pages' => array('default' => TRUE),
         'display_type' => array('default' => 0),
         'display_result' => array('default' => TRUE),
         'merge_single_action' => array('default' => FALSE),
@@ -60,6 +61,12 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
         t('Dropdown selectbox with Submit button'),
         t('Each action as a separate button'),
       ),
+    );
+    $form['vbo']['enable_select_all_pages'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Enable "Select all items on all pages"'),
+      '#default_value' => $this->options['vbo']['enable_select_all_pages'],
+      '#description' => t('Check this box to enable the ability to select all items on all pages.'),
     );
     $form['vbo']['force_single'] = array(
       '#type' => 'checkbox',
