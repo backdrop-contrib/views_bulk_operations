@@ -175,12 +175,6 @@ function views_bulk_operations_action_load_list_info_alter(&$element_info, Rules
 function _views_bulk_operations_rules_get_field($view_target, $args) {
   $views = &drupal_static(__FUNCTION__);
 
-  // Don't execute the requested View more than once in a single page request.
-  if (isset($views[$view_target])) {
-    $vbo = _views_bulk_operations_get_field($views[$view_target]);
-    return $vbo;
-  }
-
   $views_settings = explode('|', $view_target);
   $view_name = $views_settings[0];
   $display_name = $views_settings[1];
@@ -188,6 +182,17 @@ function _views_bulk_operations_rules_get_field($view_target, $args) {
   $view_arguments = explode("\n", $args);
   $view_arguments = array_map('trim', $view_arguments);
   $view_arguments = array_filter($view_arguments, 'strlen');
+  // Append the filtered list of arguments to $views_target, so that the correct
+  // View is fetched from cache.
+  if (!empty($view_arguments)) {
+    $view_target .= '|' . implode('&', $view_arguments);
+  }
+
+  // Don't execute the requested View more than once in a single page request.
+  if (isset($views[$view_target])) {
+    $vbo = _views_bulk_operations_get_field($views[$view_target]);
+    return $vbo;
+  }
 
   // Load the view and set the properties.
   $view = views_get_view($view_name);

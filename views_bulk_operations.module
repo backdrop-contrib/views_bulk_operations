@@ -823,6 +823,9 @@ function _views_bulk_operations_queue_process($data) {
  * Process function for the Batch API execution type.
  */
 function _views_bulk_operations_batch_process($rows, $operation, $options, &$context) {
+  // It is still possible to hit the time limit.
+  set_time_limit(0);
+
   if (!isset($context['sandbox']['progress'])) {
     $context['sandbox']['progress'] = 0;
     $context['sandbox']['max'] = count($rows);
