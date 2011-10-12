@@ -224,7 +224,6 @@ function _views_bulk_operations_rules_get_field($view_target, $args) {
   $view = views_get_view($view_name);
   $view->set_display($display_name);
   $view->set_arguments($view_arguments);
-  $view->display_handler->set_option('pager', array('type' => 'none', 'options' => array()));
   $view->build();
   $vbo = _views_bulk_operations_get_field($view);
   // Unset every field except the VBO one (which holds the entity id).
