@@ -748,6 +748,7 @@ function _views_bulk_operations_execute($vbo, $selection, $operation, $force_dir
 
     $context['results']['rows'] = 0;
     $context['results']['time'] = microtime(TRUE);
+    $context['results']['log'] = array();
 
     _views_bulk_operations_direct_process($operation, $rows, $options, $context);
     _views_bulk_operations_execute_finished(TRUE, $context['results'], array(), 0, $options + array('operation' => $operation));
@@ -867,12 +868,10 @@ function _views_bulk_operations_batch_process($rows, $operation, $options, &$con
     $context['results']['rows'] = $context['sandbox']['progress'];
     $context['results']['options'] = $options;
 
-    if ($options['display_result']) {
-      $context['results']['log'][] = t('Performed %operation on @items.', array(
-        '%operation' => $operation->label(),
-        '@items' => format_plural($context['results']['rows'], '1 item', '@count items'),
-      ));
-    }
+    $context['results']['log'][] = t('Performed %operation on @items.', array(
+      '%operation' => $operation->label(),
+      '@items' => format_plural($context['results']['rows'], '1 item', '@count items'),
+    ));
   }
 }
 
