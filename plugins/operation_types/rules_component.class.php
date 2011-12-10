@@ -80,14 +80,14 @@ class ViewsBulkOperationsRulesComponent extends ViewsBulkOperationsBaseOperation
   }
 
   /**
-   * Executes the selected operation on the provided entity.
+   * Executes the selected operation on the provided data.
    *
-   * @param $entity
-   *   The selected entity.
+   * @param $data
+   *   The data to to operate on. An entity or an array of entities.
    * @param $context
-   *   An array of related data provided by the caller.
+   *   An array of related data (selected views rows, etc).
    */
-  public function execute($entity, array $context) {
+  public function execute($data, array $context) {
     // If there was a config form, there's a rules_element.
     // If not, fallback to the component key.
     if ($this->configurable()) {
@@ -96,6 +96,6 @@ class ViewsBulkOperationsRulesComponent extends ViewsBulkOperationsBaseOperation
     else {
      $element = rules_action('component_' . $this->operationInfo['parameters']['component_key']);
     }
-    $element->execute($entity);
+    $element->execute($data);
   }
 }

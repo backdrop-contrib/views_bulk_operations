@@ -148,12 +148,12 @@ abstract class ViewsBulkOperationsBaseOperation {
   }
 
   /**
-   * Executes the selected operation on the provided entity.
+   * Executes the selected operation on the provided data.
    *
-   * @param $entity
-   *   The selected entity, or an array of entities, if aggregation is used.
+   * @param $data
+   *   The data to to operate on. An entity or an array of entities.
    * @param $context
-   *   An array of related data provided by the caller.
+   *   An array of related data (selected views rows, etc).
    */
-  abstract function execute($entity, array $context);
+  abstract function execute($data, array $context);
 }

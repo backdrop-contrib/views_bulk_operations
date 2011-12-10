@@ -120,23 +120,27 @@ class ViewsBulkOperationsAction extends ViewsBulkOperationsBaseOperation {
   }
 
   /**
-   * Executes the selected operation on the provided entity.
+   * Executes the selected operation on the provided data.
    *
-   * @param $entity
-   *   The selected entity, or an array of entities, if aggregation is used.
+   * @param $data
+   *   The data to to operate on. An entity or an array of entities.
    * @param $context
-   *   An array of related data provided by the caller.
+   *   An array of related data (selected views rows, etc).
    */
-  public function execute($entity, array $context) {
+  public function execute($data, array $context) {
     $context['entity_type'] = $this->entityType;
     $context['settings'] = $this->getAdminOption('settings', array());
     $context += $this->formOptions;
     $context += $this->operationInfo['parameters'];
 
-    actions_do($this->operationInfo['callback'], $entity, $context);
-    // Actions that specify 'changes_property' need to be explicitly saved.
+    actions_do($this->operationInfo['callback'], $data, $context);
+
+    // The action might need to have its entities saved after execution.
     if (in_array('changes_property', $this->operationInfo['behavior'])) {
-      entity_save($this->entityType, $entity);
+      $data = is_array($data) ? $data : array($data);
+      foreach ($data as $entity) {
+        entity_save($this->entityType, $entity);
+      }
     }
   }
 }
