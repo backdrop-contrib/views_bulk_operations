@@ -326,14 +326,8 @@ function views_bulk_operations_form($form, &$form_state, $vbo) {
     $selected_operations = array_keys($vbo->get_selected_operations());
     $operation = $vbo->get_operation($selected_operations[0]);
     if ($operation->configurable()) {
-      $dummy_selection = array();
-      foreach ($vbo->view->result as $row_index => $result) {
-        $dummy_selection[$row_index] = $result->{$vbo->field_alias};
-      }
-
       $context = array(
         'settings' => $operation->getAdminOption('settings', array()),
-        'selection' => $dummy_selection,
         // Pass the View along. Needed by views_send 7.x-1.x.
         // Has no performance penalty since objects are passed by reference,
         // but needing the full views object in a core action is in most cases
@@ -415,7 +409,6 @@ function views_bulk_operations_config_form($form, &$form_state, $view, $output) 
 
   $context = array(
     'settings' => $operation->getAdminOption('settings', array()),
-    'selection' => $form_state['selection'],
     // Pass the View along. Needed by views_send 7.x-1.x.
     // Has no performance penalty since objects are passed by reference,
     // but needing the full views object in a core action is in most cases
@@ -450,7 +443,7 @@ function views_bulk_operations_confirm_form($form, &$form_state, $view, $output)
   $form = confirm_form($form,
     t('Are you sure you want to perform %operation on the selected items?', array('%operation' => $operation->label())),
     array('path' => $view->get_url(), 'query' => $query),
-    theme('views_bulk_operations_confirmation', array('rows' => $rows, 'vbo' => $vbo))
+    theme('views_bulk_operations_confirmation', array('rows' => $rows, 'vbo' => $vbo, 'select_all_pages' => $form_state['select_all_pages']))
   );
 
   return $form;
@@ -460,26 +453,20 @@ function views_bulk_operations_confirm_form($form, &$form_state, $view, $output)
  * Theme function to show the confirmation page before executing the operation.
  */
 function theme_views_bulk_operations_confirmation($variables) {
+  $select_all_pages = $variables['select_all_pages'];
   $vbo = $variables['vbo'];
   $entity_type = $vbo->get_entity_type();
   $rows = $variables['rows'];
-  $result_count = count($vbo->view->result);
-  $row_count = count($rows);
   $items = array();
-  // All rows on all pages have been selected.
-  if ($result_count < $row_count) {
-    $entity_ids = array_slice(array_values($rows), 0, $result_count);
-    $entities = _views_bulk_operations_entity_load($entity_type, $entity_ids, $vbo->revision);
-    foreach ($entities as $entity) {
-      $items[] = check_plain(_views_bulk_operations_entity_label($entity_type, $entity));
-    }
-    $items[] = t('...and <strong>!count</strong> more.', array('!count' => $row_count - $result_count));
+  // Load the entities from the current page, and show their titles.
+  $entities = _views_bulk_operations_entity_load($entity_type, array_values($rows), $vbo->revision);
+  foreach ($entities as $entity) {
+    $items[] = check_plain(_views_bulk_operations_entity_label($entity_type, $entity));
   }
-  else {
-    $entities = _views_bulk_operations_entity_load($entity_type, array_values($rows), $vbo->revision);
-    foreach ($entities as $entity) {
-      $items[] = check_plain(_views_bulk_operations_entity_label($entity_type, $entity));
-    }
+  // All rows on all pages have been selected, so show a count of additional items.
+  if ($select_all_pages) {
+    $more_count = $vbo->view->total_rows - count($vbo->view->result);
+    $items[] = t('...and <strong>!count</strong> more.', array('!count' => $more_count));
   }
 
   $count = format_plural(count($entities), 'item', 'items');
@@ -590,7 +577,7 @@ function views_bulk_operations_form_submit($form, &$form_state) {
   switch ($form_state['step']) {
     case 'views_form_views_form':
       $form_state['selection'] = _views_bulk_operations_get_selection($vbo, $form_state);
-      _views_bulk_operations_adjust_selection($form_state['selection'], $form_state['values']['select_all'], $vbo);
+      $form_state['select_all_pages'] = $form_state['values']['select_all'];
 
       if ($form_state['values']['single_operation']) {
         $operation = &$form_state['operation'];
@@ -631,6 +618,9 @@ function views_bulk_operations_form_submit($form, &$form_state) {
       break;
   }
 
+  // Adjust the selection if needed, for example by fetching all entity ids
+  // when "Select all on all pages" was used by the user.
+  _views_bulk_operations_adjust_selection($form_state['selection'], $form_state['select_all_pages'], $vbo);
   // Execute the operation.
   _views_bulk_operations_execute($vbo, $form_state['selection'], $form_state['operation']);
 

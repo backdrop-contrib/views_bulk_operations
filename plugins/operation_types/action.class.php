@@ -73,7 +73,7 @@ class ViewsBulkOperationsAction extends ViewsBulkOperationsBaseOperation {
    * @param $form_state
    *   An array containing the current state of the form.
    * @param $context
-   *   An array of related data provided by the caller ("selection", for example).
+   *   An array of related data provided by the caller.
    */
   public function form($form, &$form_state, array $context) {
     $form_callback = $this->operationInfo['callback'] . '_form';
