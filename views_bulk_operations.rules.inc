@@ -174,11 +174,12 @@ function _views_bulk_operations_rules_get_entity_type($view_target) {
 
   if (!isset($entity_types[$view_target])) {
     $views_settings = explode('|', $view_target);
-    $view = views_get_view($views_settings[0]);
-    $view->set_display($views_settings[1]);
-    $view->build();
+    if ($view = views_get_view($views_settings[0])) {
+      $view->set_display($views_settings[1]);
+      $view->build();
 
-    $vbo = _views_bulk_operations_get_field($view);
+      $vbo = _views_bulk_operations_get_field($view);
+    }
     $entity_type = !empty($vbo) ? $vbo->get_entity_type() : '';
     $entity_types[$view_target] = $entity_type;
   }
