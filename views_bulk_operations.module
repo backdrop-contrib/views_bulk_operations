@@ -606,7 +606,7 @@ function _views_bulk_operations_adjust_selection(&$selection, $select_all, $vbo)
     $view->execute($vbo->view->current_display);
     $results = array();
     foreach ($view->result as $row_index => $result) {
-      $results[$row_index] = $result->{$vbo->field_alias};
+      $results[$row_index] = $vbo->get_value($result);
     }
     $selection = $results;
   }
@@ -1187,7 +1187,7 @@ function views_bulk_operations_execute($vid, $operation_id, $operation_arguments
   // Select all rows.
   $selection = array();
   foreach ($view->result as $row_index => $row) {
-    $selection[$row_index] = $row->{$vbo->field_alias};
+    $selection[$row_index] = $vbo->get_value($row);
   }
 
   // Execute the operation on the view results.
