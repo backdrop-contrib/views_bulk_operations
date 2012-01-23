@@ -156,8 +156,15 @@ function views_bulk_operations_condition_result_count($view, $args, $minimum) {
  *   - array('entity_list' => array(...))
  */
 function views_bulk_operations_action_load_list($view, $args) {
-  $ids = views_bulk_operations_action_load_id_list($view, $args);
-  $entities = entity_load($vbo->get_entity_type(), $ids['entity_id_list']);
+  $vbo = _views_bulk_operations_rules_get_field($view, $args);
+
+  // Get all entity ids.
+  $ids = array();
+  foreach ($vbo->view->result as $row_index => $result) {
+    $ids[] = $vbo->get_value($result);
+  }
+  // And load the entity objects.
+  $entities = entity_load($vbo->get_entity_type(), $ids);
 
   return array('entity_list' => $entities);
 }
