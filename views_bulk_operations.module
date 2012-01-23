@@ -410,6 +410,7 @@ function views_bulk_operations_form($form, &$form_state, $vbo) {
     $operation = reset($selected_operations);
     if ($operation->configurable()) {
       $context = array(
+        'entity_type' => $vbo->get_entity_type(),
         // Pass the View along. Needed by views_send 7.x-1.x.
         // Has no performance penalty since objects are passed by reference,
         // but needing the full views object in a core action is in most cases
@@ -495,6 +496,7 @@ function views_bulk_operations_config_form($form, &$form_state, $view, $output) 
   drupal_set_title(t('Set parameters for %operation', array('%operation' => $operation->label())), PASS_THROUGH);
 
   $context = array(
+    'entity_type' => $vbo->get_entity_type(),
     // Pass the View along. Needed by views_send 7.x-1.x.
     // Has no performance penalty since objects are passed by reference,
     // but needing the full views object in a core action is in most cases

@@ -150,7 +150,7 @@ class ViewsBulkOperationsAction extends ViewsBulkOperationsBaseOperation {
           $dom_id . '-selected' => array(1),
         ),
       );
-      $form['settings'] += $settings_form_callback($settings);
+      $form['settings'] += $settings_form_callback($settings, $this->entityType);
     }
 
     return $form;
