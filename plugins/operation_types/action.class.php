@@ -76,9 +76,15 @@ class ViewsBulkOperationsAction extends ViewsBulkOperationsBaseOperation {
    *   An array of related data provided by the caller.
    */
   public function form($form, &$form_state, array $context) {
+    // Some modules (including this one) place their action callbacks
+    // into separate files. At this point those files might no longer be
+    // included due to an #ajax rebuild, so we call actions_list() to trigger
+    // inclusion. The same thing is done by actions_do() on execute.
+    actions_list();
+
     $context['settings'] = $this->getAdminOption('settings', array());
     $form_callback = $this->operationInfo['callback'] . '_form';
-    return $form_callback($context);
+    return $form_callback($context, $form_state);
   }
 
   /**
