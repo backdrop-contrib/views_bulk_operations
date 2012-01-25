@@ -62,7 +62,7 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
 
     $form['vbo'] = array(
       '#type' => 'fieldset',
-      '#title' => t('Views Bulk Operations'),
+      '#title' => t('Bulk operations'),
       '#collapsible' => TRUE,
       '#collapsed' => FALSE,
     );
