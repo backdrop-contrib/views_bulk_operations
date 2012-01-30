@@ -46,6 +46,7 @@ function views_bulk_operations_load_action_includes() {
     'archive.action.inc',
     'argument_selector.action.inc',
     'delete.action.inc',
+    'modify.action.inc',
     'script.action.inc',
     'user_roles.action.inc',
   );
@@ -509,7 +510,7 @@ function views_bulk_operations_config_form($form, &$form_state, $view, $output) 
   $form['actions'] = array(
     '#type' => 'container',
     '#attributes' => array('class' => array('form-actions')),
-    '#weight' => 100,
+    '#weight' => 999,
   );
   $form['actions']['submit'] = array(
     '#type' => 'submit',
