@@ -238,6 +238,11 @@ class ViewsBulkOperationsAction extends ViewsBulkOperationsBaseOperation {
     $context['settings'] = $this->getAdminOption('settings', array());
     $context += $this->formOptions;
     $context += $this->operationInfo['parameters'];
+    // Actions provided by the Drupal system module require the entity to be
+    // present in $context, keyed by entity type.
+    if (is_object($data)) {
+      $context[$this->entityType] = $data;
+    }
 
     actions_do($this->operationInfo['callback'], $data, $context);
 
