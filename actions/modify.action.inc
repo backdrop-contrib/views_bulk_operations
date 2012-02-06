@@ -11,8 +11,12 @@ function views_bulk_operations_modify_action_info() {
   return array('views_bulk_operations_modify_action' => array(
     'type' => 'entity',
     'label' => t('Modify entity values'),
-    'configurable' => TRUE,
     'behavior' => array('changes_property'),
+    // This action only works when invoked through VBO. That's why it's
+    // declared as non-configurable to prevent it from being shown in the
+    // "Create an advanced action" dropdown on admin/config/system/actions.
+    'configurable' => FALSE,
+    'vbo_configurable' => TRUE,
   ));
 }
 
