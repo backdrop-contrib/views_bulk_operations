@@ -169,7 +169,12 @@ function views_bulk_operations_modify_action_form($context, &$form_state) {
 
   foreach ($bundles as $bundle_name => $bundle) {
     $bundle_key = $info['entity keys']['bundle'];
-    $entity = entity_create($context['entity_type'], array($bundle_key => $bundle_name));
+    $default_values = array();
+    // If the bundle key exists, it must always be set on an entity.
+    if (!empty($bundle_key)) {
+      $default_values[$bundle_key] = $bundle_name;
+    }
+    $entity = entity_create($context['entity_type'], $default_values);
     $form_state['entities'][$bundle_name] = $entity;
 
     // Show the more detailed label only if the entity type has multiple bundles.
@@ -332,9 +337,14 @@ function views_bulk_operations_modify_action_validate($form, &$form_state) {
     // $form_state['entities'] being non-empty, so a new one is created.
     $info = entity_get_info($form_state['entity_type']);
     $bundle_key = $info['entity keys']['bundle'];
-    $bundle_names = array_keys($info['bundles']);
-    $bundle_name = reset($bundle_names);
-    $entity = entity_create($form_state['entity_type'], array($bundle_key => $bundle_name));
+    $default_values = array();
+    // If the bundle key exists, it must always be set on an entity.
+    if (!empty($bundle_key)) {
+      $bundle_names = array_keys($info['bundles']);
+      $bundle_name = reset($bundle_names);
+      $default_values[$bundle_key] = $bundle_name;
+    }
+    $entity = entity_create($form_state['entity_type'], $default_values);
     $wrapper = entity_metadata_wrapper($form_state['entity_type'], $entity);
 
     $properties = _views_bulk_operations_modify_action_get_properties($form_state['entity_type']);
@@ -390,7 +400,7 @@ function _views_bulk_operations_modify_action_get_properties($entity_type, $disp
   // List of properties that can't be modified.
   $disabled_properties = array('created', 'changed');
   foreach (array('id', 'bundle', 'revision') as $key) {
-    if (isset($info['entity keys'][$key])) {
+    if (!empty($info['entity keys'][$key])) {
       $disabled_properties[] = $info['entity keys'][$key];
     }
   }
