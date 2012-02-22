@@ -42,7 +42,7 @@ function views_bulk_operations_modify_action($entity, $context) {
         }
       }
 
-      if (in_array($key, $context['append']['bundle_' . $bundle_name])) {
+      if (in_array($key, $context['append']['bundle_' . $bundle_name]) && !empty($entity->$key)) {
         $entity->{$key}[LANGUAGE_NONE] = array_merge($entity->{$key}[LANGUAGE_NONE], $pseudo_entity->{$key}[LANGUAGE_NONE]);
 
         // Check if we breached cardinality, and notify the user.
