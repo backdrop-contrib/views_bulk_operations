@@ -202,16 +202,16 @@ function views_bulk_operations_modify_action_form($context, &$form_state) {
     $instances = field_info_instances($entity_type, $bundle_name);
     $weight = 0;
     foreach (element_get_visible_children($form[$form_key]) as $field_name) {
+      // For our use case it makes no sense for any field widget to be required.
+      $language = $form[$form_key][$field_name]['#language'];
+      _views_bulk_operations_modify_action_unset_required($form[$form_key][$field_name][$language]);
+
       // The admin has specified which fields to display, but this field didn't
       // make the cut. Hide it with #access => FALSE and move on.
       if (empty($display_values[VBO_MODIFY_ACTION_ALL]) && empty($display_values[$bundle_name . '::' . $field_name])) {
         $form[$form_key][$field_name]['#access'] = FALSE;
         continue;
       }
-
-      // For our use case it makes no sense for any field widget to be required.
-      $language = $form[$form_key][$field_name]['#language'];
-      _views_bulk_operations_modify_action_unset_required($form[$form_key][$field_name][$language]);
 
       $field = $instances[$field_name];
       $form[$form_key]['show_value'][$field_name] = array(
