@@ -783,6 +783,7 @@ function _views_bulk_operations_execute($vbo, $selection, $operation, $force_dir
 
   if (!$force_direct && $operation->getAdminOption('use_queue')) {
     $entity_type = $vbo->get_entity_type();
+    $queue = DrupalQueue::get('views_bulk_operations');
     $current = 1;
     foreach ($rows as $row_index => $row) {
       // Some operations rely on knowing their position in the execution set
@@ -796,14 +797,14 @@ function _views_bulk_operations_execute($vbo, $selection, $operation, $force_dir
       );
 
       $job = array(
-        'description' => t('Perform %operation on @type !entity_id.', array(
+        'title' => t('Perform %operation on @type !entity_id.', array(
           '%operation' => $operation->label(),
           '@type' => $entity_type,
           '!entity_id' => $row['entity_id'],
         )),
-        'arguments' => array($row_index, $row, $operation, $context, $options, $user->uid),
+        'uid' => $user->uid,
+        'arguments' => array($row_index, $row, $operation, $context, $options),
       );
-      $queue = DrupalQueue::get('views_bulk_operations');
       $queue->createItem($job);
       $current++;
     }
@@ -840,7 +841,7 @@ function _views_bulk_operations_execute($vbo, $selection, $operation, $force_dir
  * Process function for the Drupal Queue execution type.
  */
 function _views_bulk_operations_queue_process($data) {
-  list($row_index, $row, $operation, $operation_context, $options, $uid) = $data['arguments'];
+  list($row_index, $row, $operation, $operation_context, $options) = $data['arguments'];
 
   $entity_type = $operation->entityType;
   $entities = _views_bulk_operations_entity_load($entity_type, array($row['entity_id']), $options['revision']);
@@ -850,7 +851,7 @@ function _views_bulk_operations_queue_process($data) {
     return;
   }
 
-  $account = user_load($uid);
+  $account = user_load($data['uid']);
   if (!_views_bulk_operations_entity_access($operation, $entity_type, $entity, $account)) {
     watchdog('views bulk operations', 'Skipped %operation on @type %title due to insufficient permissions.', array(
       '%operation' => $operation->label(),
