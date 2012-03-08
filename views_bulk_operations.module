@@ -280,6 +280,12 @@ function views_bulk_operations_form_alter(&$form, &$form_state, $form_id) {
   if (empty($vbo)) {
     return;
   }
+  
+  // Cache the built form to prevent it from being rebuilt prior to validation
+  // and submission, which could lead to data being processed incorrectly,
+  // because the views rows (and thus, the form elements as well) have changed
+  // in the meantime. Matching views issue: http://drupal.org/node/1473276.
+  $form_state['cache'] = TRUE;
 
   // Add VBO's custom callbacks.
   $form['#validate'][] = 'views_bulk_operations_form_validate';
