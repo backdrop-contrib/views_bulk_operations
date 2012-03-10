@@ -280,7 +280,7 @@ function views_bulk_operations_form_alter(&$form, &$form_state, $form_id) {
   if (empty($vbo)) {
     return;
   }
-  
+
   // Cache the built form to prevent it from being rebuilt prior to validation
   // and submission, which could lead to data being processed incorrectly,
   // because the views rows (and thus, the form elements as well) have changed
@@ -403,70 +403,37 @@ function views_bulk_operations_form($form, &$form_state, $vbo) {
     '#default_value' => FALSE,
   );
 
-  if (count($vbo->get_selected_operations()) == 1 && $vbo->options['vbo']['merge_single_action']) {
-    $form['single_operation'] = array(
-      '#type' => 'value',
-      '#value' => TRUE,
-    );
-
-    $selected_operations = $vbo->get_selected_operations();
-    $operation = reset($selected_operations);
-    if ($operation->configurable()) {
-      $context = array(
-        'entity_type' => $vbo->get_entity_type(),
-        // Pass the View along. Needed by views_send 7.x-1.x.
-        // Has no performance penalty since objects are passed by reference,
-        // but needing the full views object in a core action is in most cases
-        // a sign of a wrong implementation. Do it only if you have to.
-        'view' => $vbo->view,
-      );
-      $form += $operation->form($form, $form_state, $context);
+  unset($form['actions']['submit']);
+  $form['select'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Operations'),
+    '#collapsible' => TRUE,
+    '#attributes' => array('class' => array('container-inline')),
+  );
+  if ($vbo->options['vbo']['display_type'] == 0) {
+    $options = array(0 => t('- Choose an operation -'));
+    foreach ($vbo->get_selected_operations() as $operation_id => $operation) {
+      $options[$operation_id] = $operation->label();
     }
-    $form_state['operation'] = $operation;
 
-    $form['actions']['submit'] = array(
+    // Create dropdown and submit button.
+    $form['select']['operation'] = array(
+      '#type' => 'select',
+      '#options' => $options,
+    );
+    $form['select']['submit'] = array(
       '#type' => 'submit',
-      '#value' => $operation->label(),
+      '#value' => t('Execute'),
     );
   }
   else {
-    $form['single_operation'] = array(
-      '#type' => 'value',
-      '#value' => FALSE,
-    );
-
-    unset($form['actions']['submit']);
-    $form['select'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Operations'),
-      '#collapsible' => TRUE,
-      '#attributes' => array('class' => array('container-inline')),
-    );
-    if ($vbo->options['vbo']['display_type'] == 0) {
-      $options = array(0 => t('- Choose an operation -'));
-      foreach ($vbo->get_selected_operations() as $operation_id => $operation) {
-        $options[$operation_id] = $operation->label();
-      }
-
-      // Create dropdown and submit button.
-      $form['select']['operation'] = array(
-        '#type' => 'select',
-        '#options' => $options,
-      );
-      $form['select']['submit'] = array(
+    // Create buttons for operations.
+    foreach ($vbo->get_selected_operations() as $operation_id => $operation) {
+      $form['select'][$operation_id] = array(
         '#type' => 'submit',
-        '#value' => t('Execute'),
+        '#value' => $operation->label(),
+        '#operation_id' => $operation_id,
       );
-    }
-    else {
-      // Create buttons for operations.
-      foreach ($vbo->get_selected_operations() as $operation_id => $operation) {
-        $form['select'][$operation_id] = array(
-          '#type' => 'submit',
-          '#value' => $operation->label(),
-          '#operation_id' => $operation_id,
-        );
-      }
     }
   }
 
@@ -625,19 +592,11 @@ function views_bulk_operations_form_validate($form, &$form_state) {
 
   switch ($form_state['step']) {
     case 'views_form_views_form':
-      if ($form_state['values']['single_operation']) {
-        $operation = &$form_state['operation'];
-        if ($operation->configurable()) {
-          $operation->formValidate($form, $form_state);
-        }
+      if (!empty($form_state['triggering_element']['#operation_id'])) {
+        $form_state['values']['operation'] = $form_state['triggering_element']['#operation_id'];
       }
-      else {
-        if (!empty($form_state['triggering_element']['#operation_id'])) {
-          $form_state['values']['operation'] = $form_state['triggering_element']['#operation_id'];
-        }
-        if (!$form_state['values']['operation']) {
-          form_set_error('operation', t('No operation selected. Please select an operation to perform.'));
-        }
+      if (!$form_state['values']['operation']) {
+        form_set_error('operation', t('No operation selected. Please select an operation to perform.'));
       }
 
       $field_name = $vbo->options['id'];
@@ -671,28 +630,12 @@ function views_bulk_operations_form_submit($form, &$form_state) {
       $form_state['selection'] = _views_bulk_operations_get_selection($vbo, $form_state);
       $form_state['select_all_pages'] = $form_state['values']['select_all'];
 
-      if ($form_state['values']['single_operation']) {
-        $operation = &$form_state['operation'];
-        if ($operation->configurable()) {
-          $operation->formSubmit($form, $form_state);
-        }
-        else {
-          $operation->formOptions = $form_state['values'];
-        }
-
-        if ($operation->getAdminOption('skip_confirmation')) {
-          break; // Go directly to execution
-        }
-        $form_state['step'] = 'views_bulk_operations_confirm_form';
+      $options = $vbo->get_operation_options($form_state['values']['operation']);
+      $form_state['operation'] = $operation = views_bulk_operations_get_operation($form_state['values']['operation'], $entity_type, $options);
+      if (!$operation->configurable() && $operation->getAdminOption('skip_confirmation')) {
+        break; // Go directly to execution
       }
-      else {
-        $options = $vbo->get_operation_options($form_state['values']['operation']);
-        $form_state['operation'] = $operation = views_bulk_operations_get_operation($form_state['values']['operation'], $entity_type, $options);
-        if (!$operation->configurable() && $operation->getAdminOption('skip_confirmation')) {
-          break; // Go directly to execution
-        }
-        $form_state['step'] = $operation->configurable() ? 'views_bulk_operations_config_form' : 'views_bulk_operations_confirm_form';
-      }
+      $form_state['step'] = $operation->configurable() ? 'views_bulk_operations_config_form' : 'views_bulk_operations_confirm_form';
       $form_state['rebuild'] = TRUE;
       return;
 

@@ -49,7 +49,6 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
         'enable_select_all_pages' => array('default' => TRUE),
         'display_type' => array('default' => 0),
         'display_result' => array('default' => TRUE),
-        'merge_single_action' => array('default' => FALSE),
         'force_single' => array('default' => FALSE),
       ),
     );
@@ -93,12 +92,6 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
       '#title' => t('Display processing result'),
       '#description' => t('Check this box to let Drupal display a message with the result of processing the selected items.'),
       '#default_value' => $this->options['vbo']['display_result'],
-    );
-    $form['vbo']['merge_single_action'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Merge single action\'s form with the row selection view'),
-      '#description' => t('In case only one action is selected *and* this action is configurable, display its action form along with the row selection view.'),
-      '#default_value' => $this->options['vbo']['merge_single_action'],
     );
     $form['vbo']['entity_load_capacity'] = array(
       '#type' => 'textfield',
