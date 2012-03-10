@@ -287,10 +287,6 @@ function views_bulk_operations_form_alter(&$form, &$form_state, $form_id) {
   // in the meantime. Matching views issue: http://drupal.org/node/1473276.
   $form_state['cache'] = TRUE;
 
-  // Add VBO's custom callbacks.
-  $form['#validate'][] = 'views_bulk_operations_form_validate';
-  $form['#submit'][] = 'views_bulk_operations_form_submit';
-
   // Allow VBO to work when embedded using views_embed_view(), or in a block.
   if (empty($vbo->view->override_url)) {
     if (!empty($vbo->view->preview) || $vbo->view->display_handler instanceof views_plugin_display_block) {
@@ -403,7 +399,20 @@ function views_bulk_operations_form($form, &$form_state, $vbo) {
     '#default_value' => FALSE,
   );
 
-  unset($form['actions']['submit']);
+  // The submit button added by Views Form API might be used by a non-VBO Views
+  // Form handler. If there's no such handler on the view, hide the button.
+  $has_other_views_form_handlers = FALSE;
+  foreach ($vbo->view->field as $field) {
+    if (property_exists($field, 'views_form_callback') || method_exists($field, 'views_form')) {
+      if (!($field instanceof views_bulk_operations_handler_field_operations)) {
+        $has_other_views_form_handlers = TRUE;
+      }
+    }
+  }
+  if (!$has_other_views_form_handlers) {
+    $form['actions']['submit']['#access'] = FALSE;
+  }
+
   $form['select'] = array(
     '#type' => 'fieldset',
     '#title' => t('Operations'),
@@ -424,6 +433,8 @@ function views_bulk_operations_form($form, &$form_state, $vbo) {
     $form['select']['submit'] = array(
       '#type' => 'submit',
       '#value' => t('Execute'),
+      '#validate' => array('views_bulk_operations_form_validate'),
+      '#submit' => array('views_bulk_operations_form_submit'),
     );
   }
   else {
@@ -432,6 +443,8 @@ function views_bulk_operations_form($form, &$form_state, $vbo) {
       $form['select'][$operation_id] = array(
         '#type' => 'submit',
         '#value' => $operation->label(),
+        '#validate' => array('views_bulk_operations_form_validate'),
+        '#submit' => array('views_bulk_operations_form_submit'),
         '#operation_id' => $operation_id,
       );
     }
@@ -455,6 +468,31 @@ function views_bulk_operations_form($form, &$form_state, $vbo) {
   }
 
   return $form;
+}
+
+/**
+ * Validation callback for the first step of the VBO form.
+ */
+function views_bulk_operations_form_validate($form, &$form_state) {
+  $vbo = _views_bulk_operations_get_field($form_state['build_info']['args'][0]);
+
+  if (!empty($form_state['triggering_element']['#operation_id'])) {
+    $form_state['values']['operation'] = $form_state['triggering_element']['#operation_id'];
+  }
+  if (!$form_state['values']['operation']) {
+    form_set_error('operation', t('No operation selected. Please select an operation to perform.'));
+  }
+
+  $field_name = $vbo->options['id'];
+  $selection = _views_bulk_operations_get_selection($vbo, $form_state);
+  if (!$selection) {
+    form_set_error($field_name, t('Please select at least one item.'));
+  }
+
+  // If using force single, make sure only one value was submitted.
+  if ($vbo->options['vbo']['force_single'] && count($selection) > 1) {
+    form_set_error($field_name, t('You may only select one item.'));
+  }
 }
 
 /**
@@ -484,10 +522,21 @@ function views_bulk_operations_config_form($form, &$form_state, $view, $output) 
   $form['actions']['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Next'),
+    '#validate' => array('views_bulk_operations_config_form_validate'),
+    '#submit' => array('views_bulk_operations_form_submit'),
     '#suffix' => l(t('Cancel'), $vbo->view->get_url(), array('query' => $query)),
   );
 
   return $form;
+}
+
+/**
+ * Validation callback for the "configure" step.
+ * Gives the operation a chance to validate its config form.
+ */
+function views_bulk_operations_config_form_validate($form, &$form_state) {
+  $operation = &$form_state['operation'];
+  $operation->formValidate($form, $form_state);
 }
 
 /**
@@ -503,6 +552,8 @@ function views_bulk_operations_confirm_form($form, &$form_state, $view, $output)
     array('path' => $view->get_url(), 'query' => $query),
     theme('views_bulk_operations_confirmation', array('rows' => $rows, 'vbo' => $vbo, 'select_all_pages' => $form_state['select_all_pages']))
   );
+  // Add VBO's submit handler to the Confirm button added by config_form().
+  $form['actions']['submit']['#submit'] = array('views_bulk_operations_form_submit');
 
   return $form;
 }
@@ -581,40 +632,6 @@ function _views_bulk_operations_adjust_selection(&$selection, $select_all, $vbo)
       $results[$row_index] = $vbo->get_value($result);
     }
     $selection = $results;
-  }
-}
-
-/**
- * Validate all steps of the VBO multistep form.
- */
-function views_bulk_operations_form_validate($form, &$form_state) {
-  $vbo = _views_bulk_operations_get_field($form_state['build_info']['args'][0]);
-
-  switch ($form_state['step']) {
-    case 'views_form_views_form':
-      if (!empty($form_state['triggering_element']['#operation_id'])) {
-        $form_state['values']['operation'] = $form_state['triggering_element']['#operation_id'];
-      }
-      if (!$form_state['values']['operation']) {
-        form_set_error('operation', t('No operation selected. Please select an operation to perform.'));
-      }
-
-      $field_name = $vbo->options['id'];
-      $selection = _views_bulk_operations_get_selection($vbo, $form_state);
-      if (!$selection) {
-        form_set_error($field_name, t('Please select at least one item.'));
-      }
-
-      // if using force single, make sure only one value was submitted.
-      if ($vbo->options['vbo']['force_single'] && count($selection) > 1) {
-        form_set_error($field_name, t('You may only select one item.'));
-      }
-      break;
-
-    case 'views_bulk_operations_config_form':
-      $operation = &$form_state['operation'];
-      $operation->formValidate($form, $form_state);
-      break;
   }
 }
 
@@ -909,7 +926,7 @@ function _views_bulk_operations_direct_process($operation, $rows, $options, &$co
   $entity_type = $operation->entityType;
   $entity_ids = array();
   foreach ($rows as $row_index => $row) {
-   $entity_ids[] = $row['entity_id'];
+    $entity_ids[] = $row['entity_id'];
   }
   $entities = _views_bulk_operations_entity_load($entity_type, $entity_ids, $options['revision']);
 
