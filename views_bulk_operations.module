@@ -264,6 +264,7 @@ function views_bulk_operations_views_form_substitutions() {
     '#default_value' => FALSE,
     '#attributes' => array('class' => array('vbo-table-select-all')),
   );
+
   return array(
     $select_all_placeholder => drupal_render($select_all),
   );
@@ -1110,6 +1111,7 @@ function _views_bulk_operations_entity_label($entity_type, $entity) {
       $label = $entity->{$id_key};
     }
   }
+
   return $label;
 }
 
