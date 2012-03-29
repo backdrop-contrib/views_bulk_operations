@@ -7,6 +7,7 @@
  */
 
 class ViewsBulkOperationsAction extends ViewsBulkOperationsBaseOperation {
+
   /**
    * Contains the options provided by the user in the configuration form.
    *

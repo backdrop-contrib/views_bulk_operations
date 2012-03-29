@@ -7,6 +7,7 @@
  */
 
 class ViewsBulkOperationsRulesComponent extends ViewsBulkOperationsBaseOperation {
+
   /**
    * Returns whether the provided account has access to execute the operation.
    *

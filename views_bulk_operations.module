@@ -489,11 +489,6 @@ function views_bulk_operations_form_validate($form, &$form_state) {
   if (!$selection) {
     form_set_error($field_name, t('Please select at least one item.'));
   }
-
-  // If using force single, make sure only one value was submitted.
-  if ($vbo->options['vbo']['force_single'] && count($selection) > 1) {
-    form_set_error($field_name, t('You may only select one item.'));
-  }
 }
 
 /**
@@ -506,7 +501,7 @@ function views_bulk_operations_config_form($form, &$form_state, $view, $output) 
 
   $context = array(
     'entity_type' => $vbo->get_entity_type(),
-    // Pass the View along. Needed by views_send 7.x-1.x.
+    // Pass the View along.
     // Has no performance penalty since objects are passed by reference,
     // but needing the full views object in a core action is in most cases
     // a sign of a wrong implementation. Do it only if you have to.
@@ -738,7 +733,7 @@ function _views_bulk_operations_execute($vbo, $selection, $operation, $force_dir
       'views_row' => array(),
     );
     // Some operations require full selected rows.
-    // @todo Make this work when all rows on all pages are selected?
+    // @todo Make this work when all rows on all pages are selected. #1367644
     if ($operation->needsRows() && isset($vbo->view->result[$row_index])) {
       $rows[$row_index]['views_row'] = $vbo->view->result[$row_index];
     }
@@ -789,14 +784,7 @@ function _views_bulk_operations_execute($vbo, $selection, $operation, $force_dir
     batch_set($batch);
   }
   else {
-    @set_time_limit(0);
-
-    $context['results']['rows'] = 0;
-    $context['results']['time'] = microtime(TRUE);
-    $context['results']['log'] = array();
-
-    _views_bulk_operations_direct_process($operation, $rows, $options, $context);
-    _views_bulk_operations_execute_finished(TRUE, $context['results'], array(), 0, $options + array('operation' => $operation));
+    _views_bulk_operations_direct_process($operation, $rows, $options);
   }
 }
 
@@ -923,7 +911,16 @@ function _views_bulk_operations_batch_process($rows, $operation, $options, &$con
 /**
  * Process function for the direct execution type.
  */
-function _views_bulk_operations_direct_process($operation, $rows, $options, &$context) {
+function _views_bulk_operations_direct_process($operation, $rows, $options) {
+  @set_time_limit(0);
+
+  // Prepare an array of status information. Imitates the Batch API naming
+  // for consistency. Passed to _views_bulk_operations_execute_finished().
+  $context = array();
+  $context['results']['rows'] = 0;
+  $context['results']['time'] = microtime(TRUE);
+  $context['results']['log'] = array();
+
   $entity_type = $operation->entityType;
   $entity_ids = array();
   foreach ($rows as $row_index => $row) {
@@ -994,6 +991,8 @@ function _views_bulk_operations_direct_process($operation, $rows, $options, &$co
       '@items' => format_plural(count($entities), '1 item', '@count items'),
     ));
   }
+
+  _views_bulk_operations_execute_finished(TRUE, $context['results'], array(), 0, $options + array('operation' => $operation));
 }
 
 /**
@@ -1132,7 +1131,7 @@ function views_bulk_operations_execute($vid, $operation_id, $operation_arguments
   $view->query->set_limit(NULL); // reset the work done by the pager
   $view->query->set_offset(NULL);
 
-  // Find the view display that has the VBO style.
+  // Find the VBO field.
   $vbo = _views_bulk_operations_get_field($view);
   if (!$vbo) {
     _views_bulk_operations_report_error('Could not find a VBO field in view %vid.', array('%vid' => $vid));
