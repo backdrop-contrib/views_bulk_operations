@@ -13,10 +13,7 @@ class ViewsBulkOperationsRulesComponent extends ViewsBulkOperationsBaseOperation
    * @param $account
    */
   public function access($account) {
-    // The rules access() method returns FALSE for all non-admins, so this is
-    // disabled until http://drupal.org/node/1217128 gets solved.
-    //return rules_action('component_' . $this->operationInfo['key'])->access();
-    return TRUE;
+    return rules_action('component_' . $this->operationInfo['key'])->access();
   }
 
   /**
