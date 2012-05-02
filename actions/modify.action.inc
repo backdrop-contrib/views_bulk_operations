@@ -116,7 +116,7 @@ function views_bulk_operations_modify_action_form($context, &$form_state) {
 
   $info = entity_get_info($entity_type);
   $properties = _views_bulk_operations_modify_action_get_properties($entity_type, $context['settings']['display_values']);
-  $bundles = _views_bulk_operations_modify_action_get_bundles($entity_type, $context['settings']['display_values']);
+  $bundles = _views_bulk_operations_modify_action_get_bundles($entity_type, $context);
 
   $form['#attached']['css'][] = drupal_get_path('module', 'views_bulk_operations') . '/css/modify.action.css';
   $form['#tree'] = TRUE;
@@ -452,20 +452,39 @@ function _views_bulk_operations_modify_action_get_properties($entity_type, $disp
  * (through the action settings) then only bundles that have at least one field
  * selected are returned.
  *
- * @todo Make it consult the view passed through $context, and if it has a
- * filter on the bundle key, use the selected values.
- *
  * @param $entity_type
  *   The entity type whose bundles will be fetched.
- * @param $display_values
- *   An admin-provided list of properties and fields that should be displayed
- *   for editing, used to filter the returned list of bundles.
+ * @param $context
+ *   The VBO context variable.
  */
-function _views_bulk_operations_modify_action_get_bundles($entity_type, $display_values) {
+function _views_bulk_operations_modify_action_get_bundles($entity_type, $context) {
+  $bundles = array();
+
+  $view = $context['view'];
+  $display_values = $context['settings']['display_values'];
   $info = entity_get_info($entity_type);
+  $bundle_key = $info['bundle keys']['bundle'];
+  // Check if this View has a filter on the bundle key and assemble a list
+  // of allowed bundles according to the filter.
   $filtered_bundles = array();
+  if (isset($view->filter[$bundle_key]) && !empty($view->filter[$bundle_key]->value)) {
+    $operator = $view->filter[$bundle_key]->operator;
+    if ($operator == 'in') {
+      $filtered_bundles = $view->filter[$bundle_key]->value;
+    }
+    elseif ($operator == 'not in') {
+      $bundle_names = array_keys($info['bundles']);
+      $filtered_bundles = array_diff($bundle_names, $view->filter[$bundle_key]->value);
+    }
+  }
 
   foreach ($info['bundles'] as $bundle_name => $bundle) {
+    // The view is limited to specific bundles, but this bundle isn't one of
+    // them. Ignore it.
+    if (!empty($filtered_bundles) && !in_array($bundle_name, $filtered_bundles)) {
+      continue;
+    }
+
     $instances = field_info_instances($entity_type, $bundle_name);
     // Ignore bundles that don't have any field instances attached.
     if (empty($instances)) {
@@ -481,11 +500,11 @@ function _views_bulk_operations_modify_action_get_bundles($entity_type, $display
     // The admin has either specified that all values should be modifiable, or
     // selected at least one field belonging to this bundle.
     if (!empty($display_values[VBO_MODIFY_ACTION_ALL]) || $has_enabled_fields) {
-      $filtered_bundles[$bundle_name] = $bundle;
+      $bundles[$bundle_name] = $bundle;
     }
   }
 
-  return $filtered_bundles;
+  return $bundles;
 }
 
 /**
