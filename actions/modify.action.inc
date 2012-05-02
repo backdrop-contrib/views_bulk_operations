@@ -31,13 +31,15 @@ function views_bulk_operations_modify_action($entity, $context) {
 
   // Handle Field API fields.
   if (!empty($context['selected']['bundle_' . $bundle_name])) {
-    $pseudo_entity = $context['entities'][$bundle_name];
+    // The pseudo entity is cloned so that changes to it don't get carried
+    // over to the next execution.
+    $pseudo_entity = clone $context['entities'][$bundle_name];
     foreach ($context['selected']['bundle_' . $bundle_name] as $key) {
       // Replace any tokens that might exist in the field columns.
       foreach ($pseudo_entity->{$key}[LANGUAGE_NONE] as $delta => &$item) {
-        foreach ($item as $column => &$value) {
+        foreach ($item as $column => $value) {
           if (is_string($value)) {
-            $value = token_replace($value, array($context['entity_type'] => $entity), array('sanitize' => FALSE));
+            $item[$column] = token_replace($value, array($context['entity_type'] => $entity), array('sanitize' => FALSE));
           }
         }
       }
