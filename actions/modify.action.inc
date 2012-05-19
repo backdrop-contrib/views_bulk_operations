@@ -467,7 +467,7 @@ function _views_bulk_operations_modify_action_get_bundles($entity_type, $context
   // Check if this View has a filter on the bundle key and assemble a list
   // of allowed bundles according to the filter.
   $filtered_bundles = array();
-  if (isset($view->filter[$bundle_key]) && !empty($view->filter[$bundle_key]->value)) {
+  if (!empty($bundle_key) && isset($view->filter[$bundle_key]) && !empty($view->filter[$bundle_key]->value)) {
     $operator = $view->filter[$bundle_key]->operator;
     if ($operator == 'in') {
       $filtered_bundles = $view->filter[$bundle_key]->value;
