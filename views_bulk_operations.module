@@ -299,6 +299,9 @@ function views_bulk_operations_form_alter(&$form, &$form_state, $form_id) {
   if ($form_state['step'] == 'views_form_views_form') {
     $form = views_bulk_operations_form($form, $form_state, $vbo);
   }
+
+  // Give other modules a chance to alter the form.
+  drupal_alter('views_bulk_operations_form', $form, $form_state, $vbo);
 }
 
 /**
