@@ -463,7 +463,7 @@ function _views_bulk_operations_modify_action_get_bundles($entity_type, $context
   $view = $context['view'];
   $display_values = $context['settings']['display_values'];
   $info = entity_get_info($entity_type);
-  $bundle_key = $info['bundle keys']['bundle'];
+  $bundle_key = $info['entity keys']['bundle'];
   // Check if this View has a filter on the bundle key and assemble a list
   // of allowed bundles according to the filter.
   $filtered_bundles = array();
