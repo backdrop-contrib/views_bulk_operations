@@ -423,7 +423,7 @@ function views_bulk_operations_form($form, &$form_state, $vbo) {
     '#collapsible' => TRUE,
     '#attributes' => array('class' => array('container-inline')),
   );
-  if ($vbo->options['vbo']['display_type'] == 0) {
+  if ($vbo->get_vbo_option('display_type') == 0) {
     $options = array(0 => t('- Choose an operation -'));
     foreach ($vbo->get_selected_operations() as $operation_id => $operation) {
       $options[$operation_id] = $operation->label();
@@ -458,11 +458,11 @@ function views_bulk_operations_form($form, &$form_state, $vbo) {
   // If the view is using a table style plugin, the markup gets moved to
   // a table row below the header.
   // If we are using radio buttons, we don't use select all at all.
-  if (!empty($vbo->view->result) && !$vbo->options['vbo']['force_single']) {
+  if (!empty($vbo->view->result) && !$vbo->get_vbo_option('force_single')) {
     $enable_select_all_pages = FALSE;
     // If the view is paginated, and "select all items on all pages" is
     // enabled, tell that to the theme function.
-    if (count($vbo->view->result) != $vbo->view->total_rows && $vbo->options['vbo']['enable_select_all_pages']) {
+    if (count($vbo->view->result) != $vbo->view->total_rows && $vbo->get_vbo_option('enable_select_all_pages')) {
       $enable_select_all_pages = TRUE;
     }
     $form['select_all_markup'] = array(
@@ -721,8 +721,8 @@ function _views_bulk_operations_execute($vbo, $selection, $operation, $force_dir
   // Options that affect execution.
   $options = array(
     'revision' => $vbo->revision,
-    'display_result' => $vbo->options['vbo']['display_result'],
-    'entity_load_capacity' => $vbo->options['vbo']['entity_load_capacity'],
+    'display_result' => $vbo->get_vbo_option('display_result'),
+    'entity_load_capacity' => $vbo->get_vbo_option('entity_load_capacity'),
   );
   // An operation that needs aggregated results can only be executed directly.
   if ($operation->aggregate()) {
