@@ -180,7 +180,7 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
    * placeholder for a "select all" checkbox.
    */
   function label() {
-    if ($this->view->style_plugin instanceof views_plugin_style_table && !$this->options['vbo']['force_single']) {
+    if ($this->view->display_handler->get_option('style_plugin') == 'table' && !$this->options['vbo']['force_single']) {
       return '<!--views-bulk-operations-select-all-->';
     }
     else {
