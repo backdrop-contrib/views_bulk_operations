@@ -13,16 +13,10 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
     parent::init($view, $options);
 
     // Update old settings
-    if (!empty($options['vbo'])) {
+    if (!empty($options['vbo']) && empty($this->options['vbo_operations'])) {
       $this->options['vbo_operations'] = $options['vbo']['operations'];
       unset($options['vbo']['operations']);
       $this->options['vbo_settings'] = $options['vbo'];
-    }
-    if (!empty($this->options['vbo_settings']['selected_operations'])) {
-      foreach (array_filter($this->options['vbo_settings']['selected_operations']) as $operation_id) {
-        $this->options['vbo_operations'][$operation_id]['selected'] = TRUE;
-      }
-      unset($this->options['vbo_settings']['selected_operations']);
     }
     // Prefix all un-prefixed operations.
     foreach ($this->options['vbo_operations'] as $operation_id => &$operation_options) {
@@ -115,8 +109,9 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
     );
 
     $entity_type = $this->get_entity_type();
+    $options = $this->options['vbo_operations'];
     foreach (views_bulk_operations_get_applicable_operations($entity_type, $options) as $operation_id => $operation) {
-      $operation_options = $this->get_operation_options($operation_id);
+      $operation_options = $options[$operation_id];
 
       $dom_id = 'edit-options-vbo-operations-' . str_replace(array('_', ':'), array('-', ''), $operation_id);
       $form['vbo_operations'][$operation_id]['selected'] = array(
