@@ -577,7 +577,7 @@ function theme_views_bulk_operations_confirmation($variables) {
     $items[] = t('...and <strong>!count</strong> more.', array('!count' => $more_count));
   }
 
-  $count = format_plural(count($entities), 'item', 'items');
+  $count = format_plural(count($entities), 'item', '@count items');
   $output = theme('item_list', array('items' => $items, 'title' => t('You selected the following <strong>!count</strong>:', array('!count' => $count))));
   return $output;
 }
