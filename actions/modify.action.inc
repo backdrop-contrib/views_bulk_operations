@@ -285,6 +285,7 @@ function views_bulk_operations_modify_action_form($context, &$form_state) {
       '#theme' => 'token_tree',
       '#token_types' => array($token_type, 'site'),
       '#global_types' => array(),
+      '#dialog' => TRUE,
     );
   }
 
