@@ -236,19 +236,21 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
 
   public function get_selected_operations() {
     global $user;
+    $selected = drupal_static(__FUNCTION__);
+    if (!isset($selected)) {
+      $entity_type = $this->get_entity_type();
+      $selected = array();
+      foreach ($this->options['vbo_operations'] as $operation_id => $options) {
+        if (empty($options['selected'])) {
+          continue;
+        }
 
-    $entity_type = $this->get_entity_type();
-    $selected = array();
-    foreach ($this->options['vbo_operations'] as $operation_id => $options) {
-      if (empty($options['selected'])) {
-        continue;
+        $operation = views_bulk_operations_get_operation($operation_id, $entity_type, $options);
+        if (!$operation || !$operation->access($user)) {
+          continue;
+        }
+        $selected[$operation_id] = $operation;
       }
-
-      $operation = views_bulk_operations_get_operation($operation_id, $entity_type, $options);
-      if (!$operation || !$operation->access($user)) {
-        continue;
-      }
-      $selected[$operation_id] = $operation;
     }
 
     return $selected;
