@@ -288,10 +288,16 @@ function views_bulk_operations_form_alter(&$form, &$form_state, $form_id) {
   // in the meantime. Matching views issue: http://drupal.org/node/1473276.
   $form_state['cache'] = TRUE;
 
-  // Allow VBO to work when embedded using views_embed_view(), or in a block.
   if (empty($vbo->view->override_url)) {
+    // If the VBO view is embedded using views_embed_view(), or in a block,
+    // $view->get_url() doesn't point to the current page, which means that
+    // the form doesn't get processed.
     if (!empty($vbo->view->preview) || $vbo->view->display_handler instanceof views_plugin_display_block) {
       $vbo->view->override_url = $_GET['q'];
+      // We are changing the override_url too late, the form action was already
+      // set by Views to the previous URL, so it needs to be overriden as well.
+      $query = drupal_get_query_parameters($_GET, array('q'));
+      $form['#action'] = url($_GET['q'], array('query' => $query));
     }
   }
 
