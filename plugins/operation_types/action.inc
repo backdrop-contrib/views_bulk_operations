@@ -82,7 +82,7 @@ function views_bulk_operations_operation_advanced_action_list() {
         $actions[$action->aid][$attribute] = $static_actions[$action->callback][$attribute];
       }
     }
-    if (isset($static_actions[$action->callback['parameters']])) {
+    if (isset($static_actions[$action->callback]['parameters'])) {
       $actions[$action->aid]['parameters'] = array_merge($actions[$action->aid]['parameters'], $static_actions[$action->callback]['parameters']);
     }
   }
