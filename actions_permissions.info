@@ -1,4 +1,4 @@
-name = Actions permissions
-description = Integrates actions with the permission system.
+name = Actions permissions (VBO)
+description = Provides permission-based access control for actions. Used by Views Bulk Operations.
 package = Administration
 core = 7.x
