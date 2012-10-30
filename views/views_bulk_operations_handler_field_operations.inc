@@ -45,7 +45,6 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
         'display_type' => array('default' => 0),
         'enable_select_all_pages' => array('default' => TRUE),
         'force_single' => array('default' => FALSE),
-        'display_result' => array('default' => TRUE),
         'entity_load_capacity' => array('default' => 10),
       ),
     );
@@ -85,12 +84,6 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
       '#title' => t('Force single'),
       '#default_value' => $this->options['vbo_settings']['force_single'],
       '#description' => t('Check this box to restrict selection to a single value.'),
-    );
-    $form['vbo_settings']['display_result'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Display processing result'),
-      '#description' => t('Check this box to let Drupal display a message with the result of processing the selected items.'),
-      '#default_value' => $this->options['vbo_settings']['display_result'],
     );
     $form['vbo_settings']['entity_load_capacity'] = array(
       '#type' => 'textfield',

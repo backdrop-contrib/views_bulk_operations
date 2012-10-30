@@ -727,7 +727,6 @@ function _views_bulk_operations_execute($vbo, $selection, $operation, $force_dir
   // Options that affect execution.
   $options = array(
     'revision' => $vbo->revision,
-    'display_result' => $vbo->get_vbo_option('display_result'),
     'entity_load_capacity' => $vbo->get_vbo_option('entity_load_capacity'),
   );
   // An operation that needs aggregated results can only be executed directly.
@@ -775,11 +774,9 @@ function _views_bulk_operations_execute($vbo, $selection, $operation, $force_dir
       $queue->createItem($job);
       $current++;
     }
-    if ($options['display_result']) {
-      drupal_set_message(t('Enqueued the selected operation (%operation).', array(
-        '%operation' => $operation->label(),
-      )));
-    }
+    drupal_set_message(t('Enqueued the selected operation (%operation).', array(
+      '%operation' => $operation->label(),
+    )));
   }
   elseif (!$force_direct && $options['entity_load_capacity'] < count($rows)) {
     $batch = array(
@@ -828,13 +825,11 @@ function _views_bulk_operations_queue_process($data) {
   $operation->execute($entity, $operation_context);
 
   // @todo Provide a way to spam less here.
-  if ($options['display_result']) {
-    watchdog('views bulk operations', 'Performed %operation on @type %title.', array(
-      '%operation' => $operation->label(),
-      '@type' => $entity_type,
-      '%title' => _views_bulk_operations_entity_label($entity_type, $entity),
-    ), WATCHDOG_INFO);
-  }
+  watchdog('views bulk operations', 'Performed %operation on @type %title.', array(
+    '%operation' => $operation->label(),
+    '@type' => $entity_type,
+    '%title' => _views_bulk_operations_entity_label($entity_type, $entity),
+  ), WATCHDOG_INFO);
 }
 
 /**
@@ -1023,14 +1018,8 @@ function _views_bulk_operations_execute_finished($success, $results, $operations
     $message = t('An error occurred while processing @operation with arguments: @arguments',
       array('@operation' => $error_operation[0], '@arguments' => print_r($error_operation[0], TRUE)));
   }
-  if (empty($options)) {
-    // If the execution went through Batch API, the options are in $results.
-    $options = $results['options'];
-  }
 
-  if (!empty($options['display_result'])) {
-    _views_bulk_operations_log($message);
-  }
+  _views_bulk_operations_log($message);
 }
 
 /**
