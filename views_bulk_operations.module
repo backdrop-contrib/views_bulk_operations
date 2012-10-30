@@ -825,7 +825,7 @@ function _views_bulk_operations_queue_process($data) {
   if ($operation->needsRows()) {
     $operation_context['rows'] = array($row_index => $row['views_row']);
   }
-  _views_bulk_operations_operation_do($operation, $entity, $operation_context, $account);
+  $operation->execute($entity, $operation_context);
 
   // @todo Provide a way to spam less here.
   if ($options['display_result']) {
@@ -894,7 +894,7 @@ function _views_bulk_operations_batch_process($rows, $operation, $options, &$con
     if ($operation->needsRows()) {
       $operation_context['rows'] = array($row_index => $row['views_row']);
     }
-    _views_bulk_operations_operation_do($operation, $entity, $operation_context);
+    $operation->execute($entity, $operation_context);
 
     $context['sandbox']['progress']++;
     unset($row_group[$row_id]);
@@ -960,7 +960,7 @@ function _views_bulk_operations_direct_process($operation, $rows, $options) {
         $operation_context['rows'][$row_index] = $row['views_row'];
       }
     }
-    _views_bulk_operations_operation_do($operation, $entities, $operation_context);
+    $operation->execute($entities, $operation_context);
 
     $context['results']['log'][] = t('Performed aggregate %operation on @items.', array(
       '%operation' => $operation->label(),
@@ -990,7 +990,7 @@ function _views_bulk_operations_direct_process($operation, $rows, $options) {
       if ($operation->needsRows()) {
         $operation_context['rows'] = array($row_index => $row['views_row']);
       }
-      _views_bulk_operations_operation_do($operation, $entity, $operation_context);
+      $operation->execute($entity, $operation_context);
 
       $context['results']['rows'] += 1;
     }
@@ -1002,27 +1002,6 @@ function _views_bulk_operations_direct_process($operation, $rows, $options) {
   }
 
   _views_bulk_operations_execute_finished(TRUE, $context['results'], array(), 0, $options + array('operation' => $operation));
-}
-
-/**
- * Executes the operation. Called from the process functions.
- */
-function _views_bulk_operations_operation_do($operation, $entity, $context, $account = NULL) {
-  global $user;
-
-  // If no account was provided, fallback to the current user.
-  if (!$account) {
-    $account = $user;
-  }
-
-  if (!$operation->access($account)) {
-    watchdog('actions permissions', 'An attempt by user %user to run operation %operation was blocked due to insufficient permissions.',
-      array('%operation' => $operation->label(), '%user' => format_username($account)), WATCHDOG_ALERT);
-    drupal_access_denied();
-    drupal_exit();
-  }
-
-  $operation->execute($entity, $context);
 }
 
 /**
