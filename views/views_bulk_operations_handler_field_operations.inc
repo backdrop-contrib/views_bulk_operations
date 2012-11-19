@@ -16,7 +16,7 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
     if (!empty($options['vbo']) && empty($this->options['vbo_operations'])) {
       $this->options['vbo_operations'] = $options['vbo']['operations'];
       unset($options['vbo']['operations']);
-      $this->options['vbo_settings'] = $options['vbo'];
+      $this->options['vbo_settings'] = $options['vbo'] + $this->options['vbo_settings'];
     }
 
     foreach ($this->options['vbo_operations'] as $operation_id => &$operation_options) {
@@ -39,6 +39,7 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
       // Rename the use_queue setting.
       if (isset($operation_options['use_queue']) && !isset($operation_options['postpone_processing'])) {
         $operation_options['postpone_processing'] = $operation_options['use_queue'];
+        unset($operation_options['use_queue']);
       }
     }
   }
