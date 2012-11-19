@@ -18,8 +18,9 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
       unset($options['vbo']['operations']);
       $this->options['vbo_settings'] = $options['vbo'];
     }
-    // Prefix all un-prefixed operations.
+
     foreach ($this->options['vbo_operations'] as $operation_id => &$operation_options) {
+      // Prefix all un-prefixed operations.
       if (strpos($operation_id, '::') === FALSE) {
         $operations = views_bulk_operations_get_operation_info();
         // Basically, guess.
@@ -33,6 +34,11 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
 
         // Remove the old operation in any case.
         unset($this->options['vbo_operations'][$operation_id]);
+      }
+
+      // Rename the use_queue setting.
+      if (isset($operation_options['use_queue']) && !isset($operation_options['postpone_processing'])) {
+        $operation_options['postpone_processing'] = $operation_options['use_queue'];
       }
     }
   }
@@ -113,10 +119,10 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
         '#default_value' => !empty($operation_options['selected']),
       );
       if (!$operation->aggregate()) {
-        $form['vbo_operations'][$operation_id]['use_queue'] = array(
+        $form['vbo_operations'][$operation_id]['postpone_processing'] = array(
           '#type' => 'checkbox',
           '#title' => t('Enqueue the operation instead of executing it directly'),
-          '#default_value' => !empty($operation_options['use_queue']),
+          '#default_value' => !empty($operation_options['postpone_processing']),
           '#dependency' => array(
             $dom_id . '-selected' => array(1),
           ),
