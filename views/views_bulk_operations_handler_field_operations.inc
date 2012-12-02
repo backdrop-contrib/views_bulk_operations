@@ -111,7 +111,7 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
     $entity_type = $this->get_entity_type();
     $options = $this->options['vbo_operations'];
     foreach (views_bulk_operations_get_applicable_operations($entity_type, $options) as $operation_id => $operation) {
-      $operation_options = $options[$operation_id];
+      $operation_options = !empty($options[$operation_id]) ? $options[$operation_id] : array();
 
       $dom_id = 'edit-options-vbo-operations-' . str_replace(array('_', ':'), array('-', ''), $operation_id);
       $form['vbo_operations'][$operation_id]['selected'] = array(
