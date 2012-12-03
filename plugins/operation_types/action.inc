@@ -28,10 +28,23 @@ function views_bulk_operations_operation_action_list($operation_id = NULL) {
   $operations = &drupal_static(__FUNCTION__);
 
   if (!isset($operations)) {
+    // Combined list of all actions and advanced actions.
     $actions_list = actions_list() + views_bulk_operations_operation_advanced_action_list();
+    // Actions provided by Drupal that aren't usable in a VBO context.
+    $hidden_actions = array(
+      'system_block_ip_action',
+      'system_goto_action',
+      'system_message_action',
+    );
+
     $operations = array();
     foreach ($actions_list as $callback => $action) {
       $key = isset($action['key']) ? $action['key'] : $callback;
+      // This action needs to be skipped.
+      if (in_array($callback, $hidden_actions)) {
+        continue;
+      }
+
       // All operations must be prefixed with the operation type.
       $new_operation_id = 'action::' . $key;
 
