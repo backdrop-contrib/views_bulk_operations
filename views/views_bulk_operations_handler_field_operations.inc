@@ -18,6 +18,10 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
       unset($options['vbo']['operations']);
       $this->options['vbo_settings'] = $options['vbo'] + $this->options['vbo_settings'];
     }
+    // When updating old Views it is possible for this value to stay empty.
+    if (empty($this->options['vbo_settings']['entity_load_capacity'])) {
+      $this->options['vbo_settings']['entity_load_capacity'] = 10;
+    }
 
     foreach ($this->options['vbo_operations'] as $operation_id => &$operation_options) {
       // Prefix all un-prefixed operations.
