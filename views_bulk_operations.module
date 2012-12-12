@@ -735,8 +735,8 @@ function views_bulk_operations_execute($vbo, $operation, $selection, $select_all
     }
   }
 
-  // Aggregate operations can only be executed directly.
-  if ($operation->aggregate()) {
+  // Aggregate and single-select operations can only be executed directly.
+  if ($operation->aggregate() || $vbo->get_vbo_option('force_single')) {
     views_bulk_operations_direct_process($operation, $rows, $options);
     return;
   }
