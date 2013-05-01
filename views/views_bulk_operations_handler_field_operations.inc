@@ -61,9 +61,25 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
     );
     $options['vbo_operations'] = array(
       'default' => array(),
+      'unpack_translatable' => 'unpack_operations',
     );
 
     return $options;
+  }
+
+  function unpack_operations(&$translatable, $storage, $option, $definition, $parents, $keys) {
+    $translatable[] = array(
+      'value' => t('- Choose an operation -'),
+      'keys' => array_merge($keys, array('noop')),
+    );
+    foreach ($storage[$option] as $key => $operation) {
+      if (!empty($operation['override_label']) && !empty($operation['label'])) {
+        $translatable[] = array(
+          'value' => t($operation['label']),
+          'keys' => array_merge($keys, array($key)),
+        );
+      }
+    }
   }
 
   function options_form(&$form, &$form_state) {
