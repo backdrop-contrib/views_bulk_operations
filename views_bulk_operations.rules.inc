@@ -158,13 +158,12 @@ function views_bulk_operations_condition_result_count($view, $args, $minimum) {
 function views_bulk_operations_action_load_list($view, $args) {
   $vbo = _views_bulk_operations_rules_get_field($view, $args);
 
-  // Get all entity ids.
-  $ids = array();
+  // Get all entities, pass ids to the wrapper for lazy loading.
+  $entity_type = $vbo->get_entity_type();
+  $entities = entity_metadata_wrapper("list<$entity_type>", array());
   foreach ($vbo->view->result as $row_index => $result) {
-    $ids[] = $vbo->get_value($result);
+    $entities[] = entity_metadata_wrapper($entity_type, $vbo->get_value($result));
   }
-  // And load the entity objects.
-  $entities = entity_load($vbo->get_entity_type(), $ids);
 
   return array('entity_list' => $entities);
 }
