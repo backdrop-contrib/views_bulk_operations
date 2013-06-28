@@ -927,7 +927,7 @@ function views_bulk_operations_active_queue_process($queue_name, $operation, $to
   static $queue;
 
   // It is still possible to hit the time limit.
-  @set_time_limit(0);
+  drupal_set_time_limit(0);
 
   // Prepare the sandbox.
   if (!isset($context['sandbox']['progress'])) {
@@ -1059,7 +1059,7 @@ function views_bulk_operations_direct_adjust(&$selection, $vbo) {
  * This is a legacy function that is now only used for aggregate operations.
  */
 function views_bulk_operations_direct_process($operation, $rows, $options) {
-  @set_time_limit(0);
+  drupal_set_time_limit(0);
 
   // Prepare an array of status information. Imitates the Batch API naming
   // for consistency. Passed to views_bulk_operations_execute_finished().
