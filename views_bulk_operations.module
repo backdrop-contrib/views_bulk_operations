@@ -45,6 +45,7 @@ function views_bulk_operations_load_action_includes() {
   $files = array(
     'archive.action.inc',
     'argument_selector.action.inc',
+    'book.action.inc',
     'delete.action.inc',
     'modify.action.inc',
     'script.action.inc',
