@@ -206,8 +206,10 @@ function views_bulk_operations_modify_action_form($context, &$form_state) {
     $weight = 0;
     foreach (element_get_visible_children($form[$form_key]) as $field_name) {
       // For our use case it makes no sense for any field widget to be required.
-      $language = $form[$form_key][$field_name]['#language'];
-      _views_bulk_operations_modify_action_unset_required($form[$form_key][$field_name][$language]);
+      if (isset($form[$form_key][$field_name]['#language'])) {
+        $language = $form[$form_key][$field_name]['#language'];
+        _views_bulk_operations_modify_action_unset_required($form[$form_key][$field_name][$language]);
+      }
 
       // The admin has specified which fields to display, but this field didn't
       // make the cut. Hide it with #access => FALSE and move on.
@@ -216,32 +218,34 @@ function views_bulk_operations_modify_action_form($context, &$form_state) {
         continue;
       }
 
-      $field = $instances[$field_name];
-      $form[$form_key]['show_value'][$field_name] = array(
-        '#type' => 'checkbox',
-        '#title' => $field['label'],
-      );
-      $form[$form_key][$field_name]['#states'] = array(
-        'visible' => array(
-          '#edit-bundle-' . str_replace('_', '-', $bundle_name) . '-show-value-' . str_replace('_', '-', $field_name) => array('checked' => TRUE),
-        ),
-      );
-      // All field widgets get reassigned weights so that additional elements
-      // added between them (such as "_append") can be properly ordered.
-      $form[$form_key][$field_name]['#weight'] = $weight++;
-
-      $field_info = field_info_field($field_name);
-      if ($field_info['cardinality'] != 1) {
-        $form[$form_key]['_append::' . $field_name] = array(
+      if (isset($instances[$field_name])) {
+        $field = $instances[$field_name];
+        $form[$form_key]['show_value'][$field_name] = array(
           '#type' => 'checkbox',
-          '#title' => t('Add new value(s) to %label, instead of overwriting the existing values.', array('%label' => $field['label'])),
-          '#states' => array(
-            'visible' => array(
-              '#edit-bundle-' . str_replace('_', '-', $bundle_name) . '-show-value-' . str_replace('_', '-', $field_name) => array('checked' => TRUE),
-            ),
-          ),
-          '#weight' => $weight++,
+          '#title' => $field['label'],
         );
+        $form[$form_key][$field_name]['#states'] = array(
+          'visible' => array(
+            '#edit-bundle-' . str_replace('_', '-', $bundle_name) . '-show-value-' . str_replace('_', '-', $field_name) => array('checked' => TRUE),
+          ),
+        );
+        // All field widgets get reassigned weights so that additional elements
+        // added between them (such as "_append") can be properly ordered.
+        $form[$form_key][$field_name]['#weight'] = $weight++;
+
+        $field_info = field_info_field($field_name);
+        if ($field_info['cardinality'] != 1) {
+          $form[$form_key]['_append::' . $field_name] = array(
+            '#type' => 'checkbox',
+            '#title' => t('Add new value(s) to %label, instead of overwriting the existing values.', array('%label' => $field['label'])),
+            '#states' => array(
+              'visible' => array(
+                '#edit-bundle-' . str_replace('_', '-', $bundle_name) . '-show-value-' . str_replace('_', '-', $field_name) => array('checked' => TRUE),
+              ),
+            ),
+            '#weight' => $weight++,
+          );
+        }
       }
     }
 
