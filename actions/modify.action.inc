@@ -148,6 +148,11 @@ function views_bulk_operations_modify_action_form($context, &$form_state) {
           ),
         ),
       );
+      // The default #maxlength for textfields is 128, while most varchar
+      // columns hold 255 characters, which makes it a saner default here.
+      if ($determined_type == 'textfield') {
+        $form['properties'][$key]['#maxlength'] = 255;
+      }
 
       if (!empty($property['options list'])) {
         $form['properties'][$key]['#type'] = 'select';
