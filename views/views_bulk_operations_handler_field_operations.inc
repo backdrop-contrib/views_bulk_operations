@@ -158,7 +158,7 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
         ),
       );
 
-      $form['vbo_operations'][$operation_id] += $operation->adminOptionsForm($dom_id);
+      $form['vbo_operations'][$operation_id] += $operation->adminOptionsForm($dom_id, $this);
     }
   }
 
