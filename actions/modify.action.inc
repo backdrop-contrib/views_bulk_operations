@@ -29,15 +29,19 @@ function views_bulk_operations_modify_action_info() {
  */
 function views_bulk_operations_modify_action($entity, $context) {
   list(,,$bundle_name) = entity_extract_ids($context['entity_type'], $entity);
-
   // Handle Field API fields.
   if (!empty($context['selected']['bundle_' . $bundle_name])) {
     // The pseudo entity is cloned so that changes to it don't get carried
     // over to the next execution.
     $pseudo_entity = clone $context['entities'][$bundle_name];
     foreach ($context['selected']['bundle_' . $bundle_name] as $key) {
+      // Get this field's language. We can just pull it from the pseudo entity
+      // as it was created using field_attach_form and entity_language so it's
+      // already been figured out if this field is translatable or not and
+      // applied the appropriate language code to the field
+      $language = key($pseudo_entity->{$key});
       // Replace any tokens that might exist in the field columns.
-      foreach ($pseudo_entity->{$key}[LANGUAGE_NONE] as $delta => &$item) {
+      foreach ($pseudo_entity->{$key}[$language] as $delta => &$item) {
         foreach ($item as $column => $value) {
           if (is_string($value)) {
             $item[$column] = token_replace($value, array($context['entity_type'] => $entity), array('sanitize' => FALSE));
@@ -46,11 +50,11 @@ function views_bulk_operations_modify_action($entity, $context) {
       }
 
       if (in_array($key, $context['append']['bundle_' . $bundle_name]) && !empty($entity->$key)) {
-        $entity->{$key}[LANGUAGE_NONE] = array_merge($entity->{$key}[LANGUAGE_NONE], $pseudo_entity->{$key}[LANGUAGE_NONE]);
+        $entity->{$key}[$language] = array_merge($entity->{$key}[$language], $pseudo_entity->{$key}[$language]);
 
         // Check if we breached cardinality, and notify the user.
         $field_info = field_info_field($key);
-        $field_count = count($entity->{$key}[LANGUAGE_NONE]);
+        $field_count = count($entity->{$key}[$language]);
         if ($field_info['cardinality'] != FIELD_CARDINALITY_UNLIMITED && $field_count > $field_info['cardinality']) {
           $entity_label = entity_label($context['entity_type'], $entity);
           $warning = t('Tried to set !field_count values for field !field_name that supports a maximum of !cardinality.',
@@ -61,7 +65,7 @@ function views_bulk_operations_modify_action($entity, $context) {
         }
       }
       else {
-        $entity->$key = $pseudo_entity->$key;
+        $entity->{$key}[$language] = $pseudo_entity->{$key}[$language];
       }
     }
   }
@@ -175,6 +179,8 @@ function views_bulk_operations_modify_action_form($context, &$form_state) {
     }
   }
 
+  // Going to need this for multilingual nodes
+  global $language;
   foreach ($bundles as $bundle_name => $bundle) {
     $bundle_key = $info['entity keys']['bundle'];
     $default_values = array();
@@ -182,6 +188,7 @@ function views_bulk_operations_modify_action_form($context, &$form_state) {
     if (!empty($bundle_key)) {
       $default_values[$bundle_key] = $bundle_name;
     }
+    $default_values['language'] = $language->language;
     $entity = entity_create($context['entity_type'], $default_values);
     $form_state['entities'][$bundle_name] = $entity;
 
@@ -200,7 +207,7 @@ function views_bulk_operations_modify_action_form($context, &$form_state) {
       '#title' => $label,
       '#parents' => array($form_key),
     );
-    field_attach_form($context['entity_type'], $entity, $form[$form_key], $form_state, LANGUAGE_NONE);
+    field_attach_form($context['entity_type'], $entity, $form[$form_key], $form_state, entity_language($context['entity_type'], $entity));
     // Now that all the widgets have been added, sort them by #weight.
     // This ensures that they will stay in the correct order when they get
     // assigned new weights.
@@ -212,8 +219,8 @@ function views_bulk_operations_modify_action_form($context, &$form_state) {
     foreach (element_get_visible_children($form[$form_key]) as $field_name) {
       // For our use case it makes no sense for any field widget to be required.
       if (isset($form[$form_key][$field_name]['#language'])) {
-        $language = $form[$form_key][$field_name]['#language'];
-        _views_bulk_operations_modify_action_unset_required($form[$form_key][$field_name][$language]);
+        $field_language = $form[$form_key][$field_name]['#language'];
+        _views_bulk_operations_modify_action_unset_required($form[$form_key][$field_name][$field_language]);
       }
 
       // The admin has specified which fields to display, but this field didn't
