@@ -584,6 +584,7 @@ function views_bulk_operations_modify_action_views_bulk_operations_form($options
     '#multiple' => TRUE,
     '#description' => t('Select which values the action form should present to the user.'),
     '#default_value' => $options['display_values'],
+    '#size' => 10,
   );
   return $form;
 }
