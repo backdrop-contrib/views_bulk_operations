@@ -9,7 +9,7 @@ function views_bulk_operations_user_cancel_action_info() {
     'type' => 'user',
     'label' => t('Cancel user account'),
     'configurable' => TRUE,
-    'hooks' => array(),
+    'behavior' => array('deletes_property'),
   ));
 }
 
@@ -44,7 +44,7 @@ function views_bulk_operations_user_cancel_action_submit($form, $form_state) {
   );
 }
 
-function views_bulk_operations_user_cancel_action(&$account, $context) {
+function views_bulk_operations_user_cancel_action($account, $context) {
   global $user;
   // Prevent the user from cancelling itself.
   if ($account->uid == $user->uid) {
