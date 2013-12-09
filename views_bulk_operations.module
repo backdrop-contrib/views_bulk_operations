@@ -994,7 +994,23 @@ function views_bulk_operations_queue_item_process($queue_item_data, &$log = NULL
       continue;
     }
 
-    $entity = $entities[$entity_id];
+    if ($options['revision']) {
+      // Don't reload revisions for now, they are not statically cached and
+      // usually don't run into the edge case described below.
+      $entity = $entities[$entity_id];
+    }
+    else {
+      // A previous action might have resulted in the entity being resaved
+      // (e.g. node synchronization from a prior node in this batch), so try
+      // to reload it. If no change occurred, the entity will be retrieved
+      // from the static cache, resulting in no performance penalty.
+      $entity = entity_load_single($entity_type, $entity_id);
+      if (empty($entity)) {
+        // The entity is no longer valid.
+        continue;
+      }
+    }
+
     // If the current entity can't be accessed, skip it and log a notice.
     if (!_views_bulk_operations_entity_access($operation, $entity_type, $entity, $account)) {
       $message = 'Skipped %operation on @type %title due to insufficient permissions.';
