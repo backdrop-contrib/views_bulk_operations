@@ -350,8 +350,9 @@ function views_bulk_operations_form_alter(&$form, &$form_state, $form_id) {
 }
 
 /**
- * Hides the VBO field if no operations are available.
+ * Implements hook_views_post_build().
  *
+ * Hides the VBO field if no operations are available.
  * This causes the entire VBO form to be hidden.
  *
  * @see views_bulk_operations_form_alter().
