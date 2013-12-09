@@ -427,8 +427,12 @@ function _views_bulk_operations_modify_action_get_properties($entity_type, $disp
   // List of supported types.
   $supported_types = array('text', 'token', 'integer', 'decimal', 'date', 'duration',
                            'boolean', 'uri', 'list');
-
   $property_info = entity_get_property_info($entity_type);
+  if (empty($property_info['properties'])) {
+    // Stop here if no properties were found.
+    return array();
+  }
+
   foreach ($property_info['properties'] as $key => $property) {
     if (in_array($key, $disabled_properties)) {
       continue;
