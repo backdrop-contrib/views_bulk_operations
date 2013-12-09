@@ -302,6 +302,25 @@ function views_bulk_operations_form_alter(&$form, &$form_state, $form_id) {
     return;
   }
 
+  // The submit button added by Views Form API might be used by a non-VBO Views
+  // Form handler. If there's no such handler on the view, hide the button.
+  $has_other_views_form_handlers = FALSE;
+  foreach ($vbo->view->field as $field) {
+    if (property_exists($field, 'views_form_callback') || method_exists($field, 'views_form')) {
+      if (!($field instanceof views_bulk_operations_handler_field_operations)) {
+        $has_other_views_form_handlers = TRUE;
+      }
+    }
+  }
+  if (!$has_other_views_form_handlers) {
+    $form['actions']['#access'] = FALSE;
+  }
+
+  // The VBO field is excluded from display, stop here.
+  if (!empty($vbo->options['exclude'])) {
+    return;
+  }
+
   // Cache the built form to prevent it from being rebuilt prior to validation
   // and submission, which could lead to data being processed incorrectly,
   // because the views rows (and thus, the form elements as well) have changed
@@ -433,21 +452,6 @@ function views_bulk_operations_form($form, &$form_state, $vbo) {
     '#attributes' => array('class' => 'select-all-rows'),
     '#default_value' => FALSE,
   );
-
-  // The submit button added by Views Form API might be used by a non-VBO Views
-  // Form handler. If there's no such handler on the view, hide the button.
-  $has_other_views_form_handlers = FALSE;
-  foreach ($vbo->view->field as $field) {
-    if (property_exists($field, 'views_form_callback') || method_exists($field, 'views_form')) {
-      if (!($field instanceof views_bulk_operations_handler_field_operations)) {
-        $has_other_views_form_handlers = TRUE;
-      }
-    }
-  }
-  if (!$has_other_views_form_handlers) {
-    $form['actions']['#access'] = FALSE;
-  }
-
   $form['select'] = array(
     '#type' => 'fieldset',
     '#title' => t('Operations'),
