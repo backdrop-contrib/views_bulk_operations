@@ -350,6 +350,20 @@ function views_bulk_operations_form_alter(&$form, &$form_state, $form_id) {
 }
 
 /**
+ * Hides the VBO field if no operations are available.
+ *
+ * This causes the entire VBO form to be hidden.
+ *
+ * @see views_bulk_operations_form_alter().
+ */
+function views_bulk_operations_views_post_build(&$view) {
+  $vbo = _views_bulk_operations_get_field($view);
+  if ($vbo && $vbo->get_selected_operations() < 1) {
+    $vbo->options['exclude'] = TRUE;
+  }
+}
+
+/**
  * Returns the 'select all' div that gets inserted below the table header row
  * (for table style plugins with grouping disabled), or above the view results
  * (for non-table style plugins), providing a choice between selecting items
