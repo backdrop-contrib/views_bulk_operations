@@ -440,7 +440,7 @@ function views_bulk_operations_form($form, &$form_state, $vbo) {
     }
   }
   if (!$has_other_views_form_handlers) {
-    $form['actions']['submit']['#access'] = FALSE;
+    $form['actions']['#access'] = FALSE;
   }
 
   $form['select'] = array(
