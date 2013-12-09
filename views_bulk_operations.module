@@ -451,7 +451,7 @@ function views_bulk_operations_form($form, &$form_state, $vbo) {
   $form['select'] = array(
     '#type' => 'fieldset',
     '#title' => t('Operations'),
-    '#collapsible' => TRUE,
+    '#collapsible' => FALSE,
     '#attributes' => array('class' => array('container-inline')),
   );
   if ($vbo->get_vbo_option('display_type') == 0) {
