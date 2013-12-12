@@ -1003,12 +1003,12 @@ function views_bulk_operations_queue_item_process($queue_item_data, &$log = NULL
   $account = user_load($queue_item_data['uid']);
   $entity_type = $operation->entityType;
   $entity_ids = array();
-  foreach ($row_group as $row_id => $row) {
+  foreach ($row_group as $row_index => $row) {
     $entity_ids[] = $row['entity_id'];
   }
 
   $entities = _views_bulk_operations_entity_load($entity_type, $entity_ids, $options['revision']);
-  foreach ($row_group as $row_id => $row) {
+  foreach ($row_group as $row_index => $row) {
     $entity_id = $row['entity_id'];
     // A matching entity couldn't be loaded. Skip this item.
     if (!isset($entities[$entity_id])) {
@@ -1056,11 +1056,11 @@ function views_bulk_operations_queue_item_process($queue_item_data, &$log = NULL
       'view_info' => $options['view_info'],
     );
     if ($operation->needsRows()) {
-      $operation_context['rows'] = array($row_id => $row['views_row']);
+      $operation_context['rows'] = array($row_index => $row['views_row']);
     }
     $operation->execute($entity, $operation_context);
 
-    unset($row_group[$row_id]);
+    unset($row_group[$row_index]);
   }
 }
 
