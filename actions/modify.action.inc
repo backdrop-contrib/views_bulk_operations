@@ -488,27 +488,38 @@ function _views_bulk_operations_modify_action_get_bundles($entity_type, $context
   $bundles = array();
 
   $view = $context['view'];
+  $vbo = _views_bulk_operations_get_field($view);
   $display_values = $context['settings']['display_values'];
   $info = entity_get_info($entity_type);
   $bundle_key = $info['entity keys']['bundle'];
+
   // Check if this View has a filter on the bundle key and assemble a list
   // of allowed bundles according to the filter.
-  $filtered_bundles = array();
-  if (!empty($bundle_key) && isset($view->filter[$bundle_key]) && !empty($view->filter[$bundle_key]->value)) {
-    $operator = $view->filter[$bundle_key]->operator;
-    if ($operator == 'in') {
-      $filtered_bundles = $view->filter[$bundle_key]->value;
-    }
-    elseif ($operator == 'not in') {
-      $bundle_names = array_keys($info['bundles']);
-      $filtered_bundles = array_diff($bundle_names, $view->filter[$bundle_key]->value);
+  $filtered_bundles = array_keys($info['bundles']);
+
+  // Go over all the filters and find any relevant ones.
+  foreach ($view->filter as $key => $filter) {
+    // Check it's the right field on the right table.
+    if ($filter->table == $vbo->table && $filter->field == $bundle_key) {
+      // Exposed filters may have no bundles, so check that there is a value.
+      if (empty($filter->value)) {
+        continue;
+      }
+
+      $operator = $filter[$bundle_key]->operator;
+      if ($operator == 'in') {
+        $filtered_bundles = array_intersect($filtered_bundles, $filter[$bundle_key]->value);
+      }
+      elseif ($operator == 'not in') {
+        $filtered_bundles = array_diff($filtered_bundles, $filter[$bundle_key]->value);
+      }
     }
   }
 
   foreach ($info['bundles'] as $bundle_name => $bundle) {
     // The view is limited to specific bundles, but this bundle isn't one of
     // them. Ignore it.
-    if (!empty($filtered_bundles) && !in_array($bundle_name, $filtered_bundles)) {
+    if (!in_array($bundle_name, $filtered_bundles)) {
       continue;
     }
 
