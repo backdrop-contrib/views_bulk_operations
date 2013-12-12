@@ -738,6 +738,15 @@ function views_bulk_operations_execute($vbo, $operation, $selection, $select_all
   $options = array(
     'revision' => $vbo->revision,
     'entity_load_capacity' => $vbo->get_vbo_option('entity_load_capacity', 10),
+    // The information needed to recreate the view, to avoid serializing the
+    // whole object. Passed to the executed operation. Also used by
+    // views_bulk_operations_adjust_selection().
+    'view_info' => array(
+      'name' => $vbo->view->name,
+      'display' => $vbo->view->current_display,
+      'arguments' => $vbo->view->args,
+      'exposed_input' => $vbo->view->get_exposed_input(),
+    ),
   );
   // Create an array of rows in the needed format.
   $rows = array();
@@ -788,18 +797,8 @@ function views_bulk_operations_execute($vbo, $operation, $selection, $select_all
   if ($select_all_pages && $vbo->view->query->pager->has_more_records()) {
     $total_rows = $vbo->view->total_rows;
 
-    // Pass information needed to recreate the view inside a batch,
-    // to avoid having to serialize the current object (which is expensive).
-    $view_info = array(
-      'name' => $vbo->view->name,
-      'display' => $vbo->view->current_display,
-      'arguments' => $vbo->view->args,
-      'exposed_input' => $vbo->view->get_exposed_input(),
-      'entity_load_capacity' => $vbo->get_vbo_option('entity_load_capacity', 10),
-    );
-
     $batch['operations'][] = array(
-      'views_bulk_operations_adjust_selection', array($view_info, $queue_name, $operation, $options),
+      'views_bulk_operations_adjust_selection', array($queue_name, $operation, $options),
     );
   }
   else {
@@ -833,22 +832,21 @@ function views_bulk_operations_execute($vbo, $operation, $selection, $select_all
 /**
  * Batch API callback: loads the view page by page and enqueues all items.
  *
- * @param $view_info
- *   An array of information about the view, used to recreate and re-execute it.
  * @param $queue_name
  *   The name of the queue to which the items should be added.
  * @param $operation
  *   The operation object.
  * @param $options
- *   An array of options that affect execution (revision, entity_load_capacity).
- *   Passed along with each new queue item.
+ *   An array of options that affect execution (revision, entity_load_capacity,
+ *   view_info). Passed along with each new queue item.
  */
-function views_bulk_operations_adjust_selection($view_info, $queue_name, $operation, $options, &$context) {
+function views_bulk_operations_adjust_selection($queue_name, $operation, $options, &$context) {
   if (!isset($context['sandbox']['progress'])) {
     $context['sandbox']['progress'] = 0;
     $context['sandbox']['max'] = 0;
   }
 
+  $view_info = $options['view_info'];
   $view = views_get_view($view_info['name']);
   $view->set_exposed_input($view_info['exposed_input']);
   $view->set_arguments($view_info['arguments']);
@@ -1056,6 +1054,7 @@ function views_bulk_operations_queue_item_process($queue_item_data, &$log = NULL
     $operation_context = array(
       'progress' => $row['position'],
       'rows' => $row['views_row'],
+      'view_info' => $options['view_info'],
     );
     $operation->execute($entity, $operation_context);
 
@@ -1130,7 +1129,9 @@ function views_bulk_operations_direct_process($operation, $rows, $options) {
   }
 
   // Pass the selected rows to the operation if needed.
-  $operation_context = array();
+  $operation_context = array(
+    'view_info' => $options['view_info'],
+  );
   if ($operation->needsRows()) {
     $operation_context['rows'] = array();
     foreach ($rows as $row_index => $row) {
