@@ -63,6 +63,11 @@ function views_bulk_operations_modify_action($entity, $context) {
                              '!cardinality' => $field_info['cardinality']));
           drupal_set_message($warning, 'warning', FALSE);
         }
+
+        // Prevent storing duplicate references.
+        if (strpos($field_info['type'], 'reference') !== FALSE) {
+          $entity->{$key}[$language] = array_unique($entity->{$key}[LANGUAGE_NONE], SORT_REGULAR);
+        }
       }
       else {
         $entity->{$key}[$language] = $pseudo_entity->{$key}[$language];
