@@ -112,7 +112,7 @@ function views_bulk_operations_theme() {
       'variables' => array('view' => NULL, 'enable_select_all_pages' => TRUE),
     ),
     'views_bulk_operations_confirmation' => array(
-      'variables' => array('rows' => NULL, 'vbo' => NULL),
+      'variables' => array('rows' => NULL, 'vbo' => NULL, 'operation' => NULL, 'select_all_pages' => FALSE),
     ),
   );
   $files = views_bulk_operations_load_action_includes();
@@ -598,7 +598,7 @@ function views_bulk_operations_confirm_form($form, &$form_state, $view, $output)
   $form = confirm_form($form,
     t('Are you sure you want to perform %operation on the selected items?', array('%operation' => $operation->label())),
     array('path' => $view->get_url(), 'query' => $query),
-    theme('views_bulk_operations_confirmation', array('rows' => $rows, 'vbo' => $vbo, 'select_all_pages' => $form_state['select_all_pages']))
+    theme('views_bulk_operations_confirmation', array('rows' => $rows, 'vbo' => $vbo, 'operation' => $operation, 'select_all_pages' => $form_state['select_all_pages']))
   );
   // Add VBO's submit handler to the Confirm button added by config_form().
   $form['actions']['submit']['#submit'] = array('views_bulk_operations_form_submit');
