@@ -1053,9 +1053,11 @@ function views_bulk_operations_queue_item_process($queue_item_data, &$log = NULL
 
     $operation_context = array(
       'progress' => $row['position'],
-      'rows' => $row['views_row'],
       'view_info' => $options['view_info'],
     );
+    if ($operation->needsRows()) {
+      $operation_context['rows'] = array($row_id => $row['views_row']);
+    }
     $operation->execute($entity, $operation_context);
 
     unset($row_group[$row_id]);
