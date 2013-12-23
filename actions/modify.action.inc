@@ -506,12 +506,12 @@ function _views_bulk_operations_modify_action_get_bundles($entity_type, $context
         continue;
       }
 
-      $operator = $filter[$bundle_key]->operator;
+      $operator = $filter->operator;
       if ($operator == 'in') {
-        $filtered_bundles = array_intersect($filtered_bundles, $filter[$bundle_key]->value);
+        $filtered_bundles = array_intersect($filtered_bundles, $filter->value);
       }
       elseif ($operator == 'not in') {
-        $filtered_bundles = array_diff($filtered_bundles, $filter[$bundle_key]->value);
+        $filtered_bundles = array_diff($filtered_bundles, $filter->value);
       }
     }
   }
