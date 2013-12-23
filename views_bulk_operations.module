@@ -1109,6 +1109,7 @@ function views_bulk_operations_direct_process($operation, $rows, $options) {
   $context['results']['progress'] = 0;
   $context['results']['log'] = array();
 
+  // Load all entities.
   $entity_type = $operation->entityType;
   $entity_ids = array();
   foreach ($rows as $row_index => $row) {
@@ -1116,6 +1117,7 @@ function views_bulk_operations_direct_process($operation, $rows, $options) {
   }
   $entities = _views_bulk_operations_entity_load($entity_type, $entity_ids, $options['revision']);
 
+  // Filter out entities that can't be accessed.
   foreach ($entities as $id => $entity) {
     if (!_views_bulk_operations_entity_access($operation, $entity_type, $entity)) {
       $context['results']['log'][] = t('Skipped %operation on @type %title due to insufficient permissions.', array(
@@ -1126,21 +1128,21 @@ function views_bulk_operations_direct_process($operation, $rows, $options) {
       unset($entities[$id]);
     }
   }
-  if (empty($entities)) {
-    return;
-  }
 
-  // Pass the selected rows to the operation if needed.
-  $operation_context = array(
-    'view_info' => $options['view_info'],
-  );
-  if ($operation->needsRows()) {
-    $operation_context['rows'] = array();
-    foreach ($rows as $row_index => $row) {
-      $operation_context['rows'][$row_index] = $row['views_row'];
+  // If there are any entities left, execute the operation on them.
+  if ($entities) {
+    $operation_context = array(
+      'view_info' => $options['view_info'],
+    );
+    // Pass the selected rows to the operation if needed.
+    if ($operation->needsRows()) {
+      $operation_context['rows'] = array();
+      foreach ($rows as $row_index => $row) {
+        $operation_context['rows'][$row_index] = $row['views_row'];
+      }
     }
+    $operation->execute($entities, $operation_context);
   }
-  $operation->execute($entities, $operation_context);
 
   $context['results']['log'][] = t('Performed aggregate %operation on @items.', array(
     '%operation' => $operation->label(),
