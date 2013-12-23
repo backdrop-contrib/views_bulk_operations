@@ -701,8 +701,8 @@ function views_bulk_operations_form_submit($form, &$form_state) {
  * Entry point for executing the chosen operation upon selected rows.
  *
  * If the selected operation is an aggregate operation (requiring all selected
- * items to be passed at the same time), or the execution is being triggered
- * through Drush, the operation is executed directly.
+ * items to be passed at the same time), restricted to a single value, or has
+ * the skip_batching option set, the operation is executed directly.
  * This means that there is no batching & queueing, the PHP execution
  * time limit is ignored (if allowed), all selected entities are loaded and
  * processed.
@@ -728,9 +728,13 @@ function views_bulk_operations_form_submit($form, &$form_state) {
 function views_bulk_operations_execute($vbo, $operation, $selection, $select_all_pages = FALSE) {
   global $user;
 
-  // This is an aggregate operation, and it requires all rows to be selected.
-  // Try to load them without a batch.
-  if ($operation->aggregate() && $select_all_pages) {
+  // Determine if the operation needs to be executed directly.
+  $aggregate = $operation->aggregate();
+  $skip_batching = $vbo->get_vbo_option('skip_batching');
+  $force_single = $vbo->get_vbo_option('force_single');
+  $execute_directly = ($aggregate || $skip_batching || $force_single);
+  // Try to load all rows without a batch if needed.
+  if ($execute_directly && $select_all_pages) {
     views_bulk_operations_direct_adjust($selection, $vbo);
   }
 
@@ -769,8 +773,8 @@ function views_bulk_operations_execute($vbo, $operation, $selection, $select_all
     }
   }
 
-  // Aggregate operations can only be executed directly.
-  if ($operation->aggregate()) {
+  if ($execute_directly) {
+    // Execute the operation directly and stop here.
     views_bulk_operations_direct_process($operation, $rows, $options);
     return;
   }
@@ -1097,10 +1101,10 @@ function views_bulk_operations_direct_adjust(&$selection, $vbo) {
 
 /**
  * Processes the passed rows directly (without batching and queueing).
- *
- * This is a legacy function that is now only used for aggregate operations.
  */
 function views_bulk_operations_direct_process($operation, $rows, $options) {
+  global $user;
+
   drupal_set_time_limit(0);
 
   // Prepare an array of status information. Imitates the Batch API naming
@@ -1109,46 +1113,56 @@ function views_bulk_operations_direct_process($operation, $rows, $options) {
   $context['results']['progress'] = 0;
   $context['results']['log'] = array();
 
-  // Load all entities.
-  $entity_type = $operation->entityType;
-  $entity_ids = array();
-  foreach ($rows as $row_index => $row) {
-    $entity_ids[] = $row['entity_id'];
-  }
-  $entities = _views_bulk_operations_entity_load($entity_type, $entity_ids, $options['revision']);
-
-  // Filter out entities that can't be accessed.
-  foreach ($entities as $id => $entity) {
-    if (!_views_bulk_operations_entity_access($operation, $entity_type, $entity)) {
-      $context['results']['log'][] = t('Skipped %operation on @type %title due to insufficient permissions.', array(
-        '%operation' => $operation->label(),
-        '@type' => $entity_type,
-        '%title' => _views_bulk_operations_entity_label($entity_type, $entity),
-      ));
-      unset($entities[$id]);
+  if ($operation->aggregate()) {
+    // Load all entities.
+    $entity_type = $operation->entityType;
+    $entity_ids = array();
+    foreach ($rows as $row_index => $row) {
+      $entity_ids[] = $row['entity_id'];
     }
-  }
+    $entities = _views_bulk_operations_entity_load($entity_type, $entity_ids, $options['revision']);
 
-  // If there are any entities left, execute the operation on them.
-  if ($entities) {
-    $operation_context = array(
-      'view_info' => $options['view_info'],
-    );
-    // Pass the selected rows to the operation if needed.
-    if ($operation->needsRows()) {
-      $operation_context['rows'] = array();
-      foreach ($rows as $row_index => $row) {
-        $operation_context['rows'][$row_index] = $row['views_row'];
+    // Filter out entities that can't be accessed.
+    foreach ($entities as $id => $entity) {
+      if (!_views_bulk_operations_entity_access($operation, $entity_type, $entity)) {
+        $context['results']['log'][] = t('Skipped %operation on @type %title due to insufficient permissions.', array(
+          '%operation' => $operation->label(),
+          '@type' => $entity_type,
+          '%title' => _views_bulk_operations_entity_label($entity_type, $entity),
+        ));
+        unset($entities[$id]);
       }
     }
-    $operation->execute($entities, $operation_context);
+
+    // If there are any entities left, execute the operation on them.
+    if ($entities) {
+      $operation_context = array(
+        'view_info' => $options['view_info'],
+      );
+      // Pass the selected rows to the operation if needed.
+      if ($operation->needsRows()) {
+        $operation_context['rows'] = array();
+        foreach ($rows as $row_index => $row) {
+          $operation_context['rows'][$row_index] = $row['views_row'];
+        }
+      }
+      $operation->execute($entities, $operation_context);
+    }
+  }
+  else {
+    // Imitate a queue and process the entities one by one.
+    $queue_item_data = array(
+      'uid' => $user->uid,
+      'arguments' => array($rows, $operation, $options),
+    );
+    views_bulk_operations_queue_item_process($queue_item_data, $context['results']['log']);
   }
 
-  $context['results']['log'][] = t('Performed aggregate %operation on @items.', array(
+  $context['results']['progress'] += count($rows);
+  $context['results']['log'][] = t('Performed %operation on @items.', array(
     '%operation' => $operation->label(),
-    '@items' => format_plural(count($entities), '1 item', '@count items'),
+    '@items' => format_plural(count($rows), '1 item', '@count items'),
   ));
-  $context['results']['progress'] += count($entities);
 
   views_bulk_operations_execute_finished(TRUE, $context['results'], array());
 }

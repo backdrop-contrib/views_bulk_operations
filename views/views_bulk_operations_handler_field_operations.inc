@@ -57,6 +57,7 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
         'enable_select_all_pages' => array('default' => TRUE),
         'force_single' => array('default' => FALSE),
         'entity_load_capacity' => array('default' => 10),
+        'skip_batching' => array('default' => 0),
       ),
     );
     $options['vbo_operations'] = array(
@@ -117,6 +118,12 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
       '#title' => t('Number of entities to load at once'),
       '#description' => t("Improve execution performance at the cost of memory usage. Set to '1' if you're having problems."),
       '#default_value' => $this->options['vbo_settings']['entity_load_capacity'],
+    );
+    $form['vbo_settings']['skip_batching'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Skip batching'),
+      '#default_value' => $this->options['vbo_settings']['skip_batching'],
+      '#description' => '<b>' . t('Warning:') . '</b> ' . t('This will cause timeouts for larger amounts of selected items.'),
     );
 
     // Display operations and their settings.
