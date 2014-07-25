@@ -442,9 +442,10 @@ function theme_views_bulk_operations_select_all($variables) {
  */
 function views_bulk_operations_form($form, &$form_state, $vbo) {
   $form['#attached']['js'][] = drupal_get_path('module', 'views_bulk_operations') . '/js/views_bulk_operations.js';
-  $settings = array('row_clickable' => $vbo->options['vbo_settings']['row_clickable']);
   $form['#attached']['js'][] = array(
-    'data' => array('vbo' => $settings),
+    'data' => array('vbo' => array(
+      'row_clickable' => $vbo->get_vbo_option('row_clickable'),
+    )),
     'type' => 'setting',
   );
 
