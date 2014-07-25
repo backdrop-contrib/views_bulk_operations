@@ -877,7 +877,7 @@ function views_bulk_operations_adjust_selection($queue_name, $operation, $option
       'views_row' => array(),
       'position' => array(
         'current' => ++$context['sandbox']['progress'],
-        'total' => $view->total_rows,
+        'total' => $context['sandbox']['max'],
       ),
     );
     // Some operations require full selected rows.
