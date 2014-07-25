@@ -601,13 +601,22 @@ function views_bulk_operations_confirm_form($form, &$form_state, $view, $output)
   $operation = $form_state['operation'];
   $rows = $form_state['selection'];
   $query = drupal_get_query_parameters($_GET, array('q'));
+  $title = t('Are you sure you want to perform %operation on the selected items?', array('%operation' => $operation->label()));
   $form = confirm_form($form,
-    t('Are you sure you want to perform %operation on the selected items?', array('%operation' => $operation->label())),
+    $title,
     array('path' => $view->get_url(), 'query' => $query),
     theme('views_bulk_operations_confirmation', array('rows' => $rows, 'vbo' => $vbo, 'operation' => $operation, 'select_all_pages' => $form_state['select_all_pages']))
   );
   // Add VBO's submit handler to the Confirm button added by config_form().
   $form['actions']['submit']['#submit'] = array('views_bulk_operations_form_submit');
+
+  // We can't set the View title here as $view is just a copy of the original,
+  // and our settings changes won't "stick" for the first page load of the
+  // confirmation form. We also can't just call drupal_set_title() directly
+  // because our title will be clobbered by the actual View title later. So
+  // let's tuck the title away in the form for use later.
+  // @see views_bulk_operations_preprocess_views_view()
+  $form['#vbo_confirm_form_title'] = $title;
 
   return $form;
 }
@@ -635,6 +644,18 @@ function theme_views_bulk_operations_confirmation($variables) {
   $count = format_plural(count($entities), 'item', '@count items');
   $output = theme('item_list', array('items' => $items, 'title' => t('You selected the following <strong>!count</strong>:', array('!count' => $count))));
   return $output;
+}
+
+/**
+ * Implements hook_preprocess_views_view().
+ */
+function views_bulk_operations_preprocess_views_view($variables) {
+  // If we've stored a title for the confirmation form, retrieve it here and
+  // retitle the View.
+  // @see views_bulk_operations_confirm_form()
+  if (isset($variables['rows']['#vbo_confirm_form_title'])) {
+    $variables['view']->set_title($variables['rows']['#vbo_confirm_form_title']);
+  }
 }
 
 /**
