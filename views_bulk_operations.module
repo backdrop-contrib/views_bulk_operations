@@ -419,7 +419,7 @@ function theme_views_bulk_operations_select_all($variables) {
     if ($enable_select_all_pages) {
       $form['select_all']['or'] = array(
         '#type' => 'markup',
-        '#markup' => '<em>OR</em>',
+        '#markup' => '<em>' . t('OR') . '</em>',
       );
       $form['select_all']['all_pages'] = array(
         '#type' => 'checkbox',
