@@ -298,7 +298,7 @@ function views_bulk_operations_modify_action_form($context, &$form_state) {
     $token_type = str_replace('_', '-', $entity_type);
     $form['tokens'] = array(
       '#type' => 'fieldset',
-      '#title' => 'Available tokens',
+      '#title' => t('Available tokens'),
       '#collapsible' => TRUE,
       '#collapsed' => TRUE,
       '#weight' => 998,
