@@ -653,7 +653,7 @@ function views_bulk_operations_preprocess_views_view($variables) {
   // If we've stored a title for the confirmation form, retrieve it here and
   // retitle the View.
   // @see views_bulk_operations_confirm_form()
-  if (isset($variables['rows']['#vbo_confirm_form_title'])) {
+  if (array_key_exists('rows', $variables) && is_array($variables['rows']) && array_key_exists('#vbo_confirm_form_title', $variables['rows'])) {
     $variables['view']->set_title($variables['rows']['#vbo_confirm_form_title']);
   }
 }
