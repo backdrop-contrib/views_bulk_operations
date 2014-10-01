@@ -134,7 +134,7 @@ function views_bulk_operations_modify_action_form($context, &$form_state) {
   if (!empty($properties)) {
     $form['properties'] = array(
       '#type' => 'fieldset',
-      '#title' => 'Properties',
+      '#title' => t('Properties'),
     );
     $form['properties']['show_value'] = array(
       '#suffix' => '<div class="clearfix"></div>',
