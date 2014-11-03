@@ -647,6 +647,17 @@ function theme_views_bulk_operations_confirmation($variables) {
 }
 
 /**
+ * Implements hook_preprocess_page().
+ *
+ * Hide action links on the configure and confirm pages.
+ */
+function views_bulk_operations_preprocess_page(&$variables) {
+  if (isset($_POST['select_all'], $_POST['operation'])) {
+    $variables['action_links'] = array();
+  }
+}
+
+/**
  * Implements hook_preprocess_views_view().
  */
 function views_bulk_operations_preprocess_views_view($variables) {
