@@ -64,9 +64,24 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
     $options['vbo_operations'] = array(
       'default' => array(),
       'unpack_translatable' => 'unpack_operations',
+      'export' => 'export_vbo_operations',
     );
 
     return $options;
+  }
+
+  function export_vbo_operations($indent, $prefix, $storage, $option, $definition, $parents) {
+    // Anti-recursion, since we use the parent export helper.
+    unset($definition['export']);
+
+    // Find and remove all unselected/disabled operations.
+    foreach ($storage['vbo_operations'] as $operation_id => $operation) {
+      if (empty($operation['selected'])) {
+        unset($storage['vbo_operations'][$operation_id]);
+      }
+    }
+
+    return parent::export_option($indent, $prefix, $storage, $option, $definition, $parents);
   }
 
   function unpack_operations(&$translatable, $storage, $option, $definition, $parents, $keys) {
