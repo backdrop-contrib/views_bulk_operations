@@ -214,7 +214,12 @@ function views_bulk_operations_get_operation_info($operation_id = NULL) {
 function views_bulk_operations_get_operation($operation_id, $entity_type, $options) {
   $operations = &drupal_static(__FUNCTION__);
 
-  if (!isset($operations[$operation_id])) {
+  // Create a unique hash of the options.
+  $cid = md5(serialize($options));
+
+  // See if there's a cached copy of the operation, including entity type and
+  // options.
+  if (!isset($operations[$operation_id][$entity_type][$cid])) {
     // Intentionally not using views_bulk_operations_get_operation_info() here
     // since it's an expensive function that loads all the operations on the
     // system, despite the fact that we might only need a few.
@@ -223,14 +228,14 @@ function views_bulk_operations_get_operation($operation_id, $entity_type, $optio
     $operation_info = $plugin['list callback']($operation_id);
 
     if ($operation_info) {
-      $operations[$operation_id] = new $plugin['handler']['class']($operation_id, $entity_type, $operation_info, $options);
+      $operations[$operation_id][$entity_type][$cid] = new $plugin['handler']['class']($operation_id, $entity_type, $operation_info, $options);
     }
     else {
-      $operations[$operation_id] = FALSE;
+      $operations[$operation_id][$entity_type][$cid] = FALSE;
     }
   }
 
-  return $operations[$operation_id];
+  return $operations[$operation_id][$entity_type][$cid];
 }
 
 /**
