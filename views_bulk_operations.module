@@ -907,10 +907,16 @@ function views_bulk_operations_adjust_selection($queue_name, $operation, $option
   }
 
   $vbo = _views_bulk_operations_get_field($view);
+
+  // Call views_handler_field_entity::pre_render() to get the entities.
+  $vbo->pre_render($view->result);
+
   $rows = array();
   foreach ($view->result as $row_index => $result) {
+    // Set the row index.
+    $view->row_index = $row_index;
     $rows[$row_index] = array(
-      'entity_id' => $vbo->get_value($result),
+      'entity_id' => $vbo->get_value($result, $vbo->real_field),
       'views_row' => array(),
       'position' => array(
         'current' => ++$context['sandbox']['progress'],
@@ -1132,12 +1138,22 @@ function views_bulk_operations_direct_adjust(&$selection, $vbo) {
     if ($field_name != $vbo->options['id']) {
       unset($view->field[$field_name]);
     }
+    else {
+      // Get hold of the new VBO field.
+      $new_vbo = $view->field[$field_name];
+    }
   }
 
   $view->execute($vbo->view->current_display);
+
+  // Call views_handler_field_entity::pre_render() to get the entities.
+  $new_vbo->pre_render($view->result);
+
   $results = array();
   foreach ($view->result as $row_index => $result) {
-    $results[$row_index] = $vbo->get_value($result);
+    // Set the row index.
+    $view->row_index = $row_index;
+    $results[$row_index] = $new_vbo->get_value($result, $new_vbo->real_field);
   }
   $selection = $results;
 }

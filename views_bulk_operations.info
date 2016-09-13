@@ -1,7 +1,7 @@
 name = Views Bulk Operations
 description = Provides a way of selecting multiple rows and applying operations to them.
 dependencies[] = entity
-dependencies[] = views
+dependencies[] = views (>=3.12)
 package = Views
 core = 7.x
 php = 5.2.9
