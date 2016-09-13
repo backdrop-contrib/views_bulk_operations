@@ -76,11 +76,17 @@ function views_bulk_operations_modify_action($entity, $context) {
   }
 
   // Handle properties.
+  // Use the wrapper to set property values, since some properties need
+  // additional massaging by their setter callbacks.
+  // The wrapper will automatically modify $entity itself.
+  $wrapper = entity_metadata_wrapper($context['entity_type'], $entity);
+  // The default setting for 'revision' property (create new revisions) should
+  // be respected for nodes. This requires some special treatment.
+  if ($context['entity_type'] == 'node' && in_array('revision', variable_get('node_options_' . $bundle_name)) && !in_array('revision', $context['selected']['properties'])) {
+    $wrapper->revision->set(1);
+  }
+
   if (!empty($context['selected']['properties'])) {
-    // Use the wrapper to set property values, since some properties need
-    // additional massaging by their setter callbacks.
-    // The wrapper will automatically modify $entity itself.
-    $wrapper = entity_metadata_wrapper($context['entity_type'], $entity);
     foreach ($context['selected']['properties'] as $key) {
       if (!$wrapper->$key->access('update')) {
         // No access.
