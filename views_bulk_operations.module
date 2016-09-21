@@ -643,11 +643,11 @@ function theme_views_bulk_operations_confirmation($variables) {
   // All rows on all pages have been selected, so show a count of additional items.
   if ($select_all_pages) {
     $more_count = $vbo->view->total_rows - count($vbo->view->result);
-    $items[] = t('...and <strong>!count</strong> more.', array('!count' => $more_count));
+    $items[] = t('...and %count more.', array('%count' => $more_count));
   }
 
   $count = format_plural(count($entities), 'item', '@count items');
-  $output = theme('item_list', array('items' => $items, 'title' => t('You selected the following <strong>!count</strong>:', array('!count' => $count))));
+  $output = theme('item_list', array('items' => $items, 'title' => t('You selected the following %count:', array('%count' => $count))));
   return $output;
 }
 
