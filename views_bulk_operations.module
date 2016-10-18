@@ -45,6 +45,7 @@ function views_bulk_operations_load_action_includes() {
     'archive.action',
     'argument_selector.action',
     'book.action',
+    'change_owner.action',
     'delete.action',
     'modify.action',
     'script.action',
