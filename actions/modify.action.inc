@@ -157,7 +157,16 @@ function views_bulk_operations_modify_action_form($context, &$form_state) {
         '#title' => $property['label'],
       );
 
-      $determined_type = ($property['type'] == 'boolean') ? 'checkbox' : 'textfield';
+      // According to _views_bulk_operations_modify_action_get_properties
+      // we have fixed list of supported types. Most of these types are string
+      // and only some of them has options list.
+      if (isset($property['options list'])) {
+        $determined_type = ($property['type'] == 'list') ? 'checkboxes' : 'select';
+      }
+      else {
+        $determined_type = ($property['type'] == 'boolean') ? 'checkbox' : 'textfield';
+      }
+
       $form['properties'][$key] = array(
         '#type' => $determined_type,
         '#title' => $property['label'],
