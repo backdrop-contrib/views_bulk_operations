@@ -192,6 +192,14 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
           $dom_id . '-selected' => array(1),
         ),
       );
+      $form['vbo_operations'][$operation_id]['skip_permission_check'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Skip permission step'),
+        '#default_value' => !empty($operation_options['skip_permission_check']),
+        '#dependency' => array(
+          $dom_id . '-selected' => array(1),
+        ),
+      );
 
       $form['vbo_operations'][$operation_id] += $operation->adminOptionsForm($dom_id, $this);
     }
@@ -300,9 +308,12 @@ class views_bulk_operations_handler_field_operations extends views_handler_field
         if (empty($options['selected'])) {
           continue;
         }
-
         $operation = views_bulk_operations_get_operation($operation_id, $entity_type, $options);
-        if (!$operation || !$operation->access($user)) {
+        if (!$operation) {
+          continue;
+        }
+        $skip_permission_check = $operation->getAdminOption('skip_permission_check', FALSE);
+        if (!$operation->access($user) && !$skip_permission_check) {
           continue;
         }
         $selected[$operation_id] = $operation;
