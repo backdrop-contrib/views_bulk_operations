@@ -5,11 +5,17 @@
       prop: jQuery.fn.attr
     });
   }
+  if (typeof $.fn.removeProp != 'function') {
+    jQuery.fn.extend({
+      removeProp: jQuery.fn.removeAttr
+    });
+  }
   Drupal.behaviors.vbo = {
     attach: function(context) {
       $('.vbo-views-form', context).each(function() {
         Drupal.vbo.initTableBehaviors(this);
         Drupal.vbo.initGenericBehaviors(this);
+        Drupal.vbo.toggleButtonsState(this);
       });
     }
   }
@@ -39,6 +45,7 @@
     $('.vbo-table-select-all', form).click(function() {
       var table = $(this).closest('table')[0];
       $('input[id^="edit-views-bulk-operations"]:not(:disabled)', table).prop('checked', this.checked);
+      Drupal.vbo.toggleButtonsState(form);
 
       // Toggle the visibility of the "select all" row (if any).
       if (this.checked) {
@@ -106,6 +113,12 @@
       $('.select-all-rows', form).val(this.checked);
     });
 
+    // Toggle submit buttons' "disabled" states with the state of the operation
+    // selectbox.
+    $('select[name="operation"]', form).change(function () {
+      Drupal.vbo.toggleButtonsState(form);
+    });
+
     $('.vbo-select', form).click(function() {
       // If a checkbox was deselected, uncheck any "select all" checkboxes.
       if (!this.checked) {
@@ -127,7 +140,33 @@
           }
         }
       }
+
+      Drupal.vbo.toggleButtonsState(form);
     });
   }
+
+  Drupal.vbo.toggleButtonsState = function(form) {
+    // If no rows are checked, disable any form submit actions.
+    var selectbox = $('select[name="operation"]', form);
+    var checkedCheckboxes = $('input.vbo-select:checked', form);
+    var buttons = $('[id^="edit-select"] input[type="submit"]', form);
+
+    if (selectbox.length) {
+      if (checkedCheckboxes.length && selectbox.val() !== '0') {
+        buttons.removeProp('disabled');
+      }
+      else {
+        buttons.prop('disabled', 'disabled');
+      }
+    }
+    else {
+      if (checkedCheckboxes.length) {
+        buttons.removeProp('disabled');
+      }
+      else {
+        buttons.prop('disabled', 'disabled');
+      }
+    }
+  };
 
 })(jQuery);
