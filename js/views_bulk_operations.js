@@ -5,11 +5,7 @@
       prop: jQuery.fn.attr
     });
   }
-  if (typeof $.fn.removeProp != 'function') {
-    jQuery.fn.extend({
-      removeProp: jQuery.fn.removeAttr
-    });
-  }
+
   Drupal.behaviors.vbo = {
     attach: function(context) {
       $('.vbo-views-form', context).each(function() {
@@ -97,6 +93,7 @@
 
     $('.vbo-select-this-page', form).click(function() {
       $('input[id^="edit-views-bulk-operations"]', form).prop('checked', this.checked);
+      Drupal.vbo.toggleButtonsState(form);
       $('.vbo-select-all-pages', form).prop('checked', false);
 
       // Toggle the "select all" checkbox in grouped tables (if any).
@@ -104,6 +101,7 @@
     });
     $('.vbo-select-all-pages', form).click(function() {
       $('input[id^="edit-views-bulk-operations"]', form).prop('checked', this.checked);
+      Drupal.vbo.toggleButtonsState(form);
       $('.vbo-select-this-page', form).prop('checked', false);
 
       // Toggle the "select all" checkbox in grouped tables (if any).
@@ -148,24 +146,15 @@
   Drupal.vbo.toggleButtonsState = function(form) {
     // If no rows are checked, disable any form submit actions.
     var selectbox = $('select[name="operation"]', form);
-    var checkedCheckboxes = $('input.vbo-select:checked', form);
+    var checkedCheckboxes = $('.vbo-select:checked', form);
     var buttons = $('[id^="edit-select"] input[type="submit"]', form);
 
     if (selectbox.length) {
-      if (checkedCheckboxes.length && selectbox.val() !== '0') {
-        buttons.removeProp('disabled');
-      }
-      else {
-        buttons.prop('disabled', 'disabled');
-      }
+      var has_selection = checkedCheckboxes.length && selectbox.val() !== '0';
+      buttons.prop('disabled', !has_selection);
     }
     else {
-      if (checkedCheckboxes.length) {
-        buttons.removeProp('disabled');
-      }
-      else {
-        buttons.prop('disabled', 'disabled');
-      }
+      buttons.prop('disabled', !checkedCheckboxes.length);
     }
   };
 
