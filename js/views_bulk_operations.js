@@ -59,15 +59,10 @@
       $('.views-table tbody tr', form).click(function(event) {
         if (event.target.tagName.toLowerCase() != 'input' && event.target.tagName.toLowerCase() != 'a') {
           $('input[id^="edit-views-bulk-operations"]:not(:disabled)', this).each(function() {
-            var checked = this.checked;
-            // trigger() toggles the checkmark *after* the event is set,
-            // whereas manually clicking the checkbox toggles it *beforehand*.
-            // that's why we manually set the checkmark first, then trigger the
-            // event (so that listeners get notified), then re-set the checkmark
-            // which the trigger will have toggled. yuck!
-            this.checked = !checked;
-            $(this).trigger('click');
-            this.checked = !checked;
+            // Always return true for radios, you cannot de-select a radio by clicking on it,
+            // it should be the same when clicking on a row.
+            this.checked = $(this).is(':radio') ? true : !this.checked;
+            $(this).trigger('change');
           });
         }
       });
@@ -117,7 +112,8 @@
       Drupal.vbo.toggleButtonsState(form);
     });
 
-    $('.vbo-select', form).click(function() {
+    // Handle a "change" event originating either from a row click or an actual checkbox click.
+    $('.vbo-select', form).change(function() {
       // If a checkbox was deselected, uncheck any "select all" checkboxes.
       if (!this.checked) {
         $('.vbo-select-this-page', form).prop('checked', false);
