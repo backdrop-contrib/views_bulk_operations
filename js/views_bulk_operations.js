@@ -40,7 +40,7 @@
     // This is the "select all" checkbox in (each) table header.
     $('.vbo-table-select-all', form).click(function() {
       var table = $(this).closest('table')[0];
-      $('input[id^="edit-views-bulk-operations"]:not(:disabled)', table).prop('checked', this.checked);
+      $('.vbo-select:not(:disabled)', table).prop('checked', this.checked);
       Drupal.vbo.toggleButtonsState(form);
 
       // Toggle the visibility of the "select all" row (if any).
@@ -58,7 +58,7 @@
     if (Drupal.settings.vbo.row_clickable) {
       $('.views-table tbody tr', form).click(function(event) {
         if (event.target.tagName.toLowerCase() != 'input' && event.target.tagName.toLowerCase() != 'a') {
-          $('input[id^="edit-views-bulk-operations"]:not(:disabled)', this).each(function() {
+          $('.vbo-select:not(:disabled)', this).each(function() {
             // Always return true for radios, you cannot de-select a radio by clicking on it,
             // it should be the same when clicking on a row.
             this.checked = $(this).is(':radio') ? true : !this.checked;
@@ -87,7 +87,7 @@
     $('.vbo-select-all-markup', form).show();
 
     $('.vbo-select-this-page', form).click(function() {
-      $('input[id^="edit-views-bulk-operations"]', form).prop('checked', this.checked);
+      $('.vbo-select', form).prop('checked', this.checked);
       Drupal.vbo.toggleButtonsState(form);
       $('.vbo-select-all-pages', form).prop('checked', false);
 
@@ -95,7 +95,7 @@
       $('.vbo-table-select-all', form).prop('checked', this.checked);
     });
     $('.vbo-select-all-pages', form).click(function() {
-      $('input[id^="edit-views-bulk-operations"]', form).prop('checked', this.checked);
+      $('.vbo-select', form).prop('checked', this.checked);
       Drupal.vbo.toggleButtonsState(form);
       $('.vbo-select-this-page', form).prop('checked', false);
 
