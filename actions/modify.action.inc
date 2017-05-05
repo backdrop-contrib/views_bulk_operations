@@ -193,9 +193,9 @@ function views_bulk_operations_modify_action_form($context, &$form_state) {
         $form['properties'][$key]['#maxlength'] = 255;
       }
 
-      if (!empty($property['options list'])) {
+      if (!empty($property['options list']) && is_callable($property['options list'])) {
         $form['properties'][$key]['#type'] = 'select';
-        $form['properties'][$key]['#options'] = $property['options list']($key, array());
+        $form['properties'][$key]['#options'] = call_user_func_array($property['options list'], array($key, array()));
 
         if ($property['type'] == 'list') {
           $form['properties'][$key]['#type'] = 'checkboxes';
