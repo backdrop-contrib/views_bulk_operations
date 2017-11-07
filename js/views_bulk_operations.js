@@ -39,7 +39,7 @@
     $('.vbo-table-select-all', form).show();
     // This is the "select all" checkbox in (each) table header.
     $('input.vbo-table-select-all', form).click(function() {
-      var table = $(this).closest('table')[0];
+      var table = $(this).closest('table:not(.sticky-header)')[0];
       $('.vbo-select:not(:disabled)', table).prop('checked', this.checked);
       Drupal.vbo.toggleButtonsState(form);
 
