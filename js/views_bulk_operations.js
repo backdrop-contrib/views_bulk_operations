@@ -145,7 +145,7 @@
     var checkedCheckboxes = $('.vbo-select:checked', form);
     // The .vbo-prevent-toggle CSS class is added to buttons to prevent toggling
     // between disabled and enabled. For example the case of an 'add' button.
-    var buttons = $('[id^="edit-select"] input[type="submit"]:not(.vbo-prevent-toggle)', form);
+    var buttons = $('[id^="edit-select"] [type="submit"]:not(.vbo-prevent-toggle)', form);
 
     if (selectbox.length) {
       var has_selection = checkedCheckboxes.length && selectbox.val() !== '0';
