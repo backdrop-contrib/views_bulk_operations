@@ -57,7 +57,8 @@
     // Set up the ability to click anywhere on the row to select it.
     if (Drupal.settings.vbo.row_clickable) {
       $('.views-table tbody tr', form).click(function(event) {
-        if (event.target.tagName.toLowerCase() != 'input' && event.target.tagName.toLowerCase() != 'a') {
+        var tagName = event.target.tagName.toLowerCase();
+        if (tagName != 'input' && tagName != 'a' && tagName != 'label') {
           $('.vbo-select:not(:disabled)', this).each(function() {
             // Always return true for radios, you cannot de-select a radio by clicking on it,
             // it should be the same when clicking on a row.
