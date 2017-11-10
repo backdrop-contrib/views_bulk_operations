@@ -848,7 +848,7 @@ function views_bulk_operations_execute($vbo, $operation, $selection, $select_all
 
   // All items on all pages should be selected, add a batch job to gather
   // and enqueue them.
-  if ($select_all_pages && $vbo->view->query->pager->has_more_records()) {
+  if ($select_all_pages && ($vbo->view->query->pager->has_more_records() || $vbo->view->query->pager->get_current_page() > 0)) {
     $total_rows = $vbo->view->total_rows;
 
     $batch['operations'][] = array(
