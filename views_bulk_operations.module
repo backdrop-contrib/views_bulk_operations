@@ -196,7 +196,7 @@ function views_bulk_operations_get_operation_info($operation_id = NULL) {
       $operations += $plugin['list callback']();
     }
 
-    uasort($operations, create_function('$a, $b', 'return strcasecmp($a["label"], $b["label"]);'));
+    uasort($operations, '_views_bulk_operations_sort_operations_by_label');
   }
 
   if (!empty($operation_id)) {
@@ -205,6 +205,16 @@ function views_bulk_operations_get_operation_info($operation_id = NULL) {
   else {
     return $operations;
   }
+}
+
+/**
+ * Sort function used by uasort in views_bulk_operations_get_operation_info().
+ *
+ * A closure would be better suited for this, but closure support was added in
+ * PHP 5.3 and D7 supports 5.2.
+ */
+function _views_bulk_operations_sort_operations_by_label($a, $b) {
+  return strcasecmp($a['label'], $b['label']);
 }
 
 /**
