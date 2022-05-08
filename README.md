@@ -1,7 +1,8 @@
 # Views Bulk Operations
 
 Views Bulk Operations augments Views by allowing bulk operations
-(provided by Backdrop's core, Rules, or custom actions) to be executed on the displayed rows.
+(provided by Backdrop's core, this module, Rules, or custom actions) to be 
+executed on the displayed rows.
 It does so by showing a checkbox in front of each displayed row, and adding a
 select box on top of the View containing operations that can be applied.
 
