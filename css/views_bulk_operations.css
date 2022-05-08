@@ -1,0 +1,37 @@
+.ebo-select-all-markup,
+.ebo-table-select-all-markup {
+  display: none;
+}
+
+/* "Select all" for table styles. */
+.ebo-views-form thead .form-type-checkbox {
+  margin: 0;
+}
+.ebo-table-select-all {
+  display: none;
+}
+.views-table-row-select-all {
+  display: none;
+}
+.views-table-row-select-all td {
+  text-align: center;
+}
+.ebo-views-form .ebo-table-select-all-pages,
+.ebo-views-form .ebo-table-select-this-page {
+  margin: 0;
+  padding: 2px 5px;
+}
+
+/* Generic "select all" */
+.ebo-fieldset-select-all {
+  text-align: center;
+  width: 210px;
+  padding: 0.6em 0;
+}
+.ebo-fieldset-select-all .form-item {
+  margin-bottom: 0;
+}
+.ebo-fieldset-select-all div {
+  padding: 0;
+  margin: 0;
+}
