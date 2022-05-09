@@ -1,9 +1,7 @@
+type = module
 name = Views Bulk Operations
 description = Provides a way of selecting multiple views rows and applying operations to them.
 dependencies[] = entity_plus
 dependencies[] = views
 package = Views
 backdrop = 1.x
-
-;files[] = plugins/operation_types/base.class.php
-;files[] = views/views_bulk_operations_handler_field_operations.inc
