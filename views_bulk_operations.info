@@ -4,6 +4,7 @@ dependencies[] = entity_plus
 dependencies[] = views
 package = Views
 backdrop = 1.x
+type = module
 
 ;files[] = plugins/operation_types/base.class.php
 ;files[] = views/views_bulk_operations_handler_field_operations.inc
