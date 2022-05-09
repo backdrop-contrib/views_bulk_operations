@@ -36,7 +36,9 @@ the files/config folders before installing.
 
 ## Creating custom actions
 
-Creating custom actions is similar to Backdrop's core. The most important difference is that VBO action definitions **require** the key 'vbo' =>  TRUE in order to work properly. Otherwise the action will be considered a Backdrop core action, and its workflow will need to follow that of the core actions.
+Creating custom actions is similar to Backdrop's core. The most important differences are:
+- VBO actions must be defined in hook_vboaction_info()
+- VBO action definitions **require** the key 'vbo' =>  TRUE in order to work properly. Otherwise the action will be considered a Backdrop core action, and its workflow will need to follow that of the core actions.
 
 Documentation on how to created VBO actions will be added to the project's wiki soon. For examples on VBO actions, please check the files in the actions folder of this module. 
 
