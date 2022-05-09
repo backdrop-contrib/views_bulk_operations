@@ -79,12 +79,12 @@ class ViewsBulkOperationsAction extends ViewsBulkOperationsBaseOperation {
   public function form($form, &$form_state, array $context) {
     // Some modules (including this one) place their action callbacks
     // into separate files. At this point those files might no longer be
-    // included due to an #ajax rebuild, so we call actions_get_info() to trigger
+    // included due to an #ajax rebuild, so we call views_bulk_operations_actions_get_info() to trigger
     // inclusion. The same thing is done by actions_execute() on execute.
 
     // @todo Check to see if the above is true. We may need to manuall include
     // the inc file.
-    actions_get_info();
+    views_bulk_operations_actions_get_info();
 
     $context['settings'] = $this->getAdminOption('settings', array());
     $form_callback = $this->operationInfo['callback'] . '_form';
@@ -103,12 +103,12 @@ class ViewsBulkOperationsAction extends ViewsBulkOperationsBaseOperation {
   public function formValidate($form, &$form_state) {
     // Some modules (including this one) place their action callbacks
     // into separate files. At this point those files might no longer be
-    // included due to an #ajax rebuild, so we call actions_get_info() to trigger
+    // included due to an #ajax rebuild, so we call views_bulk_operations_actions_get_info() to trigger
     // inclusion. The same thing is done by actions_execute() on execute.
 
     // @todo Check to see if the above is true. We may need to manuall include
     // the inc file.
-    actions_get_info();
+    views_bulk_operations_actions_get_info();
 
     $validation_callback = $this->operationInfo['callback'] . '_validate';
     if (function_exists($validation_callback)) {
@@ -129,12 +129,12 @@ class ViewsBulkOperationsAction extends ViewsBulkOperationsBaseOperation {
   public function formSubmit($form, &$form_state) {
     // Some modules (including this one) place their action callbacks
     // into separate files. At this point those files might no longer be
-    // included due to an #ajax rebuild, so we call actions_get_info() to trigger
+    // included due to an #ajax rebuild, so we call views_bulk_operations_actions_get_info() to trigger
     // inclusion. The same thing is done by actions_execute() on execute.
 
     // @todo Check to see if the above is true. We may need to manuall include
     // the inc file.
-    actions_get_info();
+    views_bulk_operations_actions_get_info();
 
     $submit_callback = $this->operationInfo['callback'] . '_submit';
     // If the return value from the callback is an options array, store it for
@@ -264,14 +264,14 @@ class ViewsBulkOperationsAction extends ViewsBulkOperationsBaseOperation {
     // When the aggregate option is selected, we must pass an array of entities,
     // but since Backdrop's actions_execute() can't handle entity arrays, we
     // must use a custom function to execute the action.  
-    if (is_array($data)) {
+    if (is_array($data) || $this->isVboAction()) {
       $function = 'views_bulk_operations_actions_execute_array';
     }
     else {
       $function = 'actions_execute';
     }
     
-    $function($this->operationInfo['callback'], $data, $context);
+    $function($this->operationInfo['key'], $data, $context);
 
     if ($this->isVboAction()) {
       // For actions provided by VBO, the action might need to have its entities

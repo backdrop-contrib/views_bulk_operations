@@ -6,11 +6,11 @@
  */
 
 /**
- * Implements hook_action_info().
+ * Implements hook_vboaction_info().
  */
-function views_bulk_operations_node_unpublish_by_keyword_action_info() {
+function views_bulk_operations_node_unpublish_by_keyword_vboaction_info() {
   return array(
-    'views_bulk_operations_node_unpublish_by_keyword_action' => array(
+    'views_bulk_operations_node_unpublish_by_keyword_vboaction' => array(
       'type' => 'node',
       'label' => t('Unpublish content containing keyword(s)'),
       'configurable' => TRUE,
@@ -21,7 +21,7 @@ function views_bulk_operations_node_unpublish_by_keyword_action_info() {
 }
 
 /**
- * Generates settings form for views_bulk_operations_node_unpublish_by_keyword_action().
+ * Generates settings form for views_bulk_operations_node_unpublish_by_keyword_vboaction().
  *
  * @param array $context
  *   Array of additional information about what triggered this action.
@@ -29,9 +29,9 @@ function views_bulk_operations_node_unpublish_by_keyword_action_info() {
  * @return array
  *   A form array.
  *
- * @see views_bulk_operations_node_unpublish_by_keyword_action_submit()
+ * @see views_bulk_operations_node_unpublish_by_keyword_vboaction_submit()
  */
-function views_bulk_operations_node_unpublish_by_keyword_action_form($context) {
+function views_bulk_operations_node_unpublish_by_keyword_vboaction_form($context) {
   $form['keywords'] = array(
     '#title' => t('Keywords'),
     '#type' => 'textarea',
@@ -42,9 +42,9 @@ function views_bulk_operations_node_unpublish_by_keyword_action_form($context) {
 }
 
 /**
- * Saves settings form for views_bulk_operations_node_unpublish_by_keyword_action().
+ * Saves settings form for views_bulk_operations_node_unpublish_by_keyword_vboaction().
  */
-function views_bulk_operations_node_unpublish_by_keyword_action_submit($form, $form_state) {
+function views_bulk_operations_node_unpublish_by_keyword_vboaction_submit($form, $form_state) {
   return array('keywords' => backdrop_explode_tags($form_state['values']['keywords']));
 }
 
@@ -60,7 +60,7 @@ function views_bulk_operations_node_unpublish_by_keyword_action_submit($form, $f
  *
  * @ingroup actions
  */
-function views_bulk_operations_node_unpublish_by_keyword_action($node, $context) {
+function views_bulk_operations_node_unpublish_by_keyword_vboaction($node, $context) {
   foreach ($context['keywords'] as $keyword) {
     $elements = node_view(clone $node);
     if (strpos(backdrop_render($elements), $keyword) !== FALSE || strpos($node->title, $keyword) !== FALSE) {

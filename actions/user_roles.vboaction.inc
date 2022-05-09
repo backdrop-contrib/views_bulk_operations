@@ -1,7 +1,7 @@
 <?php
 
-function views_bulk_operations_user_roles_action_info() {
-  return array('views_bulk_operations_user_roles_action' => array(
+function views_bulk_operations_user_roles_vboaction_info() {
+  return array('views_bulk_operations_user_roles_vboaction' => array(
     'type' => 'user',
     'label' => t('Modify user roles'),
     'configurable' => TRUE,
@@ -10,7 +10,7 @@ function views_bulk_operations_user_roles_action_info() {
   ));
 }
 
-function views_bulk_operations_user_roles_action_form($context) {
+function views_bulk_operations_user_roles_vboaction_form($context) {
   $roles = user_roles(TRUE);
   unset($roles[BACKDROP_AUTHENTICATED_ROLE]);  // Can't edit authenticated role.
 
@@ -33,20 +33,20 @@ function views_bulk_operations_user_roles_action_form($context) {
   return $form;
 }
 
-function views_bulk_operations_user_roles_action_validate($form, $form_state) {
+function views_bulk_operations_user_roles_vboaction_validate($form, $form_state) {
   if (!$form_state['values']['add_roles'] && !$form_state['values']['remove_roles']) {
     form_set_error('add_roles', t('You have not chosen any role to add or remove. Please select something to do.'));
   }
 }
 
-function views_bulk_operations_user_roles_action_submit($form, $form_state) {
+function views_bulk_operations_user_roles_vboaction_submit($form, $form_state) {
   return array(
     'add_roles' => array_filter($form_state['values']['add_roles']),
     'remove_roles' => array_filter($form_state['values']['remove_roles']),
   );
 }
 
-function views_bulk_operations_user_roles_action($user, $context) {
+function views_bulk_operations_user_roles_vboaction($user, $context) {
   $wrapper = entity_metadata_wrapper('user', $user);
   if (!$wrapper->roles->access("update")) {
     // No access.

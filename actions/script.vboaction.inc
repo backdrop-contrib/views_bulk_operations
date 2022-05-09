@@ -1,8 +1,8 @@
 <?php
 
-function views_bulk_operations_script_action_info() {
+function views_bulk_operations_script_vboaction_info() {
   $actions = array();
-  $actions['views_bulk_operations_script_action'] = array(
+  $actions['views_bulk_operations_script_vboaction'] = array(
     'type' => 'entity',
     'label' => t('Execute arbitrary PHP script'),
     'configurable' => TRUE,
@@ -11,13 +11,13 @@ function views_bulk_operations_script_action_info() {
   );
   // Provide a strict default permission if actions_permissions is disabled.
   if (!module_exists('actions_permissions')) {
-    $actions['views_bulk_operations_script_action']['permissions'] = array('administer site configuration');
+    $actions['views_bulk_operations_script_vboaction']['permissions'] = array('administer site configuration');
   }
 
   return $actions;
 }
 
-function views_bulk_operations_script_action($entity, $context) {
+function views_bulk_operations_script_vboaction($entity, $context) {
   $return = eval($context['script']);
   if ($return === FALSE) {
     $msg = 'Error in script.';
@@ -27,8 +27,8 @@ function views_bulk_operations_script_action($entity, $context) {
       $msg = '!err in script: !msg in line \'%line\'.';
       $arg = array(
         '!msg' => $error['message'],
-        '%line' => _views_bulk_operations_script_action_error_line($context['script'], $error['line']),
-        '!err' => _views_bulk_operations_script_action_error_type($error['type']),
+        '%line' => _views_bulk_operations_script_vboaction_error_line($context['script'], $error['line']),
+        '!err' => _views_bulk_operations_script_vboaction_error_type($error['type']),
       );
     }
     backdrop_set_message(t($msg, $arg), 'error', FALSE);
@@ -36,7 +36,7 @@ function views_bulk_operations_script_action($entity, $context) {
   }
 }
 
-function views_bulk_operations_script_action_form($context) {
+function views_bulk_operations_script_vboaction_form($context) {
   $form['script'] = array(
     '#type' => 'textarea',
     '#title' => t('PHP script'),
@@ -47,16 +47,16 @@ function views_bulk_operations_script_action_form($context) {
   return $form;
 }
 
-function views_bulk_operations_script_action_validate($form, $form_state) {
+function views_bulk_operations_script_vboaction_validate($form, $form_state) {
 }
 
-function views_bulk_operations_script_action_submit($form, $form_state) {
+function views_bulk_operations_script_vboaction_submit($form, $form_state) {
   return array(
     'script' => $form_state['values']['script'],
   );
 }
 
-function _views_bulk_operations_script_action_error_line($script, $line) {
+function _views_bulk_operations_script_vboaction_error_line($script, $line) {
   $lines = preg_split("/(\r?\n)/", $script);
   if (isset($lines[$line-1])) {
     return $lines[$line-1];
@@ -66,7 +66,7 @@ function _views_bulk_operations_script_action_error_line($script, $line) {
   }
 }
 
-function _views_bulk_operations_script_action_error_type($type) {
+function _views_bulk_operations_script_vboaction_error_type($type) {
   $types = array(
     E_ERROR              => 'Error',
     E_WARNING            => 'Warning',

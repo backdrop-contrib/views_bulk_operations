@@ -9,11 +9,11 @@
 define('VBO_MODIFY_ACTION_ALL', '_all_');
 
 /**
- * Implements hook_action_info().
+ * Implements hook_vboaction_info().
  */
-function views_bulk_operations_modify_action_info() {
+function views_bulk_operations_modify_vboaction_info() {
   return array(
-    'views_bulk_operations_modify_action' => array(
+    'views_bulk_operations_modify_vboaction' => array(
       'type' => 'entity',
       'label' => t('Modify entity values'),
       'behavior' => array('changes_property'),
@@ -34,7 +34,7 @@ function views_bulk_operations_modify_action_info() {
  * Goes through new values and uses them to modify the passed entity by either
  * replacing the existing values, or appending to them (based on user input).
  */
-function views_bulk_operations_modify_action($entity, $context) {
+function views_bulk_operations_modify_vboaction($entity, $context) {
   list(,, $bundle_name) = entity_extract_ids($context['entity_type'], $entity);
   // Handle Field API fields.
   if (!empty($context['selected']['bundle_' . $bundle_name])) {
@@ -127,11 +127,11 @@ function views_bulk_operations_modify_action($entity, $context) {
  * (hook_entity_property_info()), as well as field widgets for each
  * entity bundle, as provided by field_attach_form().
  */
-function views_bulk_operations_modify_action_form($context, &$form_state) {
+function views_bulk_operations_modify_vboaction_form($context, &$form_state) {
   // This action form uses admin-provided settings. If they were not set, pull
   // the defaults now.
   if (!isset($context['settings'])) {
-    $context['settings'] = views_bulk_operations_modify_action_views_bulk_operations_form_options();
+    $context['settings'] = views_bulk_operations_modify_vboaction_views_bulk_operations_form_options();
   }
 
   $form_state['entity_type'] = $entity_type = $context['entity_type'];
@@ -141,14 +141,14 @@ function views_bulk_operations_modify_action_form($context, &$form_state) {
   // (field_attach_form(), field_attach_form_validate(), field_attach_submit()),
   // and filled with form data.
   // After submit, the pseudo-entities get passed to the actual action
-  // (views_bulk_operations_modify_action()) which copies the data from the
+  // (views_bulk_operations_modify_vboaction()) which copies the data from the
   // relevant pseudo-entity constructed here to the actual entity being
   // modified.
   $form_state['entities'] = array();
 
   $info = entity_get_info($entity_type);
-  $properties = _views_bulk_operations_modify_action_get_properties($entity_type, $context['settings']['display_values']);
-  $bundles = _views_bulk_operations_modify_action_get_bundles($entity_type, $context);
+  $properties = _views_bulk_operations_modify_vboaction_get_properties($entity_type, $context['settings']['display_values']);
+  $bundles = _views_bulk_operations_modify_vboaction_get_bundles($entity_type, $context);
 
   $form['#attached']['css'][] = backdrop_get_path('module', 'views_bulk_operations') . '/css/modify.action.css';
   $form['#tree'] = TRUE;
@@ -168,7 +168,7 @@ function views_bulk_operations_modify_action_form($context, &$form_state) {
         '#title' => $property['label'],
       );
 
-      // According to _views_bulk_operations_modify_action_get_properties
+      // According to _views_bulk_operations_modify_vboaction_get_properties
       // we have fixed list of supported types. Most of these types are string
       // and only some of them has options list.
       if (isset($property['options list'])) {
@@ -256,7 +256,7 @@ function views_bulk_operations_modify_action_form($context, &$form_state) {
       // For our use case it makes no sense for any field widget to be required.
       if (isset($form[$form_key][$field_name]['#language'])) {
         $field_language = $form[$form_key][$field_name]['#language'];
-        _views_bulk_operations_modify_action_unset_required($form[$form_key][$field_name][$field_language]);
+        _views_bulk_operations_modify_vboaction_unset_required($form[$form_key][$field_name][$field_language]);
       }
 
       // The admin has specified which fields to display, but this field didn't
@@ -351,7 +351,7 @@ function views_bulk_operations_modify_action_form($context, &$form_state) {
  * Checks that the user selected at least one value to modify, validates
  * properties and calls Field API to validate fields for each bundle.
  */
-function views_bulk_operations_modify_action_validate($form, &$form_state) {
+function views_bulk_operations_modify_vboaction_validate($form, &$form_state) {
   // The form structure for "Show" checkboxes is a bit bumpy.
   $search = array('properties');
   foreach ($form_state['entities'] as $bundle => $entity) {
@@ -403,7 +403,7 @@ function views_bulk_operations_modify_action_validate($form, &$form_state) {
     $entity = entity_create($form_state['entity_type'], $default_values);
     $wrapper = entity_metadata_wrapper($form_state['entity_type'], $entity);
 
-    $properties = _views_bulk_operations_modify_action_get_properties($form_state['entity_type']);
+    $properties = _views_bulk_operations_modify_vboaction_get_properties($form_state['entity_type']);
     foreach ($form_state['selected']['properties'] as $key) {
       $value = $form_state['values']['properties'][$key];
       if (!$wrapper->{$key}->validate($value)) {
@@ -422,9 +422,9 @@ function views_bulk_operations_modify_action_validate($form, &$form_state) {
  * Action form submit function.
  *
  * Fills each constructed entity with property and field values, then
- * passes them to views_bulk_operations_modify_action().
+ * passes them to views_bulk_operations_modify_vboaction().
  */
-function views_bulk_operations_modify_action_submit($form, $form_state) {
+function views_bulk_operations_modify_vboaction_submit($form, $form_state) {
   foreach ($form_state['entities'] as $bundle_name => $entity) {
     field_attach_submit($form_state['entity_type'], $entity, $form['bundle_' . $bundle_name], $form_state);
   }
@@ -449,7 +449,7 @@ function views_bulk_operations_modify_action_submit($form, $form_state) {
  *   An optional, admin-provided list of properties and fields that should be
  *   displayed for editing, used to filter the returned list of properties.
  */
-function _views_bulk_operations_modify_action_get_properties($entity_type, $display_values = NULL) {
+function _views_bulk_operations_modify_vboaction_get_properties($entity_type, $display_values = NULL) {
   $properties = array();
   $info = entity_get_info($entity_type);
 
@@ -524,7 +524,7 @@ function _views_bulk_operations_modify_action_get_properties($entity_type, $disp
  * @param array $context
  *   The VBO context variable.
  */
-function _views_bulk_operations_modify_action_get_bundles($entity_type, $context) {
+function _views_bulk_operations_modify_vboaction_get_bundles($entity_type, $context) {
   $bundles = array();
 
   $view = $context['view'];
@@ -588,17 +588,17 @@ function _views_bulk_operations_modify_action_get_bundles($entity_type, $context
 /**
  * Helper function that recursively strips #required from field widgets.
  */
-function _views_bulk_operations_modify_action_unset_required(&$element) {
+function _views_bulk_operations_modify_vboaction_unset_required(&$element) {
   $element['#required'] = FALSE;
   foreach (element_children($element) as $key) {
-    _views_bulk_operations_modify_action_unset_required($element[$key]);
+    _views_bulk_operations_modify_vboaction_unset_required($element[$key]);
   }
 }
 
 /**
  * VBO settings form function.
  */
-function views_bulk_operations_modify_action_views_bulk_operations_form_options() {
+function views_bulk_operations_modify_vboaction_views_bulk_operations_form_options() {
   $options['show_all_tokens'] = TRUE;
   $options['display_values'] = array(VBO_MODIFY_ACTION_ALL);
   return $options;
@@ -607,10 +607,10 @@ function views_bulk_operations_modify_action_views_bulk_operations_form_options(
 /**
  * The settings form for this action.
  */
-function views_bulk_operations_modify_action_views_bulk_operations_form($options, $entity_type, $dom_id) {
+function views_bulk_operations_modify_vboaction_views_bulk_operations_form($options, $entity_type, $dom_id) {
   // Initialize default values.
   if (empty($options)) {
-    $options = views_bulk_operations_modify_action_views_bulk_operations_form_options();
+    $options = views_bulk_operations_modify_vboaction_views_bulk_operations_form_options();
   }
 
   $form['show_all_tokens'] = array(
@@ -621,7 +621,7 @@ function views_bulk_operations_modify_action_views_bulk_operations_form($options
   );
 
   $info = entity_get_info($entity_type);
-  $properties = _views_bulk_operations_modify_action_get_properties($entity_type);
+  $properties = _views_bulk_operations_modify_vboaction_get_properties($entity_type);
   $values = array(VBO_MODIFY_ACTION_ALL => t('- All -'));
   foreach ($properties as $key => $property) {
     $label = t('Properties');

@@ -6,11 +6,11 @@
  */
 
 /**
- * Implements hook_action_info().
+ * Implements hook_vboaction_info().
  */
-function views_bulk_operations_goto_action_info() {
+function views_bulk_operations_goto_vboaction_info() {
   return array(
-    'views_bulk_operations_goto_action' => array(
+    'views_bulk_operations_goto_vboaction' => array(
       'type' => 'system',
       'label' => t('Redirect to URL'),
       'configurable' => TRUE,
@@ -22,9 +22,9 @@ function views_bulk_operations_goto_action_info() {
 }
 
 /**
- * Settings form for views_bulk_operations_goto_action().
+ * Settings form for views_bulk_operations_goto_vboaction().
  */
-function views_bulk_operations_goto_action_form($context) {
+function views_bulk_operations_goto_vboaction_form($context) {
   $form['url'] = array(
     '#type' => 'textfield',
     '#title' => t('URL'),
@@ -38,7 +38,7 @@ function views_bulk_operations_goto_action_form($context) {
 /** 
  * Submit handler.
  */
-function views_bulk_operations_goto_action_submit($form, $form_state) {
+function views_bulk_operations_goto_vboaction_submit($form, $form_state) {
   return array(
     'url' => $form_state['values']['url']
   );
@@ -56,6 +56,6 @@ function views_bulk_operations_goto_action_submit($form, $form_state) {
  *   - Other elements will be used as the data for token replacement.
  *
  */
-function views_bulk_operations_goto_action($entity, $context) {
+function views_bulk_operations_goto_vboaction($entity, $context) {
   backdrop_goto(token_replace($context['url'], $context));
 }

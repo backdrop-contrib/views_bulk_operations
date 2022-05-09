@@ -12,11 +12,11 @@ define('VBO_ACCESS_OP_CREATE',    0x04);
 define('VBO_ACCESS_OP_DELETE',    0x08);
 
 /**
- * Implements hook_action_info().
+ * Implements hook_vboaction_info().
  *
- * Registers custom VBO actions as Backdrop actions.
+ * Registers custom VBO actions.
  */
-function views_bulk_operations_action_info() {
+function views_bulk_operations_vboaction_info() {
   $actions = array();
   $files = views_bulk_operations_load_action_includes();
   foreach ($files as $filename) {
@@ -61,17 +61,17 @@ function views_bulk_operations_load_action_includes() {
   // caching the result has its cost).
   // Note that some of D7 core configurable actions are now defined by VBO.
   $files = array(
-    'archive.action',
-    'argument_selector.action',
-    'book.action',
-    'change_owner.action',
-    'modify.action',
-    'script.action',
-    'user_roles.action',
-    'display_message.action',
-    'send_email.action',
-    'goto.action',
-    'node_unpublish_by_keyword.action',
+    'archive.vboaction',
+    'argument_selector.vboaction',
+    'book.vboaction',
+    'change_owner.vboaction',
+    'modify.vboaction',
+    'script.vboaction',
+    'user_roles.vboaction',
+    'display_message.vboaction',
+    'send_email.vboaction',
+    'goto.vboaction',
+    'node_unpublish_by_keyword.vboaction',
   );
 
   if (!$loaded) {
@@ -1434,7 +1434,7 @@ function views_bulk_operations_actions_execute_array($action_name, $entities = a
     return NULL;
   }
 
-  $action_info = actions_get_info($action_name);
+  $action_info = views_bulk_operations_actions_get_info($action_name);
   $callback = $action_info['callback'];
   if (isset($action_info['file'])) {
     include_once BACKDROP_ROOT . '/' . backdrop_get_path('module', $action_info['module']) . '/' . $action_info['file'];
@@ -1451,4 +1451,55 @@ function views_bulk_operations_actions_execute_array($action_name, $entities = a
 
   $stack--;
   return $result;
+}
+
+/**
+ * Retrieves a single action's info by its name, or all actions
+ *
+ * This is an extension of core's action_get_info(). It's here to retrieve both
+ * core actions, and VBO actions. Unlike the D7 version, VBO defines a new 
+ * hook (hook_vboaction_info()) to define VBO actions. This is done so that
+ * those actions are invisible to core's Bulk Operations functionality.
+ *   
+ * @param $action_name
+ *   (optional) The name of the action to retrieve.
+ *
+ * @return
+ *   An array of action info as provided by hook_action_info() and
+ *   hook_vboaction_info(). If no action name is specified, all actions in the
+ *   system will be returned as an array keyed by the action name.
+ * 
+ * @see hook_vboaction_info().
+ */
+function views_bulk_operations_actions_get_info($action_name = NULL) {
+  $actions = &backdrop_static(__FUNCTION__);
+
+  if (!isset($actions)) {
+    // Retrieve core actions.
+    $actions = actions_get_info();
+
+    // Retrieve VBO actions.
+    foreach (module_implements('vboaction_info') as $module) {
+      $module_actions = module_invoke($module, 'vboaction_info');
+      foreach ($module_actions as $module_action_name => $action_info) {
+        $action_info += array(
+          'callback' => $module_action_name,
+          'module' => $module,
+        );
+        $actions[$module_action_name] = $action_info;
+      }
+    }
+    backdrop_alter('vboaction_info', $actions);
+    backdrop_sort($actions);
+  }
+
+  if (!isset($action_name)) {
+    return $actions;
+  }
+  elseif (isset($actions[$action_name])) {
+    return $actions[$action_name];
+  }
+  else {
+    return FALSE;
+  }
 }

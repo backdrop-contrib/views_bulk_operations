@@ -5,10 +5,10 @@
  * Implements actions for managing books (book.module).
  */
 
-function views_bulk_operations_book_action_info() {
+function views_bulk_operations_book_vboaction_info() {
   $actions = array();
   if (module_exists('book')) {
-    $actions['views_bulk_operations_move_to_book_action'] = array(
+    $actions['views_bulk_operations_move_to_book_vboaction'] = array(
       'type' => 'node',
       'label' => t('Move to book'),
       'configurable' => TRUE,
@@ -16,7 +16,7 @@ function views_bulk_operations_book_action_info() {
       'vbo' => TRUE,
       //'triggers' => array('any'),
     );
-    $actions['views_bulk_operations_remove_from_book_action'] = array(
+    $actions['views_bulk_operations_remove_from_book_vboaction'] = array(
       'type' => 'node',
       'label' => t('Remove from book'),
       'configurable' => FALSE,
@@ -28,7 +28,7 @@ function views_bulk_operations_book_action_info() {
   return $actions;
 }
 
-function views_bulk_operations_move_to_book_action_form($context) {
+function views_bulk_operations_move_to_book_vboaction_form($context) {
   $form = array();
   if (!isset($context['book'])) {
     $context['book'] = '';
@@ -53,11 +53,11 @@ function views_bulk_operations_move_to_book_action_form($context) {
   return $form;
 }
 
-function views_bulk_operations_move_to_book_action_submit($form, $form_state) {
+function views_bulk_operations_move_to_book_vboaction_submit($form, $form_state) {
   return array('book' => $form_state['values']['book']);
 }
 
-function views_bulk_operations_move_to_book_action($node, $context = array()) {
+function views_bulk_operations_move_to_book_vboaction($node, $context = array()) {
   if (isset($context['book'])) {
     $book_node = node_load($context['book']);
     $mlid = db_select('menu_links', 'ml')
@@ -75,7 +75,7 @@ function views_bulk_operations_move_to_book_action($node, $context = array()) {
 /**
  * Adds the action 'Remove node from a parent book'.
  */
-function views_bulk_operations_remove_from_book_action($node) {
+function views_bulk_operations_remove_from_book_vboaction($node) {
   if (_book_node_is_removable($node)) {
     menu_link_delete($node->book['mlid']);
     db_delete('book')

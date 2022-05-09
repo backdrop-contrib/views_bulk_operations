@@ -6,11 +6,11 @@
  */
 
 /**
- * Implements hook_action_info().
+ * Implements hook_vboaction_info().
  */
-function views_bulk_operations_comment_unpublish_by_keyword_action_info() {
+function views_bulk_operations_comment_unpublish_by_keyword_vboaction_info() {
   return array(
-    'views_bulk_operations_comment_unpublish_by_keyword_action' => array(
+    'views_bulk_operations_comment_unpublish_by_keyword_vboaction' => array(
       'label' => t('Unpublish comment containing keyword(s)'),
       'type' => 'comment',
       'configurable' => TRUE,
@@ -31,10 +31,10 @@ function views_bulk_operations_comment_unpublish_by_keyword_action_info() {
  *   - 'keywords': Keywords to look for. If the comment contains at least one
  *     of the keywords, it is unpublished.
  *
- * @see views_bulk_operations_comment_unpublish_by_keyword_action_form()
- * @see views_bulk_operations_comment_unpublish_by_keyword_action_submit()
+ * @see views_bulk_operations_comment_unpublish_by_keyword_vboaction_form()
+ * @see views_bulk_operations_comment_unpublish_by_keyword_vboaction_submit()
  */
-function views_bulk_operations_comment_unpublish_by_keyword_action($comment, $context) {
+function views_bulk_operations_comment_unpublish_by_keyword_vboaction($comment, $context) {
   $node = node_load($comment->nid);
   $build = comment_view($comment, $node);
   $text = backdrop_render($build);
@@ -52,10 +52,10 @@ function views_bulk_operations_comment_unpublish_by_keyword_action($comment, $co
  * Form builder; Prepare a form for blacklisted keywords.
  *
  * @ingroup forms
- * @see views_bulk_operations_comment_unpublish_by_keyword_action()
- * @see views_bulk_operations_comment_unpublish_by_keyword_action_submit()
+ * @see views_bulk_operations_comment_unpublish_by_keyword_vboaction()
+ * @see views_bulk_operations_comment_unpublish_by_keyword_vboaction_submit()
  */
-function views_bulk_operations_comment_unpublish_by_keyword_action_form($context) {
+function views_bulk_operations_comment_unpublish_by_keyword_vboaction_form($context) {
   $form['keywords'] = array(
     '#title' => t('Keywords'),
     '#type' => 'textarea',
@@ -67,10 +67,10 @@ function views_bulk_operations_comment_unpublish_by_keyword_action_form($context
 }
 
 /**
- * Process views_bulk_operations_comment_unpublish_by_keyword_action_form form submissions.
+ * Process views_bulk_operations_comment_unpublish_by_keyword_vboaction_form form submissions.
  *
- * @see views_bulk_operations_comment_unpublish_by_keyword_action()
+ * @see views_bulk_operations_comment_unpublish_by_keyword_vboaction()
  */
-function views_bulk_operations_comment_unpublish_by_keyword_action_submit($form, $form_state) {
+function views_bulk_operations_comment_unpublish_by_keyword_vboaction_submit($form, $form_state) {
   return array('keywords' => backdrop_explode_tags($form_state['values']['keywords']));
 }

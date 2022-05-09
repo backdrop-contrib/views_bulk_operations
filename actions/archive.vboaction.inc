@@ -9,12 +9,12 @@
  */
 
 /**
- * Implements hook_action_info().
+ * Implements hook_vboaction_info().
  */
-function views_bulk_operations_archive_action_info() {
+function views_bulk_operations_archive_vboaction_info() {
   $actions = array();
   if (function_exists('zip_open')) {
-    $actions['views_bulk_operations_archive_action'] = array(
+    $actions['views_bulk_operations_archive_vboaction'] = array(
       'type' => 'file',
       'label' => t('Create an archive of selected files'),
       'configurable' => TRUE,
@@ -31,7 +31,7 @@ function views_bulk_operations_archive_action_info() {
  * Since Drupal's Archiver doesn't abstract properly the archivers it implements
  * (Archive_Tar and ZipArchive), it can't be used here.
  */
-function views_bulk_operations_archive_action($file, $context) {
+function views_bulk_operations_archive_vboaction($file, $context) {
   global $user;
   static $archive_contents = array();
 
@@ -55,7 +55,7 @@ function views_bulk_operations_archive_action($file, $context) {
         }
       }
       // Make sure that the target filename is unique.
-      $filename = _views_bulk_operations_archive_action_create_filename(basename($file->uri), $archive_contents);
+      $filename = _views_bulk_operations_archive_vboaction_create_filename(basename($file->uri), $archive_contents);
       // Note that the actual addition happens on close(), hence the need
       // to open / close the archive each time the action runs.
       $zip->addFile(backdrop_realpath($file->uri), $filename);
@@ -88,7 +88,7 @@ function views_bulk_operations_archive_action($file, $context) {
 /**
  * Configuration form shown to the user before the action gets executed.
  */
-function views_bulk_operations_archive_action_form($context) {
+function views_bulk_operations_archive_vboaction_form($context) {
   // Pass the scheme as a value, so that the submit callback can access it.
   $form['scheme'] = array(
     '#type' => 'value',
@@ -110,9 +110,9 @@ function views_bulk_operations_archive_action_form($context) {
  *
  * @returns array
  *   A URI array used by the action callback
- *   (views_bulk_operations_archive_action).
+ *   (views_bulk_operations_archive_vboaction).
  */
-function views_bulk_operations_archive_action_submit($form, $form_state) {
+function views_bulk_operations_archive_vboaction_submit($form, $form_state) {
   // Validate the scheme, fallback to public if it's somehow invalid.
   $scheme = $form_state['values']['scheme'];
   if (!file_stream_wrapper_valid_scheme($scheme)) {
@@ -131,7 +131,7 @@ function views_bulk_operations_archive_action_submit($form, $form_state) {
 /**
  * Settings form (embedded into the VBO field settings in the Views UI).
  */
-function views_bulk_operations_archive_action_views_bulk_operations_form($options) {
+function views_bulk_operations_archive_vboaction_views_bulk_operations_form($options) {
   $scheme_options = array();
   foreach (file_get_stream_wrappers(STREAM_WRAPPERS_LOCAL_NORMAL) as $scheme => $stream_wrapper) {
     $scheme_options[$scheme] = $stream_wrapper['name'];
@@ -173,7 +173,7 @@ function views_bulk_operations_archive_action_views_bulk_operations_form($option
  * @return string
  *   The new filename.
  */
-function _views_bulk_operations_archive_action_create_filename($filename, $archive_list) {
+function _views_bulk_operations_archive_vboaction_create_filename($filename, $archive_list) {
   // Strip control characters (ASCII value < 32). Though these are allowed in
   // some filesystems, not many applications handle them well.
   $filename = preg_replace('/[\x00-\x1F]/u', '_', $filename);

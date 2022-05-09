@@ -19,7 +19,7 @@ function views_bulk_operations_operation_action_list($operation_id = NULL) {
 
   if (!isset($operations)) {
     // Combined list of all actions and advanced actions.
-    $actions_list = actions_get_info();
+    $actions_list = views_bulk_operations_actions_get_info();
     // Actions aren't usable in a VBO context. Add as needed
     $hidden_actions = array();
 

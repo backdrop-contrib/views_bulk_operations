@@ -6,11 +6,11 @@
  */
 
 /**
- * Implements hook_action_info().
+ * Implements hook_vboaction_info().
  */
-function views_bulk_operations_send_email_action_info() {
+function views_bulk_operations_send_email_vboaction_info() {
   return array(
-    'views_bulk_operations_send_email_action' => array(
+    'views_bulk_operations_send_email_vboaction' => array(
       'type' => 'system',
       'label' => t('Send e-mail'),
       'configurable' => TRUE,
@@ -29,7 +29,7 @@ function views_bulk_operations_send_email_action_info() {
  * @return
  *   Form definition.
  */
-function views_bulk_operations_send_email_action_form($context, $form_state) {
+function views_bulk_operations_send_email_vboaction_form($context, $form_state) {
   // Set default values for form.
   if (!isset($context['recipient'])) {
     $context['recipient'] = '';
@@ -67,9 +67,9 @@ function views_bulk_operations_send_email_action_form($context, $form_state) {
 }
 
 /**
- * Validate views_bulk_operations_send_email_action form submissions.
+ * Validate views_bulk_operations_send_email_vboaction form submissions.
  */
-function views_bulk_operations_send_email_action_validate($form, $form_state) {
+function views_bulk_operations_send_email_vboaction_validate($form, $form_state) {
   $form_values = $form_state['values'];
   // Validate the configuration form.
   if (!valid_email_address($form_values['recipient']) && strpos($form_values['recipient'], ':mail') === FALSE) {
@@ -79,9 +79,9 @@ function views_bulk_operations_send_email_action_validate($form, $form_state) {
 }
 
 /**
- * Process views_bulk_operations_send_email_action form submissions.
+ * Process views_bulk_operations_send_email_vboaction form submissions.
  */
-function views_bulk_operations_send_email_action_submit($form, $form_state) {
+function views_bulk_operations_send_email_vboaction_submit($form, $form_state) {
   $form_values = $form_state['values'];
   // Process the HTML form to store configuration. The keyed array that
   // we return will be serialized to the database.
@@ -110,7 +110,7 @@ function views_bulk_operations_send_email_action_submit($form, $form_state) {
  *   - Other elements will be used as the data for token replacement.
  *
  */
-function views_bulk_operations_send_email_action($entity, $context) {
+function views_bulk_operations_send_email_vboaction($entity, $context) {
   if (empty($context['node'])) {
     $context['node'] = $entity;
   }

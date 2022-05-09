@@ -5,7 +5,7 @@
  */
 function actions_permissions_permission() {
   $permissions = array();
-  $actions = actions_get_info();
+  $actions = views_bulk_operations_actions_get_info();
   foreach ($actions as $key => $action) {
     $permission = actions_permissions_get_perm($action['label'], $key);
 

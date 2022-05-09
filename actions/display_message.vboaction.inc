@@ -6,11 +6,11 @@
  */
 
 /**
- * Implements hook_action_info().
+ * Implements hook_vboaction_info().
  */
-function views_bulk_operations_display_message_action_info() {
+function views_bulk_operations_display_message_vboaction_info() {
   return array(
-    'views_bulk_operations_display_message_action' => array(
+    'views_bulk_operations_display_message_vboaction' => array(
       'type' => 'system',
       'label' => t('Display a message to the user'),
       'configurable' => TRUE,
@@ -34,7 +34,7 @@ function views_bulk_operations_display_message_action_info() {
  *     the message.
  *
  */
-function views_bulk_operations_display_message_action(&$entity, $context = array()) {
+function views_bulk_operations_display_message_vboaction(&$entity, $context = array()) {
   if (empty($context['node'])) {
     $context['node'] = $entity;
   }
@@ -46,7 +46,7 @@ function views_bulk_operations_display_message_action(&$entity, $context = array
 /**
  * Action form function.
  */
-function views_bulk_operations_display_message_action_form($context) {
+function views_bulk_operations_display_message_vboaction_form($context) {
   $form['message'] = array(
     '#type' => 'textarea',
     '#title' => t('Message'),
@@ -63,6 +63,6 @@ function views_bulk_operations_display_message_action_form($context) {
  *
  * Pass submitted message back to views_bulk_operations_change_owner.
  */
-function views_bulk_operations_display_message_action_submit($form, $form_state) {
+function views_bulk_operations_display_message_vboaction_submit($form, $form_state) {
   return array('message' => $form_state['values']['message']);
 }
