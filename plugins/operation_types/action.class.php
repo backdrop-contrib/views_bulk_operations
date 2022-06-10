@@ -154,7 +154,7 @@ class ViewsBulkOperationsAction extends ViewsBulkOperationsBaseOperation {
    *
    * @param $dom_id
    *   The dom path to the level where the admin options form is embedded.
-   *   Needed for #dependency.
+   *   Needed for #states.
    * @param $field_handler
    *   The Views field handler object for the VBO field.
    */
@@ -169,8 +169,10 @@ class ViewsBulkOperationsAction extends ViewsBulkOperationsBaseOperation {
         '#type' => 'fieldset',
         '#title' => t('Operation settings'),
         '#collapsible' => TRUE,
-        '#dependency' => array(
-          $dom_id . '-selected' => array(1),
+        '#states' => array(
+          'visible' => array(
+            '#' . $dom_id . '-selected'=> array('checked' => TRUE),
+          ),
         ),
       );
       $settings_dom_id = $dom_id . '-settings';

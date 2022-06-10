@@ -98,6 +98,8 @@ class ViewsBulkOperationsHandlerFieldOperations extends views_handler_field_enti
   function options_form(&$form, &$form_state) {
     parent::options_form($form, $form_state);
 
+    $form['#attached']['css'][] = backdrop_get_path('module', 'views_bulk_operations') . '/css/views_bulk_operations_admin.css';
+
     $form['vbo_settings'] = array(
       '#type' => 'fieldset',
       '#title' => t('Views bulk operations settings'),
@@ -183,8 +185,11 @@ class ViewsBulkOperationsHandlerFieldOperations extends views_handler_field_enti
           '#title' => t('Enqueue the operation instead of executing it directly'),
           '#default_value' => !empty($operation_options['postpone_processing']),
           '#access' => $isVboAction,
-          '#dependency' => array(
-            $dom_id . '-selected' => array(1),
+          '#attributes' => array('class' => array('dependent-options')),
+          '#states' => array(
+            'visible' => array(
+              '#' . $dom_id . '-selected'=> array('checked' => TRUE),
+            ),
           ),
         );
       }
@@ -193,8 +198,11 @@ class ViewsBulkOperationsHandlerFieldOperations extends views_handler_field_enti
         '#title' => t('Skip confirmation step'),
         '#default_value' => !empty($operation_options['skip_confirmation']) || !$isVboAction, // Skip confirmation for core actions, as they define their own confirmations.
         '#access' => $isVboAction,
-        '#dependency' => array(
-          $dom_id . '-selected' => array(1),
+        '#attributes' => array('class' => array('dependent-options')),
+        '#states' => array(
+          'visible' => array(
+            '#' . $dom_id . '-selected'=> array('checked' => TRUE),
+          ),
         ),
       );
       $form['vbo_operations'][$operation_id]['skip_permission_check'] = array(
@@ -202,8 +210,11 @@ class ViewsBulkOperationsHandlerFieldOperations extends views_handler_field_enti
         '#title' => t('Skip permission step'),
         '#default_value' => !empty($operation_options['skip_permission_check']),
         '#access' => $isVboAction,
-        '#dependency' => array(
-          $dom_id . '-selected' => array(1),
+        '#attributes' => array('class' => array('dependent-options')),
+        '#states' => array(
+          'visible' => array(
+            '#' . $dom_id . '-selected'=> array('checked' => TRUE),
+          ),
         ),
       );
 
