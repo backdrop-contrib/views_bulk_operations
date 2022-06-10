@@ -1,8 +1,12 @@
+type = module
 name = Views Bulk Operations
 description = Provides a way of selecting multiple views rows and applying operations to them.
-type = module
+dependencies[] = entity_plus
+dependencies[] = views
 package = Views
 backdrop = 1.x
 
-dependencies[] = entity_plus
-dependencies[] = views
+; Added by Backdrop CMS packaging script on 2022-05-08
+project = views_bulk_operations
+version = 1.x-1.0.4-alpha
+timestamp = 1652069060

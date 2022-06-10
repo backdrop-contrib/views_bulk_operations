@@ -71,6 +71,7 @@ function views_bulk_operations_load_action_includes() {
     'display_message.vboaction',
     'send_email.vboaction',
     'goto.vboaction',
+    'delete.vboaction',
     'node_unpublish_by_keyword.vboaction',
   );
 
