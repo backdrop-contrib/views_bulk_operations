@@ -180,7 +180,7 @@ abstract class ViewsBulkOperationsBaseOperation {
    *
    * @param $dom_id
    *   The dom path to the level where the admin options form is embedded.
-   *   Needed for #dependency.
+   *   Needed for #states.
    * @param $field_handler
    *   The Views field handler object for the EBO field.
    */
@@ -192,8 +192,11 @@ abstract class ViewsBulkOperationsBaseOperation {
       '#type' => 'checkbox',
       '#title' => t('Override label'),
       '#default_value' => $label !== '',
-      '#dependency' => array(
-        $dom_id . '-selected' => array(1),
+      '#attributes' => array('class' => array('dependent-options')),
+      '#states' => array(
+        'visible' => array(
+          '#' . $dom_id . '-selected'=> array('checked' => TRUE),
+        ),
       ),
     );
     $form['label'] = array(
@@ -201,11 +204,13 @@ abstract class ViewsBulkOperationsBaseOperation {
       '#title' => t('Provide label'),
       '#title_display' => 'invisible',
       '#default_value' => $label,
-      '#dependency' => array(
-        $dom_id . '-selected' => array(1),
-        $dom_id . '-override-label' => array(1),
+      '#attributes' => array('class' => array('dependent-options')),
+      '#states' => array(
+        'visible' => array(
+          '#' . $dom_id . '-selected'=> array('checked' => TRUE),
+          '#' . $dom_id . '-override-label'=> array('checked' => TRUE),
+        ),
       ),
-      '#dependency_count' => 2,
     );
 
     return $form;
