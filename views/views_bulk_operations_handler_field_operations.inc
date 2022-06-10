@@ -168,9 +168,13 @@ class ViewsBulkOperationsHandlerFieldOperations extends views_handler_field_enti
       $isVboAction = $operation->isVboAction();
 
       $dom_id = 'edit-options-vbo-operations-' . str_replace(array('_', ':'), array('-', ''), $operation_id);
+      $title = $operation->adminLabel();
+      if (!$isVboAction) {
+        $title .= ' (provided in core)';
+      }
       $form['vbo_operations'][$operation_id]['selected'] = array(
         '#type' => 'checkbox',
-        '#title' => $operation->adminLabel(),
+        '#title' => $title,
         '#default_value' => !empty($operation_options['selected']),
       );
       if (!$operation->aggregate()) {
