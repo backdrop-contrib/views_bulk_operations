@@ -1,8 +1,7 @@
+type = module
 name = Views Bulk Operations
 description = Provides a way of selecting multiple views rows and applying operations to them.
-type = module
-package = Views
-backdrop = 1.x
-
 dependencies[] = entity_plus
 dependencies[] = views
+package = Views
+backdrop = 1.x
