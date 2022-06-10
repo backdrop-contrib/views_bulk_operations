@@ -18,10 +18,10 @@
  *  A step of the VBO form to be altered.
  * @param $form_state
  *  Form state. Contains the name of the current step in $form_state['step'].
- * @param $ebo
- *   The VBO views field. Contains a reference to the view in $ebo->view.
+ * @param $vbo
+ *   The VBO views field. Contains a reference to the view in $vbo->view.
  */
-function hook_views_bulk_operations_form_alter(&$form, &$form_state, $ebo) {
+function hook_views_bulk_operations_form_alter(&$form, &$form_state, $vbo) {
   if ($form_state['step'] == 'views_form_views_form') {
     // Alter the first step of the VBO form (the selection page).
     $form['select']['#title'] = t('Bulk operations');

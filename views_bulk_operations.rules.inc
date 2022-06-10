@@ -151,8 +151,8 @@ function views_bulk_operations_views_list() {
  *   TRUE if the view has more than $minimum results, FALSE otherwise.
  */
 function views_bulk_operations_condition_result_count($view, $args, $minimum) {
-  $ebo = _views_bulk_operations_rules_get_field($view, $args);
-  return (count($ebo->view->result) >= $minimum);
+  $vbo = _views_bulk_operations_rules_get_field($view, $args);
+  return (count($vbo->view->result) >= $minimum);
 }
 
 /**
@@ -167,16 +167,16 @@ function views_bulk_operations_condition_result_count($view, $args, $minimum) {
  *   - array('entity_list' => array(...))
  */
 function views_bulk_operations_action_load_list($view, $args) {
-  $ebo = _views_bulk_operations_rules_get_field($view, $args);
+  $vbo = _views_bulk_operations_rules_get_field($view, $args);
 
   // Get all entities, pass ids to the wrapper for lazy loading.
-  $entity_type = $ebo->get_entity_type();
+  $entity_type = $vbo->get_entity_type();
   $entities = entity_metadata_wrapper("list<$entity_type>", array());
-  foreach ($ebo->view->result as $row_index => $result) {
+  foreach ($vbo->view->result as $row_index => $result) {
     // Grab the entire entity if it's already loaded or fall back to the
     // entity identifier.
-    $entity = $ebo->get_value($result);
-    $data = $entity ? $entity : $result->{$ebo->real_field};
+    $entity = $vbo->get_value($result);
+    $data = $entity ? $entity : $result->{$vbo->real_field};
     $entities[] = entity_metadata_wrapper($entity_type, $data);
   }
 
@@ -196,12 +196,12 @@ function views_bulk_operations_action_load_list($view, $args) {
  *   - array('entity_id_list' => array(...))
  */
 function views_bulk_operations_action_load_id_list($view, $args) {
-  $ebo = _views_bulk_operations_rules_get_field($view, $args);
+  $vbo = _views_bulk_operations_rules_get_field($view, $args);
 
   // Get all entity ids.
   $ids = array();
-  foreach ($ebo->view->result as $row_index => $result) {
-    $ids[] = $ebo->get_value($result);
+  foreach ($vbo->view->result as $row_index => $result) {
+    $ids[] = $vbo->get_value($result);
   }
 
   return array('entity_id_list' => $ids);
@@ -247,9 +247,9 @@ function _views_bulk_operations_rules_get_entity_type($view_target) {
       $view->set_display($views_settings[1]);
       $view->build();
 
-      $ebo = _views_bulk_operations_get_field($view);
+      $vbo = _views_bulk_operations_get_field($view);
     }
-    $entity_type = !empty($ebo) ? $ebo->get_entity_type() : '';
+    $entity_type = !empty($vbo) ? $vbo->get_entity_type() : '';
     $entity_types[$view_target] = $entity_type;
   }
 
@@ -286,8 +286,8 @@ function _views_bulk_operations_rules_get_field($view_target, $args) {
 
   // Don't execute the requested View more than once in a single page request.
   if (isset($views[$view_target])) {
-    $ebo = _views_bulk_operations_get_field($views[$view_target]);
-    return $ebo;
+    $vbo = _views_bulk_operations_get_field($views[$view_target]);
+    return $vbo;
   }
 
   // Load the view and set the properties.
@@ -295,12 +295,12 @@ function _views_bulk_operations_rules_get_field($view_target, $args) {
   $view->set_display($display_name);
   $view->set_arguments($view_arguments);
   $view->build();
-  $ebo = _views_bulk_operations_get_field($view);
+  $vbo = _views_bulk_operations_get_field($view);
   // Unset every field except the VBO one (which holds the entity id).
   // That way the performance hit becomes much smaller, because there is no
   // chance of views_handler_field_field::post_execute() firing entity_load().
   foreach ($view->field as $field_name => $field) {
-    if ($field_name != $ebo->options['id']) {
+    if ($field_name != $vbo->options['id']) {
       unset($view->field[$field_name]);
     }
   }
@@ -308,5 +308,5 @@ function _views_bulk_operations_rules_get_field($view_target, $args) {
   // Save the view in the static cache.
   $views[$view_target] = $view;
 
-  return $ebo;
+  return $vbo;
 }
