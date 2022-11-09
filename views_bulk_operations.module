@@ -1422,7 +1422,7 @@ function _views_bulk_operations_log($msg) {
  *
  * @ingroup actions
  */
-function views_bulk_operations_actions_execute_array($action_name, $entities = array(), &$context) {
+function views_bulk_operations_actions_execute_array($action_name, $entities, &$context) {
   // $stack tracks the number of recursive calls.
   static $stack;
   $stack++;
