@@ -31,6 +31,9 @@ function views_bulk_operations_update_1000(&$sandbox) {
       'action::system_send_email_action' => 'action::views_bulk_operations_send_email_vboaction',
       'action::views_bulk_operations_script_action' => 'action::views_bulk_operations_script_vboaction',
       'action::views_bulk_operations_user_roles_action' => 'action::views_bulk_operations_user_roles_vboaction',
+      'action::pathauto_node_update_action' => 'action::path_node_update_action',
+      'action::pathauto_taxonomy_term_update_action' => 'action::path_taxonomy_term_update_action',
+      'action::pathauto_user_update_action' => 'action::path_user_update_action',
     );
   }
 
@@ -42,7 +45,7 @@ function views_bulk_operations_update_1000(&$sandbox) {
     foreach ($view['display'] as $display_name => $info) {
       if (isset($info['display_options']['fields'])) {
         foreach ($info['display_options']['fields'] as $field_name => $field_info) {
-          if (strpos($field_name, 'views_bulk_operations') === 0) {
+          if (strpos($field_name, 'views_bulk_operations') === 0 && !empty($field_info['vbo_operations'])) {
             foreach ($field_info['vbo_operations'] as $operation_name => $operation_info) {
               if (!empty($sandbox['map'][$operation_name])) {
                 $new_name = $sandbox['map'][$operation_name];
